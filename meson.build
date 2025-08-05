@@ -7,6 +7,7 @@ inc = include_directories('include')
 
 sources = files(
   'src/main.c',
+  'src/game.c',
 )
 
 executable('sockfish',
