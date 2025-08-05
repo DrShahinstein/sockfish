@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 
   SDL_Init(SDL_INIT_VIDEO);
 
-  SDL_Window *window = SDL_CreateWindow(W_TITLE, W_WIDTH, W_HEIGHT, 0);
+  SDL_Window *window = SDL_CreateWindow(W_TITLE, W_SIZE, W_SIZE, 0);
   if (window == NULL) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create window: %s\n", SDL_GetError());
     SDL_Quit();
