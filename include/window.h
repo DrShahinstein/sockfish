@@ -1,6 +1,6 @@
 #pragma once
 
-#define W_WIDTH 800
-#define W_HEIGHT 800
-#define W_TITLE "Sockfish"
+#include "board.h"
 
+#define W_SIZE SQ * 8
+#define W_TITLE "Sockfish"
