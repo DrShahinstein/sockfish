@@ -1,4 +1,5 @@
 #include "window.h"
+#include "game.h"
 #include <SDL3/SDL.h>
 
 int main(int argc, char *argv[]) {
@@ -19,18 +20,20 @@ int main(int argc, char *argv[]) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create renderer: %s\n", SDL_GetError());
     return 1;
   }
+  
+  struct GameState state = {
+    .running = true,
+  };
 
-  int running = true;
-
-  while (running) {
+  while (state.running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT) {
-        running = false;
+        state.running = false;
       }
     }
-
-    // CODECODECODECODEOCOCODOCOCOCOCOCCO
+    
+    game(renderer, &state);
   }
 
   SDL_DestroyRenderer(renderer);
