@@ -3,8 +3,6 @@
 #include <ctype.h>
 #include <stdio.h>
 
-static const char *start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-
 void load_fen(const char *fen, struct GameState *state) {
   int row = 0, col = 0;
   for (const char *p = fen; *p && row < 8; ++p) {
@@ -48,7 +46,7 @@ void initialize_board(SDL_Renderer *renderer, struct GameState *state) {
       state->board[r][c] = 0;
 
   load_piece_textures(renderer, state);
-  load_fen(start_fen, state);
+  load_fen(START_FEN, state);
 }
 
 void cleanup_textures(struct GameState *state) {
