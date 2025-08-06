@@ -6,4 +6,4 @@ struct GameState {
   bool running;
 };
 
-void game(SDL_Renderer *renderer, struct GameState *state);
+void draw_game(SDL_Renderer *renderer, struct GameState *state);

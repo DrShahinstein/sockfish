@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
       }
     }
     
-    game(renderer, &state);
+    draw_game(renderer, &state);
   }
 
   SDL_DestroyRenderer(renderer);
