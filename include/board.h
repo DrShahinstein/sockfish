@@ -4,6 +4,7 @@
 
 #define SQ 100
 #define PIECE_PATH "assets/pieces/%c.png"
+#define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 void load_fen(const char *fen, struct GameState *state);
 void load_piece_textures(SDL_Renderer *renderer, struct GameState *state);
