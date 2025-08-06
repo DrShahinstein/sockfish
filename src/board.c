@@ -64,18 +64,31 @@ void draw_board(SDL_Renderer *renderer, struct GameState *state) {
       SDL_FRect sq = {col * SQ, row * SQ, SQ, SQ};
       bool light = ((row + col) & 1) == 0;
       if (light) SDL_SetRenderDrawColor(renderer, 240, 217, 181, 255);
-      else       SDL_SetRenderDrawColor(renderer, 181, 136, 99, 255);
+      else SDL_SetRenderDrawColor(renderer, 181, 136, 99, 255);
       SDL_RenderFillRect(renderer, &sq);
     }
   }
 
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
+      if (state->drag.active && row == state->drag.row && col == state->drag.col) continue;
       char pc = state->board[row][col];
+
       if (pc && state->tex[(int)pc]) {
         SDL_FRect dst = {col * SQ, row * SQ, SQ, SQ};
         SDL_RenderTexture(renderer, state->tex[(int)pc], NULL, &dst);
       }
+    }
+  }
+
+  if (state->drag.active) {
+    char pc = state->board[state->drag.row][state->drag.col];
+    float x, y;
+    SDL_GetMouseState(&x, &y);
+
+    if (pc && state->tex[(int)pc]) {
+      SDL_FRect dst = {x - SQ / 2.0f, y - SQ / 2.0f, SQ, SQ};
+      SDL_RenderTexture(renderer, state->tex[(int)pc], NULL, &dst);
     }
   }
 }
