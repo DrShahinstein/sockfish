@@ -1,5 +1,6 @@
 #include "window.h"
 #include "game.h"
+#include "board.h"
 #include <SDL3/SDL.h>
 
 int main(int argc, char *argv[]) {
@@ -25,6 +26,8 @@ int main(int argc, char *argv[]) {
     .running = true,
   };
 
+  initialize_board(renderer, &state);
+
   while (state.running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -36,6 +39,7 @@ int main(int argc, char *argv[]) {
     draw_game(renderer, &state);
   }
 
+  cleanup_textures(&state);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
