@@ -1,6 +1,7 @@
 #include "window.h"
 #include "game.h"
 #include "board.h"
+#include "event.h"
 #include <SDL3/SDL.h>
 
 int main(int argc, char *argv[]) {
@@ -29,11 +30,10 @@ int main(int argc, char *argv[]) {
   initialize_board(renderer, &state);
 
   while (state.running) {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT) {
-        state.running = false;
-      }
+    SDL_Event e;
+
+    while (SDL_PollEvent(&e)) {
+      handle_event(&e, &state);
     }
     
     draw_game(renderer, &state);
