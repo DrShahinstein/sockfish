@@ -3,6 +3,7 @@
 #include "game.h"
 
 #define SQ 100
+#define BOARD_SIZE (SQ * 8)
 #define PIECE_PATH "assets/pieces/%c.png"
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
