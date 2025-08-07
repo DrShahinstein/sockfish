@@ -4,7 +4,8 @@ sdl3_dep       = dependency('sdl3')
 sdl3_image_dep = dependency('sdl3-image')
 sdl3_ttf_dep   = dependency('sdl3-ttf')
 
-inc = include_directories('include')
+inc      = include_directories('include')
+sdl3_inc = include_directories(sdl3_dep.get_variable(pkgconfig: 'includedir'))
 
 sources = files(
   'src/main.c',
@@ -16,7 +17,7 @@ sources = files(
 
 executable('sockfish',
   sources,
-  include_directories : inc,
+  include_directories : [inc, sdl3_inc],
   dependencies : [sdl3_dep, sdl3_image_dep, sdl3_ttf_dep],
   install : true
 )
