@@ -3,6 +3,8 @@
 #include "game.h"
 #include "SDL3/SDL.h"
 
+bool is_mouse_in_board(float mx, float my);
+
 void handle_event(SDL_Event *e, struct GameState *state) {
   float mx; float my; int sq_row; int sq_col;
 
@@ -13,6 +15,11 @@ void handle_event(SDL_Event *e, struct GameState *state) {
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
+
+      if (!is_mouse_in_board(mx, my)) {
+        state->drag.active = false;
+        return;
+      }
 
       sq_col = mx / SQ;
       sq_row = my / SQ;
@@ -30,6 +37,12 @@ void handle_event(SDL_Event *e, struct GameState *state) {
   case SDL_EVENT_MOUSE_BUTTON_UP:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
+
+      if (!is_mouse_in_board(mx, my)) {
+        state->drag.active = false;
+        return;
+      }
+
       sq_col = mx / SQ;
       sq_row = my / SQ;
 
@@ -55,4 +68,8 @@ void handle_event(SDL_Event *e, struct GameState *state) {
     }
     break;
   }
+}
+
+bool is_mouse_in_board(float mx, float my) {
+  return mx >= 0 && mx < BOARD_SIZE && my >= 0 && my < BOARD_SIZE; 
 }
