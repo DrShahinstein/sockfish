@@ -4,11 +4,13 @@
 #include "event.h"
 #include "ui.h"
 #include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 int main(int argc, char *argv[]) {
   (void)argc; (void)argv;
 
   SDL_Init(SDL_INIT_VIDEO);
+  TTF_Init();
 
   SDL_Window *window = SDL_CreateWindow(W_TITLE, W_WIDTH, W_HEIGHT, 0);
   if (window == NULL) {
@@ -39,7 +41,9 @@ int main(int argc, char *argv[]) {
     }
     draw_game(renderer, &game, &ui);
   }
-
+  
+  ui_destroy(&ui);
+  TTF_Quit();
   cleanup_textures(&game);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
