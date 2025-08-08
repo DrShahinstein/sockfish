@@ -33,7 +33,7 @@ void ui_init(UI_State *ui) {
 
 void ui_draw(SDL_Renderer *r, UI_State *ui) {
   // panel
-  SDL_FRect panel = {BOARD_SIZE, 0, BOARD_SIZE, BOARD_SIZE};
+  SDL_FRect panel = {BOARD_SIZE, 0, UI_WIDTH, BOARD_SIZE};
   SDL_SetRenderDrawColor(r, 40, 44, 52, 255);
   SDL_RenderFillRect(r, &panel);
 
