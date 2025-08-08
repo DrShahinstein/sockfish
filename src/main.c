@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   }
   
   UI_State ui;
-  struct GameState game = {
+  GameState game = {
     .running = true,
   };
 

@@ -17,7 +17,7 @@ void handle_event(SDL_Event *e, GameState *game) {
       SDL_GetMouseState(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) {
-        state->drag.active = false;
+        game->drag.active = false;
         return;
       }
 

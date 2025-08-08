@@ -74,9 +74,9 @@ void draw_board(SDL_Renderer *renderer, GameState *game) {
 
       char pc = game->board[row][col];
 
-      if (pc && state->tex[(int)pc]) {
+      if (pc && game->tex[(int)pc]) {
         SDL_FRect dst = {col * SQ, row * SQ, SQ, SQ};
-        SDL_RenderTexture(renderer, state->tex[(int)pc], NULL, &dst);
+        SDL_RenderTexture(renderer, game->tex[(int)pc], NULL, &dst);
       }
     }
   }
