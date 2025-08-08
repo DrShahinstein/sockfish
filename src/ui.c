@@ -54,7 +54,7 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
     bool over = point_in_rect(mx, my, &ui->toggle_button.rect);
 
     if (over) SDL_SetCursor(cursor_pointer);
-    else SDL_SetCursor(cursor_pointer);
+    else SDL_SetCursor(cursor_default);
 
     ui->toggle_button.hovered = over;
     break;
@@ -71,8 +71,7 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
   case SDL_EVENT_MOUSE_BUTTON_UP:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
-      if (ui->toggle_button.active &&
-          point_in_rect(mx, my, &ui->toggle_button.rect)) {
+      if (ui->toggle_button.active && point_in_rect(mx, my, &ui->toggle_button.rect)) {
         ui->engine_on = !ui->engine_on;
       }
       ui->toggle_button.active = false;
