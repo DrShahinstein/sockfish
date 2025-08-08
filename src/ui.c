@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "window.h"
+#include "cursor.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -8,10 +9,6 @@
 // font colors
 #define FWHITE (SDL_Color){255,255,255,255}
 #define FBLACK (SDL_Color){0,0,0,255}
-// cursor types
-#define CURSOR_DEFAULT SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT)
-#define CURSOR_POINTER SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER)
-
 
 bool point_in_rect(float x, float y, SDL_FRect *r) {
   return x >= r->x && x < (r->x + r->w) && y >= r->y && y < (r->y + r->h);
@@ -86,6 +83,5 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
 
 void ui_destroy(UI_State *ui) {
   (void)ui;
-  if (CURSOR_POINTER) SDL_DestroyCursor(CURSOR_POINTER);
-  if (CURSOR_DEFAULT) SDL_DestroyCursor(CURSOR_DEFAULT);
+  cleanup_cursors();
 }
