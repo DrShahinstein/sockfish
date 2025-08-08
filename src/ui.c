@@ -46,17 +46,23 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
 
 void ui_handle_event(UI_State *ui, SDL_Event *e) {
   float mx, my;
+  static bool last_over;
 
   switch (e->type) {
   case SDL_EVENT_MOUSE_MOTION:
     mx = (float)e->motion.x;
     my = (float)e->motion.y;
-    bool over = point_in_rect(mx, my, &ui->toggle_button.rect);
 
-    if (over) SDL_SetCursor(cursor_pointer);
-    else SDL_SetCursor(cursor_default);
+    bool over_toggler = point_in_rect(mx, my, &ui->toggle_button.rect);
+    bool over_board   = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
+    bool over_any     = over_toggler || over_board;
 
-    ui->toggle_button.hovered = over;
+    if (over_any != last_over) {
+      SDL_SetCursor(over_any ? cursor_pointer : cursor_default);
+      last_over = over_any;
+    }
+
+    ui->toggle_button.hovered = over_toggler;
     break;
 
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
