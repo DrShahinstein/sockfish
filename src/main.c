@@ -24,27 +24,23 @@ int main(int argc, char *argv[]) {
   }
   
   UI_State ui;
-  struct GameState state = {
+  struct GameState game = {
     .running = true,
   };
 
-  initialize_board(renderer, &state);
+  initialize_board(renderer, &game);
   ui_init(&ui);
 
-  while (state.running) {
+  while (game.running) {
     SDL_Event e;
-
     while (SDL_PollEvent(&e)) {
-      handle_event(&e, &state);
+      handle_event(&e, &game);
       ui_handle_event(&ui, &e);
     }
-    
-    draw_game(renderer, &state);
-    ui_draw(renderer, &ui);
-    SDL_RenderPresent(renderer);
+    draw_game(renderer, &game, &ui);
   }
 
-  cleanup_textures(&state);
+  cleanup_textures(&game);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
