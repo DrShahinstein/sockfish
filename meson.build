@@ -13,6 +13,7 @@ sources = files(
   'src/board.c',
   'src/event.c',
   'src/ui.c',
+  'src/cursor.c',
 )
 
 executable('sockfish',
