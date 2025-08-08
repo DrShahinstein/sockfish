@@ -6,9 +6,14 @@
 #include "cursor.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
+#include <stdint.h>
 
 int main(int argc, char *argv[]) {
   (void)argc; (void)argv;
+
+  uint64_t prev = SDL_GetPerformanceCounter();
+  double freq = (double)SDL_GetPerformanceFrequency();
+  const double target_ms = 1000.0 / 60.0; // 60 FPS
 
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
@@ -41,7 +46,13 @@ int main(int argc, char *argv[]) {
       handle_event(&e, &game);
       ui_handle_event(&ui, &e);
     }
+    
     draw_game(renderer, &game, &ui);
+
+    uint64_t now = SDL_GetPerformanceCounter();
+    double elapsed_ms = (now - prev) * 1000.0 / freq;
+    if (elapsed_ms < target_ms) SDL_Delay((Uint32)(target_ms - elapsed_ms));
+    prev = SDL_GetPerformanceCounter();
   }
   
   cleanup_cursors();
