@@ -53,8 +53,8 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
     my = (float)e->motion.y;
     bool over = point_in_rect(mx, my, &ui->toggle_button.rect);
 
-    if (over) SDL_SetCursor(CURSOR_POINTER);
-    else SDL_SetCursor(CURSOR_DEFAULT);
+    if (over) SDL_SetCursor(cursor_pointer);
+    else SDL_SetCursor(cursor_pointer);
 
     ui->toggle_button.hovered = over;
     break;
@@ -83,5 +83,4 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
 
 void ui_destroy(UI_State *ui) {
   (void)ui;
-  cleanup_cursors();
 }
