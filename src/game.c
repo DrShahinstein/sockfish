@@ -3,8 +3,8 @@
 #include "ui.h"
 #include <SDL3/SDL.h>
 
-void draw_game(SDL_Renderer *renderer, struct GameState *game_state, UI_State *ui_state) {
-  draw_board(renderer, game_state);
-  ui_draw(renderer, ui_state);
+void draw_game(SDL_Renderer *renderer, GameState *game, UI_State *ui) {
+  draw_board(renderer, game);
+  ui_draw(renderer, ui);
   SDL_RenderPresent(renderer);
 }

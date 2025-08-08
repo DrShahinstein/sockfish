@@ -1,9 +1,9 @@
 #pragma once
 
-#include <SDL3/SDL.h>
 #include "ui.h"
+#include <SDL3/SDL.h>
 
-struct GameState {
+typedef struct {
   bool running;
   char board[8][8];
   SDL_Texture *tex[128];
@@ -14,6 +14,6 @@ struct GameState {
     int from_col;
     bool active;
   } drag;
-};
+} GameState ;
 
-void draw_game(SDL_Renderer *renderer, struct GameState *game_state, UI_State *ui_state);
+void draw_game(SDL_Renderer *renderer, GameState *game, UI_State *ui);

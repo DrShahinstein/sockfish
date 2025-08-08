@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <stdio.h>
 
-void load_fen(const char *fen, struct GameState *state) {
+void load_fen(const char *fen, GameState *game) {
   int row = 0, col = 0;
   for (const char *p = fen; *p && row < 8; ++p) {
     if (isdigit((unsigned char)*p)) {
@@ -12,13 +12,12 @@ void load_fen(const char *fen, struct GameState *state) {
       row++;
       col = 0;
     } else {
-      if (col < 8)
-        state->board[row][col++] = *p;
+      if (col < 8) game->board[row][col++] = *p;
     }
   }
 }
 
-void load_piece_textures(SDL_Renderer *renderer, struct GameState *state) {
+void load_piece_textures(SDL_Renderer *renderer, GameState *game) {
   const char *pieces = "rnbqkpRNBQKP";
   char path[256];
 
@@ -31,34 +30,34 @@ void load_piece_textures(SDL_Renderer *renderer, struct GameState *state) {
       continue;
     }
 
-    state->tex[(int)*c] = SDL_CreateTextureFromSurface(renderer, surf);
+    game->tex[(int)*c] = SDL_CreateTextureFromSurface(renderer, surf);
     SDL_DestroySurface(surf);
 
-    if (!state->tex[(int)*c]) {
+    if (!game->tex[(int)*c]) {
       SDL_LogError(SDL_LOG_CATEGORY_ERROR, "CreateTexture '%s' failed: %s\n", path, SDL_GetError());
     }
   }
 }
 
-void initialize_board(SDL_Renderer *renderer, struct GameState *state) {
+void initialize_board(SDL_Renderer *renderer, GameState *game) {
   for (int r = 0; r < 8; ++r)
     for (int c = 0; c < 8; ++c)
-      state->board[r][c] = 0;
+      game->board[r][c] = 0;
 
-  load_piece_textures(renderer, state);
-  load_fen(START_FEN, state);
+  load_piece_textures(renderer, game);
+  load_fen(START_FEN, game);
 }
 
-void cleanup_textures(struct GameState *state) {
+void cleanup_textures(GameState *game) {
   for (int i = 0; i < 128; ++i) {
-    if (state->tex[i]) {
-      SDL_DestroyTexture(state->tex[i]);
-      state->tex[i] = NULL;
+    if (game->tex[i]) {
+      SDL_DestroyTexture(game->tex[i]);
+      game->tex[i] = NULL;
     }
   }
 }
 
-void draw_board(SDL_Renderer *renderer, struct GameState *state) {
+void draw_board(SDL_Renderer *renderer, GameState *game) {
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
       SDL_FRect sq = {col * SQ, row * SQ, SQ, SQ};
@@ -71,8 +70,9 @@ void draw_board(SDL_Renderer *renderer, struct GameState *state) {
 
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
-      if (state->drag.active && row == state->drag.row && col == state->drag.col) continue;
-      char pc = state->board[row][col];
+      if (game->drag.active && row == game->drag.row && col == game->drag.col) continue;
+
+      char pc = game->board[row][col];
 
       if (pc && state->tex[(int)pc]) {
         SDL_FRect dst = {col * SQ, row * SQ, SQ, SQ};
@@ -81,14 +81,14 @@ void draw_board(SDL_Renderer *renderer, struct GameState *state) {
     }
   }
 
-  if (state->drag.active) {
-    char pc = state->board[state->drag.row][state->drag.col];
+  if (game->drag.active) {
+    char pc = game->board[game->drag.row][game->drag.col];
     float x, y;
     SDL_GetMouseState(&x, &y);
 
-    if (pc && state->tex[(int)pc]) {
+    if (pc && game->tex[(int)pc]) {
       SDL_FRect dst = {x - SQ / 2.0f, y - SQ / 2.0f, SQ, SQ};
-      SDL_RenderTexture(renderer, state->tex[(int)pc], NULL, &dst);
+      SDL_RenderTexture(renderer, game->tex[(int)pc], NULL, &dst);
     }
   }
 }

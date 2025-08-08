@@ -20,4 +20,4 @@ typedef struct {
 
 void ui_init(UI_State *ui);
 void ui_handle_event(UI_State *ui, SDL_Event *e);
-void ui_draw(SDL_Renderer *r, UI_State *ui);
+void ui_draw(SDL_Renderer *renderer, UI_State *ui);

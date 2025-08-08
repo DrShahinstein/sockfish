@@ -7,8 +7,8 @@
 #define PIECE_PATH "assets/pieces/%c.png"
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
-void load_fen(const char *fen, struct GameState *state);
-void load_piece_textures(SDL_Renderer *renderer, struct GameState *state);
-void initialize_board(SDL_Renderer *renderer, struct GameState *state);
-void cleanup_textures(struct GameState *state);
-void draw_board(SDL_Renderer *renderer, struct GameState *state);
+void load_fen(const char *fen, GameState *game);
+void load_piece_textures(SDL_Renderer *renderer, GameState *game);
+void initialize_board(SDL_Renderer *renderer, GameState *game);
+void cleanup_textures(GameState *game);
+void draw_board(SDL_Renderer *renderer, GameState *game);
