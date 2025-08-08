@@ -1,7 +1,15 @@
 #include "cursor.h"
-#include <SDL3/SDL_mouse.h>
 
-void cleanup_cursors() {
-  if (CURSOR_POINTER) SDL_DestroyCursor(CURSOR_POINTER);
-  if (CURSOR_DEFAULT) SDL_DestroyCursor(CURSOR_DEFAULT);
+SDL_Cursor *cursor_default = NULL;
+SDL_Cursor *cursor_pointer = NULL;
+
+void init_cursors(void) {
+  cursor_default = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT);
+  cursor_pointer = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_POINTER);
+  SDL_SetCursor(cursor_default);
+}
+
+void cleanup_cursors(void) {
+  if (cursor_pointer) SDL_DestroyCursor(cursor_pointer);
+  if (cursor_default) SDL_DestroyCursor(cursor_default);
 }
