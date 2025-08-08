@@ -1,7 +1,7 @@
 #include "event.h"
 #include "board.h"
 #include "game.h"
-#include "SDL3/SDL.h"
+#include <SDL3/SDL.h>
 
 bool is_mouse_in_board(float mx, float my);
 
