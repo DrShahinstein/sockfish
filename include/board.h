@@ -8,6 +8,7 @@
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 void load_fen(const char *fen, GameState *game);
+void load_board(const char *fen, GameState *game);
 void load_piece_textures(SDL_Renderer *renderer, GameState *game);
 void initialize_board(SDL_Renderer *renderer, GameState *game);
 void cleanup_textures(GameState *game);
