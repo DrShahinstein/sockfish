@@ -14,7 +14,7 @@
 #define FGRAY  (SDL_Color){150,150,150,255}
 
 static void draw_text(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_Color color, float x, float y) {
-  SDL_Surface *surf = TTF_RenderText_Blended(font, text, strlen(text)+1, color);
+  SDL_Surface *surf = TTF_RenderText_Blended(font, text, 0, color);
   SDL_Texture *tex  = SDL_CreateTextureFromSurface(r, surf);
   SDL_FRect dst     = {x, y, (float)surf->w, (float)surf->h};
   SDL_DestroySurface(surf);
