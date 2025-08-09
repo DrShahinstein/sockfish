@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       handle_event(&e, &game);
-      ui_handle_event(&ui, &e);
+      ui_handle_event(&e, &ui, &game);
     }
     
     draw_game(renderer, &game, &ui);
