@@ -10,10 +10,6 @@
 #define FWHITE (SDL_Color){255,255,255,255}
 #define FBLACK (SDL_Color){0,0,0,255}
 
-static bool point_in_rect(float x, float y, SDL_FRect *r) {
-  return x >= r->x && x < (r->x + r->w) && y >= r->y && y < (r->y + r->h);
-}
-
 static void draw_text(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_Color color, float x, float y) {
   SDL_Surface *surf = TTF_RenderText_Blended(font, text, strlen(text)+1, color);
   SDL_Texture *tex  = SDL_CreateTextureFromSurface(r, surf);
@@ -53,7 +49,7 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
     mx = (float)e->motion.x;
     my = (float)e->motion.y;
 
-    bool over_toggler = point_in_rect(mx, my, &ui->toggle_button.rect);
+    bool over_toggler = cursor_in_rect(mx, my, &ui->toggle_button.rect);
     bool over_board   = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
     bool over_any     = over_toggler || over_board;
 
@@ -68,7 +64,7 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
-      if (point_in_rect(mx, my, &ui->toggle_button.rect)) {
+      if (cursor_in_rect(mx, my, &ui->toggle_button.rect)) {
         ui->toggle_button.active = true;
       }
     }
@@ -77,7 +73,7 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
   case SDL_EVENT_MOUSE_BUTTON_UP:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
-      if (ui->toggle_button.active && point_in_rect(mx, my, &ui->toggle_button.rect)) {
+      if (ui->toggle_button.active && cursor_in_rect(mx, my, &ui->toggle_button.rect)) {
         ui->engine_on = !ui->engine_on;
       }
       ui->toggle_button.active = false;
