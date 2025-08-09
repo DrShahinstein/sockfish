@@ -7,6 +7,9 @@
 #define UI_PADDING 10
 #define ROBOTO "assets/Roboto-Regular.ttf"
 #define MAX_FEN 128
+#define FEN_PLACEHOLDER "Enter FEN here..."
+
+typedef struct GameState GameState;
 
 typedef struct {
   SDL_FRect rect;
@@ -29,6 +32,6 @@ typedef struct {
 } UI_State;
 
 void ui_init(UI_State *ui);
-void ui_handle_event(UI_State *ui, SDL_Event *e);
+void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game);
 void ui_draw(SDL_Renderer *renderer, UI_State *ui);
 void ui_destroy(UI_State *ui);
