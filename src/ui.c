@@ -20,11 +20,18 @@ static void draw_text(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_Col
 }
 
 void ui_init(UI_State *ui) {
-  ui->font                   = TTF_OpenFont(ROBOTO, 16);
-  ui->engine_on              = false;
-  ui->toggle_button.rect     = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING, 30, 30};
-  ui->toggle_button.hovered  = false;
-  ui->toggle_button.active   = false;
+  ui->font                    = TTF_OpenFont(ROBOTO, 16);
+  ui->engine_on               = false;
+  ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING, 30, 30};
+  ui->toggle_btn.hovered      = false;
+  ui->toggle_btn.active       = false;
+  ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING+50, 220, 60};
+  ui->fen_loader.area.active  = false;
+  ui->fen_loader.area.hovered = false; 
+  ui->fen_loader.length       = 0;
+  ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x, ui->fen_loader.area.rect.y + 70, 110, 30};
+  ui->fen_loader.btn.active   = false;
+  ui->fen_loader.btn.hovered  = false;
 }
 
 void ui_draw(SDL_Renderer *r, UI_State *ui) {
@@ -34,10 +41,25 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
   SDL_RenderFillRect(r, &panel);
 
   // toggler
-  SDL_FRect tog = ui->toggle_button.rect;
+  SDL_FRect tog = ui->toggle_btn.rect;
   SDL_SetRenderDrawColor(r, ui->engine_on ? 100 : 200, ui->engine_on ? 200 : 100, 100, 255);
   SDL_RenderFillRect(r, &tog);
   draw_text(r, ui->font, ui->engine_on ? "Engine: ON" : "Engine: OFF", FWHITE, tog.x + tog.w + 10, tog.y + 5);
+
+  // fen loader
+  SDL_FRect fen = ui->fen_loader.area.rect;
+  SDL_SetRenderDrawColor(r, 255, 255, 255, 0);
+  SDL_RenderFillRect(r, &fen);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &fen);
+
+  // fen loader -- btn
+  SDL_FRect fenbtn = ui->fen_loader.btn.rect;
+  SDL_SetRenderDrawColor(r, 200, 200, 200, 255);
+  SDL_RenderFillRect(r, &fenbtn);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &fenbtn);
+  draw_text(r, ui->font, "Load", FBLACK, fenbtn.x + 38, fenbtn.y + 5);
 }
 
 void ui_handle_event(UI_State *ui, SDL_Event *e) {
@@ -49,7 +71,7 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
     mx = (float)e->motion.x;
     my = (float)e->motion.y;
 
-    bool over_toggler = cursor_in_rect(mx, my, &ui->toggle_button.rect);
+    bool over_toggler = cursor_in_rect(mx, my, &ui->toggle_btn.rect);
     bool over_board   = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
     bool over_any     = over_toggler || over_board;
 
@@ -58,14 +80,14 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
       last_over = over_any;
     }
 
-    ui->toggle_button.hovered = over_toggler;
+    ui->toggle_btn.hovered = over_toggler;
     break;
 
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
-      if (cursor_in_rect(mx, my, &ui->toggle_button.rect)) {
-        ui->toggle_button.active = true;
+      if (cursor_in_rect(mx, my, &ui->toggle_btn.rect)) {
+        ui->toggle_btn.active = true;
       }
     }
     break;
@@ -73,10 +95,10 @@ void ui_handle_event(UI_State *ui, SDL_Event *e) {
   case SDL_EVENT_MOUSE_BUTTON_UP:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
-      if (ui->toggle_button.active && cursor_in_rect(mx, my, &ui->toggle_button.rect)) {
+      if (ui->toggle_btn.active && cursor_in_rect(mx, my, &ui->toggle_btn.rect)) {
         ui->engine_on = !ui->engine_on;
       }
-      ui->toggle_button.active = false;
+      ui->toggle_btn.active = false;
     }
     break;
   }
