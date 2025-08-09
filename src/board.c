@@ -48,6 +48,13 @@ void initialize_board(SDL_Renderer *renderer, GameState *game) {
   load_fen(START_FEN, game);
 }
 
+void load_board(const char *fen, GameState *game) {
+  for (int r = 0; r < 8; ++r)
+    for (int c = 0; c < 8; ++c)
+      game->board[r][c] = 0;
+  load_fen(fen, game);
+}
+
 void cleanup_textures(GameState *game) {
   for (int i = 0; i < 128; ++i) {
     if (game->tex[i]) {
