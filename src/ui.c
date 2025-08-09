@@ -44,7 +44,6 @@ void ui_init(UI_State *ui) {
   ui->fen_loader.length       = 0;
   ui->fen_loader.input[0]     = '\0';
   ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x, ui->fen_loader.area.rect.y + 70, 110, 30};
-  ui->fen_loader.btn.active   = false;
   ui->fen_loader.btn.hovered  = false;
 
   if (!ui->font) SDL_Log("Could not load font: %s", SDL_GetError());
@@ -142,7 +141,6 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
         ui->fen_loader.area.active = false;
         SDL_StopTextInput(SDL_GetKeyboardFocus());
       }
-      else if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) ui->fen_loader.btn.active = true;
     }
     break;
 
@@ -153,11 +151,9 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
       if (ui->toggle_btn.active && cursor_in_rect(mx, my, &ui->toggle_btn.rect)) ui->engine_on = !ui->engine_on;
       ui->toggle_btn.active = false;
 
-      if (ui->fen_loader.btn.active && cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
-        if (ui->fen_loader.length > 0) load_fen(ui->fen_loader.input, game);
+      if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
+        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
       }
-
-      ui->fen_loader.btn.active = false;
     }
     break;
 
@@ -181,11 +177,13 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
           ui->fen_loader.length--;
           ui->fen_loader.input[ui->fen_loader.length] = '\0';
         }
-      } else if (kc == SDLK_RETURN || kc == SDLK_KP_ENTER) {
-        if (ui->fen_loader.length > 0 && game) {
-          load_fen(ui->fen_loader.input, game);
-        }
-      } else if (kc == SDLK_V && (SDL_GetModState() & SDL_KMOD_CTRL)) {
+      }
+
+      else if (kc == SDLK_RETURN || kc == SDLK_KP_ENTER) {
+        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
+      }
+      
+      else if (kc == SDLK_V && (SDL_GetModState() & SDL_KMOD_CTRL)) {
         char *clip = SDL_GetClipboardText();
 
         if (clip) {
