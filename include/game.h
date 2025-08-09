@@ -3,7 +3,7 @@
 #include "ui.h"
 #include <SDL3/SDL.h>
 
-typedef struct {
+typedef struct GameState {
   bool running;
   char board[8][8];
   SDL_Texture *tex[128];
