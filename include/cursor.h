@@ -5,6 +5,7 @@
 
 extern SDL_Cursor *cursor_default;
 extern SDL_Cursor *cursor_pointer;
+extern SDL_Cursor *cursor_text;
 
 void init_cursors(void);
 void cleanup_cursors(void);
