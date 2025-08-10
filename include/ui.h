@@ -6,6 +6,7 @@
 #define UI_WIDTH 250
 #define UI_PADDING 10
 #define ROBOTO "assets/Roboto-Regular.ttf"
+#define JBMONO "assets/JetBrainsMonoNL-Regular.ttf" 
 #define MAX_FEN 128
 #define FEN_PLACEHOLDER "Enter FEN here..."
 
