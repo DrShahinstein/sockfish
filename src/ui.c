@@ -189,11 +189,12 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
     mx = (float)e->motion.x;
     my = (float)e->motion.y;
    
-    bool over_board    = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
-    bool over_toggler  = cursor_in_rect(mx, my, &ui->toggle_btn.rect);
-    bool over_fen_area = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
-    bool over_fen_btn  = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
-    bool over_any      = over_board || over_toggler || over_fen_btn;
+    bool over_board     = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
+    bool over_toggler   = cursor_in_rect(mx, my, &ui->toggle_btn.rect);
+    bool over_fen_area  = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
+    bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
+    bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
+    bool over_any       = over_board || over_toggler || over_fen_btn || over_reset_btn;
 
     if (over_any != last_over) {
       SDL_SetCursor(over_any ? cursor_pointer : cursor_default);
@@ -208,6 +209,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
     ui->toggle_btn.hovered      = over_toggler;
     ui->fen_loader.area.hovered = over_fen_area;
     ui->fen_loader.btn.hovered  = over_fen_btn;
+    ui->reset_btn.hovered       = over_reset_btn;
     break;
 
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
