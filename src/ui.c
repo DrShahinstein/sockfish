@@ -75,21 +75,24 @@ static int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, c
 }
 
 void ui_init(UI_State *ui) {
-  ui->font                    = TTF_OpenFont(ROBOTO, 16);
+  ui->font                    = TTF_OpenFont(ROBOTO,16);
   ui->engine_on               = false;
-  ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING, 30, 30};
+  ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE+UI_PADDING,UI_PADDING,30,30};
   ui->toggle_btn.hovered      = false;
   ui->toggle_btn.active       = false;
-  ui->fen_loader.font         = TTF_OpenFont(JBMONO, 14);
-  ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING+50, 220, 90};
+  ui->fen_loader.font         = TTF_OpenFont(JBMONO,14);
+  ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE+UI_PADDING,UI_PADDING+50,230,90};
   ui->fen_loader.area.active  = false;
   ui->fen_loader.area.hovered = false; 
   ui->fen_loader.length       = 0;
   ui->fen_loader.input[0]     = '\0';
-  ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x, ui->fen_loader.area.rect.y + 100, 110, 30};
+  ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x,ui->fen_loader.area.rect.y+100,100,30};
   ui->fen_loader.btn.hovered  = false;
+  ui->reset_btn.rect          = (SDL_FRect){ui->fen_loader.area.rect.x+ui->fen_loader.area.rect.w-100,ui->fen_loader.btn.rect.y,100,ui->fen_loader.btn.rect.h};
+  ui->reset_btn.hovered       = false;
 
-  if (!ui->font) SDL_Log("Could not load font: %s", SDL_GetError());
+  if (!ui->font)            SDL_Log("Could not load font: %s", SDL_GetError());
+  if (!ui->fen_loader.font) SDL_Log("Could not load font: %s", SDL_GetError());
 }
 
 void ui_draw(SDL_Renderer *r, UI_State *ui) {
@@ -167,6 +170,13 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &fenbtn);
   draw_text_centered(r, ui->font, "Load", FBLACK, ui->fen_loader.btn.rect);
+
+  SDL_FRect resetbtn = ui->reset_btn.rect; 
+  SDL_SetRenderDrawColor(r, ui->reset_btn.hovered ? 170 : 200, 200, 200, 255);
+  SDL_RenderFillRect(r, &resetbtn);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &resetbtn);
+  draw_text_centered(r, ui->font, "Reset", FBLACK, ui->reset_btn.rect);
 }
 
 void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
@@ -226,6 +236,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
         if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
       }
+
+      if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) load_board(START_FEN, game);
     }
     break;
 
