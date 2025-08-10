@@ -80,7 +80,7 @@ void ui_init(UI_State *ui) {
   ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING, 30, 30};
   ui->toggle_btn.hovered      = false;
   ui->toggle_btn.active       = false;
-  ui->fen_loader.font         = TTF_OpenFont(ROBOTO, 12);
+  ui->fen_loader.font         = TTF_OpenFont(ROBOTO, 14);
   ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING+50, 220, 90};
   ui->fen_loader.area.active  = false;
   ui->fen_loader.area.hovered = false; 
@@ -253,6 +253,11 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
 
       else if (kc == SDLK_RETURN || kc == SDLK_KP_ENTER) {
         if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
+      }
+
+      else if (kc == SDLK_A && (SDL_GetModState() & SDL_KMOD_CTRL)) {
+        ui->fen_loader.input[0] = '\0';
+        ui->fen_loader.length = 0;
       }
       
       else if (kc == SDLK_V && (SDL_GetModState() & SDL_KMOD_CTRL)) {
