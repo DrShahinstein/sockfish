@@ -18,6 +18,7 @@ typedef struct {
 } UI_Element;
 
 typedef struct {
+  TTF_Font *font;
   UI_Element area;
   UI_Element btn;
   char input[MAX_FEN];
