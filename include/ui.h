@@ -29,6 +29,7 @@ typedef struct {
 typedef struct {
   bool engine_on;
   UI_Element toggle_btn;
+  UI_Element reset_btn;
   UI_FenLoader fen_loader;
   TTF_Font *font;
 } UI_State;
