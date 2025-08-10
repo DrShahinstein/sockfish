@@ -10,20 +10,20 @@
 #define MAX_FEN 128
 #define FEN_PLACEHOLDER "Enter FEN here..."
 
+typedef enum {
+  WHITE, BLACK
+} Turn;
+
 typedef struct GameState GameState;
 
 typedef struct {
   SDL_FRect rect;
-} UI_Separator;
-
-typedef struct {
-  SDL_FRect rect;
   bool hovered;
-  bool active;
 } UI_Element;
 
 typedef struct {
   TTF_Font *font;
+  bool active;
   UI_Element area;
   UI_Element btn;
   char input[MAX_FEN];
@@ -32,10 +32,12 @@ typedef struct {
 
 typedef struct {
   bool engine_on;
+  Turn turn;
   UI_Element engine_toggler;
+  UI_Element turn_changer;
   UI_Element reset_btn;
   UI_FenLoader fen_loader;
-  UI_Separator separator;
+  UI_Element separator;
   TTF_Font *font;
 } UI_State;
 
