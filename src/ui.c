@@ -139,7 +139,7 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
     draw_text(r, ui->fen_loader.font, wrapped[li], FBLACK, text_x, y);
   }
 
-  if (ui->fen_loader.length == 0 && !ui->fen_loader.area.active) draw_text(r, ui->fen_loader.font, FEN_PLACEHOLDER, FGRAY, text_x, text_y);
+  if (ui->fen_loader.length == 0 && !ui->fen_loader.area.active) draw_text(r, ui->font, FEN_PLACEHOLDER, FGRAY, text_x, text_y);
   else if (ui->fen_loader.length > 0)                            draw_text(r, ui->fen_loader.font, ui->fen_loader.input, FBLACK, text_x, text_y);
   else {}
   if (ui->fen_loader.area.active) {
