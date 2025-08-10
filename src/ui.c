@@ -90,6 +90,7 @@ void ui_init(UI_State *ui) {
   ui->fen_loader.btn.hovered  = false;
   ui->reset_btn.rect          = (SDL_FRect){ui->fen_loader.area.rect.x+ui->fen_loader.area.rect.w-100,ui->fen_loader.btn.rect.y,100,ui->fen_loader.btn.rect.h};
   ui->reset_btn.hovered       = false;
+  ui->separator.rect          = (SDL_FRect){ui->fen_loader.area.rect.x,ui->reset_btn.rect.y+80,ui->fen_loader.area.rect.w,4};
 
   if (!ui->font)            SDL_Log("Could not load font: %s", SDL_GetError());
   if (!ui->fen_loader.font) SDL_Log("Could not load font: %s", SDL_GetError());
@@ -179,7 +180,16 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
   draw_text_centered(r, ui->font, "Reset", FBLACK, ui->reset_btn.rect);
 
   /* --- sockfish engine --- */
-  // codecodecodecodecode
+  if (ui->engine_on) {
+    SDL_FRect separator = ui->separator.rect;
+    SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
+    SDL_RenderFillRect(r, &separator);
+    SDL_RenderRect(r, &separator);
+  }
+
+  // codecodecode
+  // codecode
+  // code
 }
 
 void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
