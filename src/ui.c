@@ -80,7 +80,7 @@ void ui_init(UI_State *ui) {
   ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING, 30, 30};
   ui->toggle_btn.hovered      = false;
   ui->toggle_btn.active       = false;
-  ui->fen_loader.font         = TTF_OpenFont(ROBOTO, 14);
+  ui->fen_loader.font         = TTF_OpenFont(JBMONO, 14);
   ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING+50, 220, 90};
   ui->fen_loader.area.active  = false;
   ui->fen_loader.area.hovered = false; 
