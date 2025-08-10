@@ -32,18 +32,60 @@ static void draw_text_centered(SDL_Renderer *r, TTF_Font *font, const char *text
   draw_text(r, font, text, color, x, y);
 }
 
+static int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, char lines[][MAX_FEN], int max_lines) {
+  if (!font || !text) return 0;
+
+  int len = (int)strlen(text);
+  int start = 0;
+  int line_count = 0;
+
+  while (start < len && line_count < max_lines) {
+    int end = start;
+    int w = 0;
+    char tmp[MAX_FEN];
+
+    while (end < len) {
+      int chunk = end - start + 1;
+      if (chunk >= MAX_FEN) break;
+      memcpy(tmp, &text[start], chunk);
+      tmp[chunk] = '\0';
+      TTF_MeasureString(font, tmp, 0, 0, &w, NULL);
+      if (w > (int)max_w) break;
+      end++;
+    }
+
+    if (end == start) {
+      int take = 1;
+      if (start + take > len) take = len - start;
+      memcpy(tmp, &text[start], take);
+      tmp[take] = '\0';
+      strncpy(lines[line_count++], tmp, MAX_FEN);
+      start += take;
+    } else {
+      int take = end - start;
+      if (take >= MAX_FEN) take = MAX_FEN - 1;
+      memcpy(tmp, &text[start], take);
+      tmp[take] = '\0';
+      strncpy(lines[line_count++], tmp, MAX_FEN);
+      start = end;
+    }
+  }
+
+  return line_count;
+}
+
 void ui_init(UI_State *ui) {
   ui->font                    = TTF_OpenFont(ROBOTO, 16);
   ui->engine_on               = false;
   ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING, 30, 30};
   ui->toggle_btn.hovered      = false;
   ui->toggle_btn.active       = false;
-  ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING+50, 220, 60};
+  ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE + UI_PADDING, UI_PADDING+50, 220, 90};
   ui->fen_loader.area.active  = false;
   ui->fen_loader.area.hovered = false; 
   ui->fen_loader.length       = 0;
   ui->fen_loader.input[0]     = '\0';
-  ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x, ui->fen_loader.area.rect.y + 70, 110, 30};
+  ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x, ui->fen_loader.area.rect.y + 100, 110, 30};
   ui->fen_loader.btn.hovered  = false;
 
   if (!ui->font) SDL_Log("Could not load font: %s", SDL_GetError());
@@ -71,22 +113,51 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
   float text_x = fen.x + 6;
   float text_y = fen.y + 6;
 
+  int line_h = TTF_GetFontHeight(ui->font);
+  if (line_h <= 0) line_h = 16;
+
+  int max_vis_lines = (int) (fen.h / (float)line_h);
+  if (max_vis_lines <= 0) max_vis_lines = 1;
+
+  const int MAX_WRAP_LINES = 10;
+  char wrapped[MAX_WRAP_LINES][MAX_FEN];
+  for (int i = 0; i < MAX_WRAP_LINES; ++i) wrapped[i][0] = '\0';
+
+  int total_lines = wrap_text_into_lines(ui->font, ui->fen_loader.input, fen.w - 8.0f, wrapped, MAX_WRAP_LINES);
+  int first_line = 0;
+  if (total_lines > max_vis_lines) {
+    if (ui->fen_loader.area.active) first_line = total_lines - max_vis_lines;
+    else first_line = 0;
+  }
+
+  int last_line = first_line + max_vis_lines;
+  if (last_line > total_lines) last_line = total_lines;
+
+  for (int li = first_line, row_i = 0; li < last_line; ++li, ++row_i) {
+    float y = text_y + row_i * (float)line_h;
+    draw_text(r, ui->font, wrapped[li], FBLACK, text_x, y);
+  }
+
   if (ui->fen_loader.length == 0 && !ui->fen_loader.area.active) draw_text(r, ui->font, FEN_PLACEHOLDER, FGRAY, text_x, text_y);
   else if (ui->fen_loader.length > 0)                            draw_text(r, ui->font, ui->fen_loader.input, FBLACK, text_x, text_y);
   else {}
   if (ui->fen_loader.area.active) {
-    int w = 0;
-    int h = TTF_GetFontHeight(ui->font);
-    
-    if (ui->fen_loader.length > 0) TTF_MeasureString(ui->font, ui->fen_loader.input, 0, 0, &w, NULL);
-
+    int w; int visible_count;
     bool caret_visible = SDL_GetTicks() % 1000 < 500;
 
     if (caret_visible) {
-      SDL_FRect caret = {text_x + (float)w, text_y, 2.0f, (float)h};
-      SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
-      SDL_RenderFillRect(r, &caret);
+      visible_count = last_line - first_line;
+      int last_visible_idx = (visible_count > 0) ? (last_line - 1) : -1; 
+      w = 0;
+      if (last_visible_idx >= 0) TTF_MeasureString(ui->font, wrapped[last_visible_idx], 0, 0, &w, NULL);
+      else w = 0;
     }
+
+    float caret_x = text_x + (float)w;
+    float caret_y = text_y + (float) ((visible_count > 0 ? visible_count-1 : 0) * line_h);
+    SDL_FRect caret = { caret_x, caret_y, 2.0f, (float)line_h };
+    SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+    SDL_RenderFillRect(r, &caret);
   }
 
   SDL_FRect fenbtn = ui->fen_loader.btn.rect;
