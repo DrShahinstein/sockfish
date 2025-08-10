@@ -14,6 +14,10 @@ typedef struct GameState GameState;
 
 typedef struct {
   SDL_FRect rect;
+} UI_Separator;
+
+typedef struct {
+  SDL_FRect rect;
   bool hovered;
   bool active;
 } UI_Element;
@@ -31,6 +35,7 @@ typedef struct {
   UI_Element engine_toggler;
   UI_Element reset_btn;
   UI_FenLoader fen_loader;
+  UI_Separator separator;
   TTF_Font *font;
 } UI_State;
 
