@@ -77,9 +77,9 @@ static int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, c
 void ui_init(UI_State *ui) {
   ui->font                    = TTF_OpenFont(ROBOTO,16);
   ui->engine_on               = false;
-  ui->toggle_btn.rect         = (SDL_FRect){BOARD_SIZE+UI_PADDING,UI_PADDING,30,30};
-  ui->toggle_btn.hovered      = false;
-  ui->toggle_btn.active       = false;
+  ui->engine_toggler.rect     = (SDL_FRect){BOARD_SIZE+UI_PADDING,UI_PADDING,30,30};
+  ui->engine_toggler.hovered  = false;
+  ui->engine_toggler.active   = false;
   ui->fen_loader.font         = TTF_OpenFont(JBMONO,14);
   ui->fen_loader.area.rect    = (SDL_FRect){BOARD_SIZE+UI_PADDING,UI_PADDING+50,230,90};
   ui->fen_loader.area.active  = false;
@@ -102,12 +102,12 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
   SDL_RenderFillRect(r, &panel);
 
   // toggler
-  SDL_FRect tog = ui->toggle_btn.rect;
+  SDL_FRect tog = ui->engine_toggler.rect;
   SDL_SetRenderDrawColor(r, ui->engine_on ? 100 : 200, ui->engine_on ? 200 : 100, 100, 255);
   SDL_RenderFillRect(r, &tog);
   draw_text(r, ui->font, ui->engine_on ? "Engine: ON" : "Engine: OFF", FWHITE, tog.x + tog.w + 10, tog.y + 5);
 
-  // --- fen loader ---
+  /* --- fen loader --- */
   SDL_FRect fen = ui->fen_loader.area.rect;
   SDL_SetRenderDrawColor(r, 255, 255, 255, 0);
   SDL_RenderFillRect(r, &fen);
@@ -177,6 +177,9 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &resetbtn);
   draw_text_centered(r, ui->font, "Reset", FBLACK, ui->reset_btn.rect);
+
+  /* --- sockfish engine --- */
+  // codecodecodecodecode
 }
 
 void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
@@ -190,7 +193,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
     my = (float)e->motion.y;
    
     bool over_board     = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
-    bool over_toggler   = cursor_in_rect(mx, my, &ui->toggle_btn.rect);
+    bool over_toggler   = cursor_in_rect(mx, my, &ui->engine_toggler.rect);
     bool over_fen_area  = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
     bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
     bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
@@ -206,7 +209,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
       last_over_fen_area = over_fen_area;
     }
 
-    ui->toggle_btn.hovered      = over_toggler;
+    ui->engine_toggler.hovered  = over_toggler;
     ui->fen_loader.area.hovered = over_fen_area;
     ui->fen_loader.btn.hovered  = over_fen_btn;
     ui->reset_btn.hovered       = over_reset_btn;
@@ -216,7 +219,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
 
-      if (cursor_in_rect(mx, my, &ui->toggle_btn.rect)) ui->toggle_btn.active = true;
+      if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) ui->engine_toggler.active = true;
       else if (cursor_in_rect(mx, my, &ui->fen_loader.area.rect)) {
         ui->fen_loader.area.active = true;
         SDL_StartTextInput(SDL_GetKeyboardFocus());
@@ -232,8 +235,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
 
-      if (ui->toggle_btn.active && cursor_in_rect(mx, my, &ui->toggle_btn.rect)) ui->engine_on = !ui->engine_on;
-      ui->toggle_btn.active = false;
+      if (ui->engine_toggler.active && cursor_in_rect(mx, my, &ui->engine_toggler.rect)) ui->engine_on = !ui->engine_on;
+      ui->engine_toggler.active = false;
 
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
         if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
