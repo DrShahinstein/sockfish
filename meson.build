@@ -13,6 +13,7 @@ sources = files(
   'src/board.c',
   'src/event.c',
   'src/ui.c',
+  'src/ui_helpers.c',
   'src/cursor.c',
   'src/sockfish.c',
 )
