@@ -3,6 +3,8 @@
 #include "ui.h"
 #include <SDL3/SDL.h>
 
+typedef struct Sockfish Sockfish;
+
 typedef struct GameState {
   bool running;
   char board[8][8];
@@ -14,6 +16,7 @@ typedef struct GameState {
     int from_col;
     bool active;
   } drag;
+  Sockfish *engine;
 } GameState ;
 
 void draw_game(SDL_Renderer *renderer, GameState *game, UI_State *ui);
