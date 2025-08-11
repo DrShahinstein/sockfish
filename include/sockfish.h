@@ -4,7 +4,9 @@
 
 typedef struct GameState GameState;
 typedef enum { WHITE, BLACK } Turn;
-typedef struct Sockfish Sockfish;
+typedef struct Sockfish {
+  Turn search_color;
+} Sockfish;
 
-Sockfish *sf_create();
+void sf_init(Sockfish *sf);
 void sf_destroy(Sockfish *sf);
