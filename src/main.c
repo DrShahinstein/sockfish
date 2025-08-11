@@ -3,6 +3,7 @@
 #include "board.h"
 #include "event.h"
 #include "ui.h"
+#include "sockfish.h"
 #include "cursor.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -35,10 +36,14 @@ int main(int argc, char *argv[]) {
   UI_State ui;
   GameState game = {
     .running = true,
+    .engine  = NULL,
   };
 
   initialize_board(renderer, &game);
+  sf_init(&game);
   ui_init(&ui);
+
+  if (game.engine == NULL) SDL_Log("Sockfish could not load");
 
   while (game.running) {
     SDL_Event e;
@@ -58,6 +63,7 @@ int main(int argc, char *argv[]) {
   cleanup_cursors();
   ui_destroy(&ui);
   TTF_Quit();
+  sf_destroy(&game);
   cleanup_textures(&game);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
