@@ -14,6 +14,7 @@ sources = files(
   'src/event.c',
   'src/ui.c',
   'src/cursor.c',
+  'src/sockfish.c',
 )
 
 executable('sockfish',
