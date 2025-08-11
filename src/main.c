@@ -39,11 +39,11 @@ int main(int argc, char *argv[]) {
     .engine  = NULL,
   };
 
-  initialize_board(renderer, &game);
-  sf_init(&game);
-  ui_init(&ui);
+  game.engine = sf_create();
+  if (!game.engine) SDL_Log("Sockfish could not instantiated!");
 
-  if (game.engine == NULL) SDL_Log("Sockfish could not load");
+  initialize_board(renderer, &game);
+  ui_init(&ui);
 
   while (game.running) {
     SDL_Event e;
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   cleanup_cursors();
   ui_destroy(&ui);
   TTF_Quit();
-  sf_destroy(&game);
+  sf_destroy(game.engine);
   cleanup_textures(&game);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
