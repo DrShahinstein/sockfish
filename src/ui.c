@@ -98,7 +98,7 @@ void ui_init(UI_State *ui) {
   if (!ui->fen_loader.font) SDL_Log("Could not load font: %s", SDL_GetError());
 }
 
-void ui_draw(SDL_Renderer *r, UI_State *ui) {
+void ui_draw(SDL_Renderer *r, UI_State *ui, Sockfish *sockfish) {
   // panel
   SDL_FRect panel = {BOARD_SIZE, 0, UI_WIDTH, BOARD_SIZE};
   SDL_SetRenderDrawColor(r, 40, 44, 52, 255);
@@ -194,11 +194,10 @@ void ui_draw(SDL_Renderer *r, UI_State *ui) {
     else SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
     SDL_RenderFillRect(r, &turn_changer);
     draw_text(r, ui->font, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
-  }
 
-  // codecodecode
-  // codecode
-  // code
+    (void)sockfish;
+    // codecodecodecode
+  }
 }
 
 void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {

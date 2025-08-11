@@ -34,15 +34,13 @@ int main(int argc, char *argv[]) {
   }
   
   UI_State ui;
+  Sockfish sockfish; 
   GameState game = {
     .running = true,
-    .engine  = NULL,
   };
 
-  game.engine = sf_create();
-  if (!game.engine) SDL_Log("Sockfish could not load");
-
   initialize_board(renderer, &game);
+  sf_init(&sockfish);
   ui_init(&ui);
 
   while (game.running) {
@@ -52,7 +50,7 @@ int main(int argc, char *argv[]) {
       ui_handle_event(&e, &ui, &game);
     }
     
-    draw_game(renderer, &game, &ui);
+    draw_game(renderer, &game, &ui, &sockfish);
 
     uint64_t now = SDL_GetPerformanceCounter();
     double elapsed_ms = (now - prev) * 1000.0 / freq;
@@ -63,7 +61,7 @@ int main(int argc, char *argv[]) {
   cleanup_cursors();
   ui_destroy(&ui);
   TTF_Quit();
-  sf_destroy(game.engine);
+  sf_destroy(&sockfish);
   cleanup_textures(&game);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);

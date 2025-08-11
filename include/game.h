@@ -16,7 +16,6 @@ typedef struct GameState {
     int from_col;
     bool active;
   } drag;
-  Sockfish *engine;
 } GameState ;
 
-void draw_game(SDL_Renderer *renderer, GameState *game, UI_State *ui);
+void draw_game(SDL_Renderer *renderer, GameState *game, UI_State *ui, Sockfish *sockfish);

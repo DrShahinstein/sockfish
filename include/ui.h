@@ -12,6 +12,7 @@
 #define FEN_PLACEHOLDER "Enter FEN here..."
 
 typedef struct GameState GameState;
+typedef struct Sockfish Sockfish;
 
 typedef struct {
   SDL_FRect rect;
@@ -40,5 +41,5 @@ typedef struct {
 
 void ui_init(UI_State *ui);
 void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game);
-void ui_draw(SDL_Renderer *renderer, UI_State *ui);
+void ui_draw(SDL_Renderer *renderer, UI_State *ui, Sockfish *sockfish);
 void ui_destroy(UI_State *ui);
