@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     .running = true,
   };
 
-  initialize_board(renderer, &game);
+  board_init(renderer, &game);
   sf_init(&sockfish);
   ui_init(&ui);
 

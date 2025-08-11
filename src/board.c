@@ -39,7 +39,7 @@ void load_piece_textures(SDL_Renderer *renderer, GameState *game) {
   }
 }
 
-void initialize_board(SDL_Renderer *renderer, GameState *game) {
+void board_init(SDL_Renderer *renderer, GameState *game) {
   for (int r = 0; r < 8; ++r)
     for (int c = 0; c < 8; ++c)
       game->board[r][c] = 0;
