@@ -1,18 +1,11 @@
 #pragma once
 
-#include <stdbool.h>
+#include <SDL3/SDL.h>
 
 typedef struct GameState GameState;
+typedef enum { WHITE, BLACK } Turn;
+typedef struct Sockfish Sockfish;
+typedef struct SF_Move SF_Move;
 
-typedef enum {
-  WHITE, BLACK
-} Turn;
-
-typedef struct Sockfish {
-  bool engine_on;
-  Turn turn;
-
-} Sockfish;
-
-void sf_init(GameState *game);
-void sf_destroy(GameState *game);
+Sockfish *sf_create();
+void sf_destroy(Sockfish *sf);
