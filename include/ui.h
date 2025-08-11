@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sockfish.h" // enum Turn;
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -9,10 +10,6 @@
 #define JBMONO "assets/JetBrainsMonoNL-Regular.ttf" 
 #define MAX_FEN 128
 #define FEN_PLACEHOLDER "Enter FEN here..."
-
-typedef enum {
-  WHITE, BLACK
-} Turn;
 
 typedef struct GameState GameState;
 
