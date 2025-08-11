@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   };
 
   game.engine = sf_create();
-  if (!game.engine) SDL_Log("Sockfish could not instantiated!");
+  if (!game.engine) SDL_Log("Sockfish could not load");
 
   initialize_board(renderer, &game);
   ui_init(&ui);
