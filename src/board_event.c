@@ -1,10 +1,10 @@
-#include "event.h"
+#include "board_event.h"
 #include "board.h"
 #include <SDL3/SDL.h>
 
-bool is_mouse_in_board(float mx, float my);
+static bool is_mouse_in_board(float mx, float my);
 
-void handle_event(SDL_Event *e, BoardState *board) {
+void board_handle_event(SDL_Event *e, BoardState *board) {
   float mx; float my; int sq_row; int sq_col;
 
   switch (e->type) {
@@ -69,6 +69,6 @@ void handle_event(SDL_Event *e, BoardState *board) {
   }
 }
 
-bool is_mouse_in_board(float mx, float my) {
+static bool is_mouse_in_board(float mx, float my) {
   return mx >= 0 && mx < BOARD_SIZE && my >= 0 && my < BOARD_SIZE; 
 }
