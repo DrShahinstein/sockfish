@@ -2,7 +2,6 @@
 #include "window.h"
 #include "cursor.h"
 #include "board.h"
-#include "game.h"
 #include "ui_helpers.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_mouse.h>
@@ -140,7 +139,7 @@ void ui_draw(SDL_Renderer *r, UI_State *ui, Sockfish *sockfish) {
   }
 }
 
-void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
+void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
   float mx, my;
   static bool last_over;
   static bool last_over_fen_area;
@@ -197,10 +196,10 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
       if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) ui->engine_on = !ui->engine_on;
 
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
-        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
+        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, board);
       }
 
-      if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) load_board(START_FEN, game);
+      if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) load_board(START_FEN, board);
 
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
         if (ui->turn == WHITE) ui->turn = BLACK;
@@ -232,7 +231,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game) {
       }
 
       else if (kc == SDLK_RETURN || kc == SDLK_KP_ENTER) {
-        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, game);
+        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, board);
       }
 
       else if (kc == SDLK_A && (SDL_GetModState() & SDL_KMOD_CTRL)) {

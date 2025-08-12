@@ -2,7 +2,6 @@
 
 #include <SDL3/SDL.h>
 
-typedef struct GameState GameState;
 typedef enum { WHITE, BLACK } Turn;
 typedef struct Sockfish {
   Turn search_color;

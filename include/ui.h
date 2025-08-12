@@ -1,6 +1,7 @@
 #pragma once
 
-#include "sockfish.h" // enum Turn;
+#include "sockfish.h"
+#include "board.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -10,9 +11,6 @@
 #define JBMONO "assets/JetBrainsMonoNL-Regular.ttf" 
 #define MAX_FEN 128
 #define FEN_PLACEHOLDER "Enter FEN here..."
-
-typedef struct GameState GameState;
-typedef struct Sockfish Sockfish;
 
 typedef struct {
   SDL_FRect rect;
@@ -40,6 +38,6 @@ typedef struct {
 } UI_State;
 
 void ui_init(UI_State *ui);
-void ui_handle_event(SDL_Event *e, UI_State *ui, GameState *game);
+void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board);
 void ui_draw(SDL_Renderer *renderer, UI_State *ui, Sockfish *sockfish);
 void ui_destroy(UI_State *ui);

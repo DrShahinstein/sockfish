@@ -1,5 +1,4 @@
 #include "window.h"
-#include "game.h"
 #include "board.h"
 #include "event.h"
 #include "ui.h"
@@ -35,22 +34,24 @@ int main(int argc, char *argv[]) {
   
   UI_State ui;
   Sockfish sockfish; 
-  GameState game = {
+  BoardState board = {
     .running = true,
   };
 
-  board_init(renderer, &game);
+  board_init(renderer, &board);
   sf_init(&sockfish);
   ui_init(&ui);
 
-  while (game.running) {
+  while (board.running) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-      handle_event(&e, &game);
-      ui_handle_event(&e, &ui, &game);
+      handle_event(&e, &board);
+      ui_handle_event(&e, &ui, &board);
     }
     
-    draw_game(renderer, &game, &ui, &sockfish);
+    draw_board(renderer, &board);
+    ui_draw(renderer, &ui, &sockfish);
+    SDL_RenderPresent(renderer);
 
     uint64_t now = SDL_GetPerformanceCounter();
     double elapsed_ms = (now - prev) * 1000.0 / freq;
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
   ui_destroy(&ui);
   TTF_Quit();
   sf_destroy(&sockfish);
-  cleanup_textures(&game);
+  cleanup_textures(&board);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
