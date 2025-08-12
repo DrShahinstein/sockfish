@@ -10,7 +10,7 @@ sdl3_inc = include_directories(sdl3_dep.get_variable(pkgconfig: 'includedir'))
 sources = files(
   'src/main.c',
   'src/board.c',
-  'src/event.c',
+  'src/board_event.c',
   'src/ui.c',
   'src/ui_helpers.c',
   'src/cursor.c',
