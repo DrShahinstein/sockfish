@@ -1,6 +1,6 @@
 #include "window.h"
 #include "board.h"
-#include "event.h"
+#include "board_event.h"
 #include "ui.h"
 #include "sockfish.h"
 #include "cursor.h"
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   while (board.running) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-      handle_event(&e, &board);
+      board_handle_event(&e, &board);
       ui_handle_event(&e, &ui, &board);
     }
     
