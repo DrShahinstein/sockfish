@@ -39,5 +39,5 @@ typedef struct {
 
 void ui_init(UI_State *ui);
 void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board);
-void ui_draw(SDL_Renderer *renderer, UI_State *ui, Sockfish *sockfish);
+void ui_draw(SDL_Renderer *renderer, UI_State *ui, Sockfish *sockfish, BoardState *board);
 void ui_destroy(UI_State *ui);
