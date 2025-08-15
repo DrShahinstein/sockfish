@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     }
     
     draw_board(renderer, &board);
-    ui_draw(renderer, &ui, &sockfish);
+    ui_draw(renderer, &ui, &sockfish, &board);
     SDL_RenderPresent(renderer);
 
     uint64_t now = SDL_GetPerformanceCounter();
