@@ -35,10 +35,11 @@ static int sf_search_thread(void *data) {
   }
 
   SDL_LockMutex(sf->mtx);
-  sf->search_color = BLACK;
-  sf->best = (Move){0,0,0,0};
   sf->thinking = false;
+  sf->best = (Move){0,0,0,0};
+  sf->search_color = sf->search_color == WHITE ? BLACK : WHITE;
   SDL_DetachThread(sf->thr);
+  sf->thr = NULL;
   SDL_UnlockMutex(sf->mtx);
 
   return 0;
@@ -46,7 +47,12 @@ static int sf_search_thread(void *data) {
 
 void sf_destroy(Sockfish *sf) {
   SDL_LockMutex(sf->mtx);
-  SDL_DetachThread(sf->thr);
-  sf->thr = NULL;
+  if (sf->thr != NULL)
+  {
+    SDL_DetachThread(sf->thr);
+    sf->thr = NULL;
+  }
   SDL_UnlockMutex(sf->mtx);
+
+  SDL_DestroyMutex(sf->mtx);
 }
