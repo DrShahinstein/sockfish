@@ -134,8 +134,13 @@ void ui_draw(SDL_Renderer *r, UI_State *ui, Sockfish *sockfish) {
     SDL_RenderFillRect(r, &turn_changer);
     draw_text(r, ui->font, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
 
-    (void)sockfish;
-    // codecodecodecode
+    sf_req_search(sockfish);
+
+    SDL_LockMutex(sockfish->mtx);
+    Move best = sockfish->best;
+    SDL_UnlockMutex(sockfish->mtx);
+
+    SDL_Log("Best: (%d)", best.fc);
   }
 }
 
