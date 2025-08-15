@@ -1,12 +1,10 @@
 #pragma once
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-#  ifndef SDL_BeginThreadFunction
-#    define SDL_BeginThreadFunction NULL
-#  endif
-#  ifndef SDL_EndThreadFunction
-#    define SDL_EndThreadFunction NULL
-#  endif
+#  undef SDL_BeginThreadFunction
+#  undef SDL_EndThreadFunction
+#  define SDL_BeginThreadFunction NULL
+#  define SDL_EndThreadFunction NULL
 #endif
 
 #include <SDL3/SDL.h>
