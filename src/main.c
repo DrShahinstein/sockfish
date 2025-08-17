@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   while (board.running) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
-      board_handle_event(&e, &board);
+      board_handle_event(&e, &board, &ui);
       ui_handle_event(&e, &ui, &board);
     }
     
