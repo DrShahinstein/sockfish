@@ -3,13 +3,19 @@
 #define SQ 100
 #define BOARD_SIZE (SQ * 8)
 #define PIECE_PATH "assets/pieces/%c.png"
-#define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+#define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 #include <SDL3/SDL.h>
+
+#define CASTLE_WK 0x01
+#define CASTLE_WQ 0x02
+#define CASTLE_BK 0x04
+#define CASTLE_BQ 0x08
 
 typedef struct BoardState {
   bool running;
   char board[8][8];
+  uint8_t castling;
   SDL_Texture *tex[128];
   struct {
     int row;
