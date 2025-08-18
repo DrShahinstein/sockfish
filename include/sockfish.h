@@ -1,10 +1,7 @@
 #pragma once
 
+#include "board.h"
 #include <SDL3/SDL.h>
-
-typedef struct BoardState BoardState;
-
-typedef enum { WHITE, BLACK } Turn;
 
 typedef struct Move {
   int fr; int fc;
@@ -14,7 +11,6 @@ typedef struct Move {
 typedef struct Sockfish {
   SDL_Mutex *mtx;
   SDL_Thread *thr;
-  char *board_ref;
   Turn search_color;
   Move best;
   bool thinking;
@@ -23,5 +19,5 @@ typedef struct Sockfish {
 } Sockfish;
 
 void sf_init(Sockfish *sf);
-void sf_req_search(Sockfish *sf, BoardState *board, Turn turn);
+void sf_req_search(Sockfish *sf, BoardState *board);
 void sf_destroy(Sockfish *sf);

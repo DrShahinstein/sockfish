@@ -4,7 +4,6 @@
 #include <SDL3/SDL.h>
 
 static int sf_search_thread(void *data);
-
 static uint64_t position_hash(BoardState *b, Turn t);
 
 void sf_init(Sockfish *sf) {
@@ -17,7 +16,7 @@ void sf_init(Sockfish *sf) {
   sf->last_turn      = WHITE;
 }
 
-void sf_req_search(Sockfish *sf, BoardState *board, Turn turn) {
+void sf_req_search(Sockfish *sf, BoardState *board) {
   if (!sf || !board) return;
 
   SDL_LockMutex(sf->mtx);
@@ -26,16 +25,16 @@ void sf_req_search(Sockfish *sf, BoardState *board, Turn turn) {
     return;
   }
 
-  uint64_t new_hash = position_hash(board, turn);
+  uint64_t new_hash = position_hash(board, board->turn);
 
-  if (sf->last_pos_hash == new_hash && sf->last_turn == turn) {
+  if (sf->last_pos_hash == new_hash && sf->last_turn == board->turn) {
     SDL_UnlockMutex(sf->mtx);
     return;
   }
 
   sf->thinking = true;
   sf->last_pos_hash = new_hash;
-  sf->last_turn = turn;
+  sf->last_turn = board->turn;
   sf->thr = SDL_CreateThread(sf_search_thread, "SockfishSearchThread", sf);
   SDL_UnlockMutex(sf->mtx);
 }

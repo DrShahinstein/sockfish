@@ -4,7 +4,7 @@
 
 static bool is_mouse_in_board(float mx, float my);
 
-void board_handle_event(SDL_Event *e, BoardState *board, UI_State *ui) {
+void board_handle_event(SDL_Event *e, BoardState *board) {
   float mx; float my; int sq_row; int sq_col;
 
   switch (e->type) {
@@ -61,8 +61,8 @@ void board_handle_event(SDL_Event *e, BoardState *board, UI_State *ui) {
           board->board[sq_row][sq_col] = moving_piece;
           board->board[from_r][from_c] = 0;
           
-          if (ui->turn == WHITE) ui->turn = BLACK;
-          else ui->turn = WHITE;
+          if (board->turn == WHITE) board->turn = BLACK;
+          else board->turn = WHITE;
         }
 
         board->drag.active = false;

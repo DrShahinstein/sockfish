@@ -28,7 +28,6 @@ typedef struct {
 
 typedef struct {
   bool engine_on;
-  Turn turn;
   UI_Element engine_toggler;
   UI_Element turn_changer;
   UI_Element reset_btn;

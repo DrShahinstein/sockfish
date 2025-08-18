@@ -29,7 +29,6 @@ void ui_init(UI_State *ui) {
   ui->reset_btn.rect          = (SDL_FRect){ui->fen_loader.area.rect.x+ui->fen_loader.area.rect.w-100,ui->fen_loader.btn.rect.y,100,ui->fen_loader.btn.rect.h};
   ui->reset_btn.hovered       = false;
   ui->separator.rect          = (SDL_FRect){ui->fen_loader.area.rect.x,ui->reset_btn.rect.y+80,ui->fen_loader.area.rect.w,4};
-  ui->turn                    = WHITE;
   ui->turn_changer.rect       = (SDL_FRect){ui->fen_loader.area.rect.x,ui->separator.rect.y+25,30,30};
   ui->turn_changer.hovered    = false;
 
@@ -128,13 +127,13 @@ void ui_draw(SDL_Renderer *r, UI_State *ui, Sockfish *sockfish, BoardState *boar
     SDL_RenderRect(r, &separator);
 
     SDL_FRect turn_changer = ui->turn_changer.rect;
-    bool white = ui->turn == WHITE;
+    bool white = board->turn == WHITE;
     if (white) SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
     else SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
     SDL_RenderFillRect(r, &turn_changer);
     draw_text(r, ui->font, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
 
-    sf_req_search(sockfish, board, ui->turn);
+    sf_req_search(sockfish, board);
 
     SDL_LockMutex(sockfish->mtx);
     Move best = sockfish->best;
@@ -224,8 +223,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) load_board(START_FEN, board);
 
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
-        if (ui->turn == WHITE) ui->turn = BLACK;
-        else ui->turn = WHITE;
+        if (board->turn == WHITE) board->turn = BLACK;
+        else board->turn = WHITE;
       } 
     }
     break;
