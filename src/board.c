@@ -30,35 +30,48 @@ static bool validate_castling(const char *str) {
   return true;
 }
 
-void load_fen(const char *fen, BoardState *board) {
-  memset(board->board, 0, sizeof(board->board));
-  board->castling = 0;
-    
+void load_fen(const char * fen, BoardState * board) {
+  memset(board -> board, 0, sizeof(board -> board));
+  board -> castling = 0;
+  board -> turn = WHITE;
+
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
-  int count = sscanf(fen, "%255s %1s %15s %2s %15s %15s", placement, active, castling, ep, halfmove, fullmove);
-    
-  if (count < 3) {
+  int count = sscanf(fen, "%255s %1s %15s %2s %15s %15s",
+    placement, active, castling, ep, halfmove, fullmove);
+
+  if (count < 2) {
     SDL_Log("Invalid FEN: %s", fen);
     load_fen(START_FEN, board);
     return;
   }
-    
-  if (!validate_castling(castling)) {
-    SDL_Log("Invalid castling rights in FEN: %s", castling);
-    strcpy(castling, "KQkq");
+
+  if (active[0] == 'w' || active[0] == 'W') {
+    board -> turn = WHITE;
+  } else if (active[0] == 'b' || active[0] == 'B') {
+    board -> turn = BLACK;
+  } else {
+    SDL_Log("Invalid active color in FEN: %c", active[0]);
   }
-    
-  board->castling = parse_castling(castling);
-    
+
+  if (count >= 3) {
+    if (!validate_castling(castling)) {
+      SDL_Log("Invalid castling rights in FEN: %s", castling);
+      strcpy(castling, "KQkq");
+    }
+    board -> castling = parse_castling(castling);
+  } else {
+    board -> castling = parse_castling("KQkq");
+  }
+
   int row = 0, col = 0;
-  for (const char *p = placement; *p && row < 8; ++p) {
-    if (isdigit((unsigned char)*p)) {
-      col += *p - '0';
-    } else if (*p == '/') {
+  for (const char * p = placement;* p && row < 8; ++p) {
+    if (isdigit((unsigned char) * p)) {
+      col += * p - '0';
+    } else if ( * p == '/') {
       row++;
       col = 0;
     } else {
-      if (col < 8) board->board[row][col++] = *p;
+      if (col < 8) board -> board[row][col++] = * p;
     }
   }
 }
