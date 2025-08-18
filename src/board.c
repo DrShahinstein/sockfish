@@ -2,10 +2,56 @@
 #include <SDL3_image/SDL_image.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
+
+static uint8_t parse_castling(const char *str) {
+  uint8_t rights = 0;
+  if (strcmp(str, "-") == 0) return rights;
+    
+  for (; *str; str++) {
+    switch (*str) {
+      case 'K': rights |= CASTLE_WK; break;
+      case 'Q': rights |= CASTLE_WQ; break;
+      case 'k': rights |= CASTLE_BK; break;
+      case 'q': rights |= CASTLE_BQ; break;
+    }
+  }
+
+  return rights;
+}
+
+static bool validate_castling(const char *str) {
+  if (strcmp(str, "-") == 0) return true;
+    
+  for (; *str; str++) {
+    if (*str != 'K' && *str != 'Q' && *str != 'k' && *str != 'q') return false;
+  }
+
+  return true;
+}
 
 void load_fen(const char *fen, BoardState *board) {
+  memset(board->board, 0, sizeof(board->board));
+  board->castling = 0;
+    
+  char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
+  int count = sscanf(fen, "%255s %1s %15s %2s %15s %15s", placement, active, castling, ep, halfmove, fullmove);
+    
+  if (count < 3) {
+    SDL_Log("Invalid FEN: %s", fen);
+    load_fen(START_FEN, board);
+    return;
+  }
+    
+  if (!validate_castling(castling)) {
+    SDL_Log("Invalid castling rights in FEN: %s", castling);
+    strcpy(castling, "KQkq");
+  }
+    
+  board->castling = parse_castling(castling);
+    
   int row = 0, col = 0;
-  for (const char *p = fen; *p && row < 8; ++p) {
+  for (const char *p = placement; *p && row < 8; ++p) {
     if (isdigit((unsigned char)*p)) {
       col += *p - '0';
     } else if (*p == '/') {
@@ -40,9 +86,9 @@ void load_piece_textures(SDL_Renderer *renderer, BoardState *board) {
 }
 
 void board_init(SDL_Renderer *renderer, BoardState *board) {
-  for (int r = 0; r < 8; ++r)
-    for (int c = 0; c < 8; ++c)
-      board->board[r][c] = 0;
+  memset(board->board, 0, sizeof(board->board));
+  memset(board->tex, 0, sizeof(board->tex));
+  board->castling = 0;
 
   load_piece_textures(renderer, board);
   load_fen(START_FEN, board);
