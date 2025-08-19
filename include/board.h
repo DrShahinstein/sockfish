@@ -14,6 +14,13 @@
 
 typedef enum { WHITE, BLACK } Turn;
 
+typedef struct {
+  bool active;
+  int row;
+  int col;
+  char choices[4];
+} Promotion;
+
 typedef struct BoardState {
   bool running;
   char board[8][8];
@@ -27,6 +34,7 @@ typedef struct BoardState {
     int from_col;
     bool active;
   } drag;
+  Promotion promo;
 } BoardState ;
 
 void load_fen(const char *fen, BoardState *board);
