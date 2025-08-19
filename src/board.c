@@ -101,16 +101,17 @@ void load_piece_textures(SDL_Renderer *renderer, BoardState *board) {
 void board_init(SDL_Renderer *renderer, BoardState *board) {
   memset(board->board, 0, sizeof(board->board));
   memset(board->tex, 0, sizeof(board->tex));
+  memset(&board->promo, 0, sizeof(board->promo));
   board->castling = 0;
+  board->promo.active = false;
 
   load_piece_textures(renderer, board);
   load_fen(START_FEN, board);
 }
 
 void load_board(const char *fen, BoardState *board) {
-  for (int r = 0; r < 8; ++r)
-    for (int c = 0; c < 8; ++c)
-      board->board[r][c] = 0;
+  board->promo.active = false;
+  memset(board->board, 0, sizeof(board->board));
   load_fen(fen, board);
 }
 
@@ -155,6 +156,22 @@ void draw_board(SDL_Renderer *renderer, BoardState *board) {
     if (pc && board->tex[(int)pc]) {
       SDL_FRect dst = {x - SQ / 2.0f, y - SQ / 2.0f, SQ, SQ};
       SDL_RenderTexture(renderer, board->tex[(int)pc], NULL, &dst);
+    }
+  }
+
+  if (board->promo.active) {
+    for (int i = 0; i < 4; ++i) {
+      float menu_x = board->promo.col * SQ;
+      float menu_y = board->turn == WHITE ? (i*SQ) : ((7-i) * SQ);
+
+      SDL_FRect dst = {menu_x, menu_y, SQ, SQ};
+      SDL_SetRenderDrawColor(renderer, 169, 169, 169, 255);
+      SDL_RenderFillRect(renderer, &dst);
+
+      char pc = board->promo.choices[i];
+      if (pc && board->tex[(int)pc]) {
+        SDL_RenderTexture(renderer, board->tex[(int)pc], NULL, &dst);
+      }
     }
   }
 }
