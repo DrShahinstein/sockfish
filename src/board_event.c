@@ -26,6 +26,12 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       sq_row = my / SQ;
       char piece = board->board[sq_row][sq_col];
 
+      bool turn_okay = (board->turn == WHITE && SDL_isupper(piece)) || (board->turn == BLACK && SDL_islower(piece));
+      if (!turn_okay) {
+        board->drag.active=false;
+        return;
+      }
+
       if (piece != 0) {
         board->drag.active = true;
         board->drag.row = sq_row;
@@ -73,25 +79,25 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         return;
       }
 
-      sq_col = mx / SQ;
-      sq_row = my / SQ;
-
       if (board->drag.active) {
         if (board->promo.active) {
           board->drag.active = false;
           return;
         }
-
+        
         int from_r = board->drag.from_row;
         int from_c = board->drag.from_col;
+        sq_row     = my / SQ; // to row
+        sq_col     = mx / SQ; // to col
         char moving_piece = board->board[from_r][from_c];
-        bool legal = true; // for now
+
         bool dropped_same = from_r == sq_row && from_c == sq_col;
-        
         if (dropped_same) {
           board->drag.active = false;
           return;
         }
+
+        bool legal = true; // for now
 
         if (legal) {
           board->board[sq_row][sq_col] = moving_piece;
