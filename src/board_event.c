@@ -1,12 +1,10 @@
 #include "board_event.h"
 #include "board.h"
 #include "window.h"
+#include "special_moves.h"
 #include <SDL3/SDL.h>
 
 static bool is_mouse_in_board(float mx, float my);
-static void update_castling_rights(BoardState *board, char moving_piece, Move *move);
-static bool is_castling_move(BoardState *board, Move *move);
-static void perform_castling(BoardState *board, Move *move);
 
 void board_handle_event(SDL_Event *e, BoardState *board) {
   float mx; float my; int sq_row; int sq_col;
@@ -112,14 +110,34 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           return;
         }
 
+        if (is_en_passant_capture(board, &move)) {
+          int captured_row = board->turn == WHITE ? move.tr + 1 : move.tr - 1;
+          board->board[captured_row][move.tc] = 0;
+          board->board[move.tr][move.tc] = moving_piece;
+          board->board[move.fr][move.fc] = 0;
+          board->ep_row = -1;
+          board->ep_col = -1;
+          board->turn = (board->turn == WHITE) ? BLACK : WHITE;
+          board->drag.active = false;
+          return;
+        }
+
         bool legal = true; // for now
 
         if (legal) {
+          if ((moving_piece == 'p' || moving_piece == 'P') && SDL_abs(move.fr - move.tr) == 2) {
+            board->ep_row = (move.fr + move.tr) / 2;
+            board->ep_col = move.fc;
+          } else {
+            board->ep_row = -1;
+            board->ep_col = -1;
+          }
           board->promo.captured = board->board[move.tr][move.tc];
           board->board[move.tr][move.tc] = moving_piece;
           board->board[move.fr][move.fc] = 0;
 
           update_castling_rights(board, moving_piece, &move);
+          update_enpassant_rights(board, moving_piece);
 
           bool promotion = (move.tr == 0 || move.tr == 7) && (moving_piece == 'p' || moving_piece == 'P');
 
@@ -150,64 +168,4 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
 static bool is_mouse_in_board(float mx, float my) {
   return mx >= 0 && mx < BOARD_SIZE && my >= 0 && my < BOARD_SIZE;
-}
-
-static void update_castling_rights(BoardState *board, char moving_piece, Move *move) {
-  if (moving_piece == 'K')      board->castling &= ~(CASTLE_WK | CASTLE_WQ);
-  else if (moving_piece == 'k') board->castling &= ~(CASTLE_BK | CASTLE_BQ);
-  else if (moving_piece == 'R') {
-    if (move->fr == 7 && move->fc == 0)      board->castling &= ~CASTLE_WQ;
-    else if (move->fr == 7 && move->fc == 7) board->castling &= ~CASTLE_WK;
-  }
-  else if (moving_piece == 'r') {
-    if (move->fr == 0 && move->fc == 0)      board->castling &= ~CASTLE_BQ;
-    else if (move->fr == 0 && move->fc == 7) board->castling &= ~CASTLE_BK;
-  }
-}
-
-static bool is_castling_move(BoardState *board, Move *move) {
-  char piece = board->board[move->fr][move->fc];
-
-  if ((piece != 'K' && piece != 'k') || (move->fr != move->tr) || SDL_abs(move->fc - move->tc) != 2) {
-    return false;
-  }
-
-  bool kingside = (move->tc > move->fc);
-  int rook_col  = kingside ? 7:0;
-  char rook     = (piece == 'K') ? 'R':'r';
-
-  if (board->board[move->fr][rook_col] != rook) {
-    return false;
-  }
-
-  uint8_t required_right;
-  if (piece == 'K') {
-    required_right = kingside ? CASTLE_WK : CASTLE_WQ;
-  } else {
-    required_right = kingside ? CASTLE_BK : CASTLE_BQ;
-  }
-
-  return (board->castling & required_right) != 0;
-}
-
-static void perform_castling(BoardState *board, Move *move) {
-  char piece      = board->board[move->fr][move->fc];
-  bool kingside   = (move->tc > move->fc);
-  int rook_fr_col = kingside ? 7 : 0;
-  int rook_to_col = kingside ? move->tc-1 : move->tc+1;
-
-  // move the king
-  board->board[move->tr][move->tc] = piece;
-  board->board[move->fr][move->fc] = 0;
-
-  // move the rook
-  char rook = board->board[move->fr][rook_fr_col];
-  board->board[move->fr][rook_to_col] = rook;
-  board->board[move->fr][rook_fr_col] = 0;
-
-  if (piece == 'K') {
-    board->castling &= ~(CASTLE_WK | CASTLE_WQ);
-  } else {
-    board->castling &= ~(CASTLE_BK | CASTLE_BQ);
-  }
 }
