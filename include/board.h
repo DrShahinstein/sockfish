@@ -19,6 +19,7 @@ typedef struct {
   int row;
   int col;
   char choices[4];
+  char captured;
 } Promotion;
 
 typedef struct BoardState {
