@@ -15,6 +15,11 @@
 typedef enum { WHITE, BLACK } Turn;
 
 typedef struct {
+  int fr; int fc;
+  int tr; int tc;
+} Move;
+
+typedef struct {
   bool active;
   int row;
   int col;
