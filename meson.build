@@ -15,6 +15,7 @@ sources = files(
   'src/ui_helpers.c',
   'src/cursor.c',
   'src/sockfish.c',
+  'src/special_moves.c',
 )
 
 executable('sockfish',
