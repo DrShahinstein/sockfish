@@ -3,11 +3,6 @@
 #include "board.h"
 #include <SDL3/SDL.h>
 
-typedef struct Move {
-  int fr; int fc;
-  int tr; int tc;
-} Move;
-
 typedef struct Sockfish {
   SDL_Mutex *mtx;
   SDL_Thread *thr;
