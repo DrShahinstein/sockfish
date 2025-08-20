@@ -72,9 +72,9 @@ void load_fen(const char * fen, BoardState * board) {
 
   int row = 0, col = 0;
   for (const char *p = placement; *p && row < 8; ++p) {
-    if (isdigit((unsigned char) * p)) {
-      col += * p - '0';
-    } else if ( * p == '/') {
+    if (isdigit((unsigned char)*p)) {
+      col += *p - '0';
+    } else if (*p == '/') {
       row++;
       col = 0;
     } else {
