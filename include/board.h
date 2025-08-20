@@ -41,6 +41,8 @@ typedef struct BoardState {
     bool active;
   } drag;
   Promotion promo;
+  int ep_row; // en-passant row (-1 for none)
+  int ep_col; // en-passant col (-1 for none)
 } BoardState ;
 
 void load_fen(const char *fen, BoardState *board);
