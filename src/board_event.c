@@ -66,7 +66,12 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         }
 
         if (p == -1) {
-          board->drag.active = false;
+          char p_abort = board->turn == WHITE ? 'P':'p';
+
+          board->drag.active  = false;
+          board->promo.active = false;
+          board->board[board->drag.from_row][board->drag.from_col] = p_abort;
+          board->board[board->promo.row][board->promo.col] = board->promo.captured;
           return;
         }
 
@@ -100,10 +105,11 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         bool legal = true; // for now
 
         if (legal) {
+          board->promo.captured = board->board[sq_row][sq_col];
           board->board[sq_row][sq_col] = moving_piece;
           board->board[from_r][from_c] = 0;
 
-          bool promotion =  (sq_row == 0 || sq_row == 7) && (moving_piece == 'p' || moving_piece == 'P');
+          bool promotion = (sq_row == 0 || sq_row == 7) && (moving_piece == 'p' || moving_piece == 'P');
 
           if (promotion) {
             board->promo.active = true;
