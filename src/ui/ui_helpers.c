@@ -24,7 +24,7 @@ void draw_text_centered(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_C
 int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, char lines[][MAX_FEN], int max_lines) {
   if (!font || !text) return 0;
 
-  int len = (int)strlen(text);
+  int len = (int)SDL_strlen(text);
   int start = 0;
   int line_count = 0;
 
@@ -36,7 +36,7 @@ int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, char lin
     while (end < len) {
       int chunk = end - start + 1;
       if (chunk >= MAX_FEN) break;
-      memcpy(tmp, &text[start], chunk);
+      SDL_memcpy(tmp, &text[start], chunk);
       tmp[chunk] = '\0';
       TTF_MeasureString(font, tmp, 0, 0, &w, NULL);
       if (w > (int)max_w) break;
@@ -46,16 +46,16 @@ int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, char lin
     if (end == start) {
       int take = 1;
       if (start + take > len) take = len - start;
-      memcpy(tmp, &text[start], take);
+      SDL_memcpy(tmp, &text[start], take);
       tmp[take] = '\0';
-      strncpy(lines[line_count++], tmp, MAX_FEN);
+      SDL_strlcpy(lines[line_count++], tmp, MAX_FEN);
       start += take;
     } else {
       int take = end - start;
       if (take >= MAX_FEN) take = MAX_FEN - 1;
-      memcpy(tmp, &text[start], take);
+      SDL_memcpy(tmp, &text[start], take);
       tmp[take] = '\0';
-      strncpy(lines[line_count++], tmp, MAX_FEN);
+      SDL_strlcpy(lines[line_count++], tmp, MAX_FEN);
       start = end;
     }
   }
