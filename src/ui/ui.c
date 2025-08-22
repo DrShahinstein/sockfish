@@ -7,7 +7,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <string.h>
 
 // font colors
 #define FWHITE (SDL_Color){255,255,255,255}
@@ -227,8 +226,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       const char *txt = e->text.text;
       size_t avail = MAX_FEN - ui->fen_loader.length - 1;
       if (avail > 0) {
-        strncat(ui->fen_loader.input, txt, avail);
-        ui->fen_loader.length = strlen(ui->fen_loader.input);
+        SDL_strlcat(ui->fen_loader.input, txt, avail);
+        ui->fen_loader.length = SDL_strlen(ui->fen_loader.input);
       }
     }
     break;
@@ -259,8 +258,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
         if (clip) {
           size_t avail = MAX_FEN - ui->fen_loader.length - 1;
           if (avail > 0) {
-            strncat(ui->fen_loader.input, clip, avail);
-            ui->fen_loader.length = strlen(ui->fen_loader.input);
+            SDL_strlcat(ui->fen_loader.input, clip, avail);
+            ui->fen_loader.length = SDL_strlen(ui->fen_loader.input);
           }
           SDL_free(clip);
         }
