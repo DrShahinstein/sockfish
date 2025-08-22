@@ -1,8 +1,9 @@
-#include "ui.h"
 #include "window.h"
+#include "ui.h"
+#include "ui_helpers.h"
 #include "cursor.h"
 #include "board.h"
-#include "ui_helpers.h"
+#include "engine.h"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -36,7 +37,7 @@ void ui_init(UI_State *ui) {
   if (!ui->fen_loader.font) SDL_Log("Could not load font: %s", SDL_GetError());
 }
 
-void ui_draw(SDL_Renderer *r, UI_State *ui, Sockfish *sockfish, BoardState *board) {
+void ui_draw(SDL_Renderer *r, UI_State *ui, Engine *engine, BoardState *board) {
   // panel
   SDL_FRect panel = {BOARD_SIZE, 0, UI_WIDTH, BOARD_SIZE};
   SDL_SetRenderDrawColor(r, 40, 44, 52, 255);
@@ -133,29 +134,21 @@ void ui_draw(SDL_Renderer *r, UI_State *ui, Sockfish *sockfish, BoardState *boar
     SDL_RenderFillRect(r, &turn_changer);
     draw_text(r, ui->font, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
 
-    sf_req_search(sockfish, board);
+    engine_req_search(engine, board);
+    
+    SDL_LockMutex(engine->mtx);
+    Move best = engine->ctx.best;
+    bool thinking = engine->ctx.thinking;
+    SDL_UnlockMutex(engine->mtx);
 
-    SDL_LockMutex(sockfish->mtx);
-    Move best = sockfish->best;
-    bool thinking = sockfish->thinking;
-    SDL_UnlockMutex(sockfish->mtx);
+    float x = ui->turn_changer.rect.x;
+    float y = ui->turn_changer.rect.y + 50;
 
-    float move_x = ui->turn_changer.rect.x;
-    float move_y = ui->turn_changer.rect.y + 50;
-
-    if (thinking) {
-      draw_text(r, ui->font, "Thinking...", FWHITE, move_x, move_y);
-    }
-    else if (best.fr >= 0 && best.fc >= 0 && best.tr >= 0 && best.tc >= 0)
-    {
-      char from_file = (char)('e' + (best.fc));
-      char from_rank = (char)('2' - (best.fr));
-      char to_file = (char)('e' + (best.tc));
-      char to_rank = (char)('4' - (best.tr));
+    if (thinking) draw_text(r, ui->font, "Thinking...", FWHITE, x, y);
+    else {
       char move_str[32];
-
-      SDL_snprintf(move_str, sizeof move_str, "Best: %c%c -> %c%c", from_file, from_rank, to_file, to_rank);
-      draw_text(r, ui->font, move_str, FWHITE, move_x, move_y);
+      SDL_snprintf(move_str, sizeof(move_str), "BEST: (%d,%d) -> (%d,%d)", best.fc, best.fr, best.tc, best.tr);
+      draw_text(r, ui->font, move_str, FWHITE, x, y);
     }
   }
 }
