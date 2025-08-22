@@ -9,13 +9,14 @@ sdl3_inc = include_directories(sdl3_dep.get_variable(pkgconfig: 'includedir'))
 
 sources = files(
   'src/main.c',
-  'src/board.c',
-  'src/board_event.c',
-  'src/ui.c',
-  'src/ui_helpers.c',
-  'src/cursor.c',
-  'src/sockfish.c',
-  'src/special_moves.c',
+  'src/board/board.c',
+  'src/board/board_event.c',
+  'src/board/special_moves.c',
+  'src/ui/ui.c',
+  'src/ui/ui_helpers.c',
+  'src/ui/cursor.c',
+  'src/sockfish/engine.c',
+  'src/sockfish/sockfish.c',
 )
 
 executable('sockfish',
