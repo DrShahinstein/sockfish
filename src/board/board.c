@@ -1,12 +1,10 @@
 #include "board.h"
+#include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
-#include <ctype.h>
-#include <stdio.h>
-#include <string.h>
 
 static uint8_t parse_castling(const char *str) {
   uint8_t rights = 0;
-  if (strcmp(str, "-") == 0) return rights;
+  if (SDL_strcmp(str, "-") == 0) return rights;
     
   for (; *str; str++) {
     switch (*str) {
@@ -21,7 +19,7 @@ static uint8_t parse_castling(const char *str) {
 }
 
 static bool validate_castling(const char *str) {
-  if (strcmp(str, "-") == 0) return true;
+  if (SDL_strcmp(str, "-") == 0) return true;
     
   for (; *str; str++) {
     if (*str != 'K' && *str != 'Q' && *str != 'k' && *str != 'q') return false;
@@ -31,14 +29,14 @@ static bool validate_castling(const char *str) {
 }
 
 void load_fen(const char * fen, BoardState * board) {
-  memset(board->board, 0, sizeof(board->board));
+  SDL_memset(board->board, 0, sizeof(board->board));
   board->castling = 0;
   board->turn = WHITE;
   board->ep_row = -1;
   board->ep_col = -1;
 
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
-  int count = sscanf(fen, "%255s %1s %15s %2s %15s %15s",
+  int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
     placement, active, castling, ep, halfmove, fullmove);
 
   if (count < 2) {
@@ -63,7 +61,7 @@ void load_fen(const char * fen, BoardState * board) {
   if (count >= 3) {
     if (!validate_castling(castling)) {
       SDL_Log("Invalid castling rights in FEN: %s", castling);
-      strcpy(castling, "KQkq");
+      SDL_strlcpy(castling, "KQkq", sizeof(castling));
     }
     board->castling = parse_castling(castling);
   } else {
@@ -72,7 +70,7 @@ void load_fen(const char * fen, BoardState * board) {
 
   int row = 0, col = 0;
   for (const char *p = placement; *p && row < 8; ++p) {
-    if (isdigit((unsigned char)*p)) {
+    if (SDL_isdigit((unsigned char)*p)) {
       col += *p - '0';
     } else if (*p == '/') {
       row++;
@@ -88,7 +86,7 @@ void load_piece_textures(SDL_Renderer *renderer, BoardState *board) {
   char path[256];
 
   for (const char *c = pieces; *c; ++c) {
-    snprintf(path, sizeof path, PIECE_PATH, *c);
+    SDL_snprintf(path, sizeof path, PIECE_PATH, *c);
     SDL_Surface *surf = IMG_Load(path);
 
     if (!surf) {
@@ -106,9 +104,9 @@ void load_piece_textures(SDL_Renderer *renderer, BoardState *board) {
 }
 
 void board_init(SDL_Renderer *renderer, BoardState *board) {
-  memset(board->board, 0, sizeof(board->board));
-  memset(board->tex, 0, sizeof(board->tex));
-  memset(&board->promo, 0, sizeof(board->promo));
+  SDL_memset(board->board, 0, sizeof(board->board));
+  SDL_memset(board->tex, 0, sizeof(board->tex));
+  SDL_memset(&board->promo, 0, sizeof(board->promo));
   board->castling = 0;
   board->promo.active = false;
 
@@ -118,7 +116,7 @@ void board_init(SDL_Renderer *renderer, BoardState *board) {
 
 void load_board(const char *fen, BoardState *board) {
   board->promo.active = false;
-  memset(board->board, 0, sizeof(board->board));
+  SDL_memset(board->board, 0, sizeof(board->board));
   load_fen(fen, board);
 }
 
