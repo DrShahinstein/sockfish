@@ -1,6 +1,5 @@
 #include "engine.h"
 #include "board.h"
-#include <stdlib.h>
 #include <SDL3/SDL.h>
 
 static int engine_thread(void *data);
@@ -14,7 +13,7 @@ void engine_init(EngineWrapper *engine) {
   engine->ctx.search_color  = WHITE;
   engine->ctx.best          = (Move){-1,-1,-1,-1};
   engine->ctx.thinking      = false;
-  memset(engine->ctx.board_ref, 0, sizeof(engine->ctx.board_ref));
+  SDL_memset(engine->ctx.board_ref, 0, sizeof(engine->ctx.board_ref));
 }
 
 void engine_req_search(EngineWrapper *engine, const BoardState *board) {
@@ -30,7 +29,7 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   }
 
   // make board_ref from board->board
-  memcpy(engine->ctx.board_ref, board->board, sizeof(engine->ctx.board_ref));
+  SDL_memcpy(engine->ctx.board_ref, board->board, sizeof(engine->ctx.board_ref));
 
   // match search color with actual turn on board
   engine->ctx.search_color = board->turn;
@@ -56,7 +55,7 @@ static int engine_thread(void *data) {
   SF_Context ctx = engine->ctx;
 
   SDL_LockMutex(engine->mtx);
-  memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
+  SDL_memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
   SDL_UnlockMutex(engine->mtx);
 
   Move best = sf_search(&ctx);
