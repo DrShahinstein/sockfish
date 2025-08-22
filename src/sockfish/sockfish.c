@@ -1,7 +1,7 @@
 #include "sockfish.h"
 #include <SDL3/SDL.h> // temp
 
-Move sf_search(SF_Context *ctx) {
+Move sf_search(const SF_Context *ctx) {
   (void)ctx;
 
   for (int i = 0; i < 4; ++i) {

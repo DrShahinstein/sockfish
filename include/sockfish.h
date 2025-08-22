@@ -17,4 +17,4 @@ typedef struct SF_Context {
   bool thinking;
 } SF_Context;
 
-Move sf_search(SF_Context *ctx);
+Move sf_search(const SF_Context *ctx);
