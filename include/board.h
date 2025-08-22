@@ -5,19 +5,13 @@
 #define PIECE_PATH "assets/pieces/%c.png"
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+#include "sockfish.h" /* Move, Turn */
 #include <SDL3/SDL.h>
 
 #define CASTLE_WK 0x01
 #define CASTLE_WQ 0x02
 #define CASTLE_BK 0x04
 #define CASTLE_BQ 0x08
-
-typedef enum { WHITE, BLACK } Turn;
-
-typedef struct {
-  int fr; int fc;
-  int tr; int tc;
-} Move;
 
 typedef struct {
   bool active;
