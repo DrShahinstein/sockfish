@@ -1,18 +1,18 @@
 #pragma once
 
-#include "board.h"
+#include "sockfish.h"
 #include <SDL3/SDL.h>
 
-typedef struct Sockfish {
+typedef struct BoardState BoardState;
+
+typedef struct Engine {
   SDL_Mutex *mtx;
   SDL_Thread *thr;
-  Turn search_color;
-  Move best;
-  bool thinking;
+  SF_Context ctx;
   uint64_t last_pos_hash;
   Turn last_turn;
-} Sockfish;
+} Engine;
 
-void sf_init(Sockfish *sf);
-void sf_req_search(Sockfish *sf, BoardState *board);
-void sf_destroy(Sockfish *sf);
+void engine_init(Engine *engine);
+void engine_req_search(Engine *engine, const BoardState *board);
+void engine_destroy(Engine *engine);
