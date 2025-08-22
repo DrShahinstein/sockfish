@@ -1,91 +1,105 @@
+#include "engine.h"
 #include "board.h"
-#include "sockfish.h"
-#include "stdlib.h"
+#include <stdlib.h>
 #include <SDL3/SDL.h>
 
-static int sf_search_thread(void *data);
-static uint64_t position_hash(BoardState *b, Turn t);
+static int engine_thread(void *data);
+static uint64_t position_hash(const char b[8][8], Turn t);
 
-void sf_init(Sockfish *sf) {
-  sf->search_color   = WHITE;
-  sf->thinking       = false;
-  sf->best           = (Move){-1,-1,-1,-1};
-  sf->thr            = NULL;
-  sf->mtx            = SDL_CreateMutex();
-  sf->last_pos_hash  = 0ULL;
-  sf->last_turn      = WHITE;
+void engine_init(Engine *engine) {
+  engine->thr               = NULL;
+  engine->mtx               = SDL_CreateMutex();
+  engine->last_pos_hash     = 0ULL;
+  engine->last_turn         = WHITE;
+  engine->ctx.search_color  = WHITE;
+  engine->ctx.best          = (Move){-1,-1,-1,-1};
+  engine->ctx.thinking      = false;
+  memset(engine->ctx.board_ref, 0, sizeof(engine->ctx.board_ref));
 }
 
-void sf_req_search(Sockfish *sf, BoardState *board) {
-  if (!sf || !board) return;
+void engine_req_search(Engine *engine, const BoardState *board) {
+  if (!engine) return;
+  if (board->promo.active) return;
 
-  SDL_LockMutex(sf->mtx);
-  if (sf->thinking) {
-    SDL_UnlockMutex(sf->mtx);
+  SDL_LockMutex(engine->mtx);
+
+  // return if already thinking
+  if (engine->ctx.thinking) {
+    SDL_UnlockMutex(engine->mtx);
     return;
   }
 
-  uint64_t new_hash = position_hash(board, board->turn);
+  // make board_ref from board->board
+  memcpy(engine->ctx.board_ref, board->board, sizeof(engine->ctx.board_ref));
 
-  if (sf->last_pos_hash == new_hash && sf->last_turn == board->turn) {
-    SDL_UnlockMutex(sf->mtx);
+  // match search color with actual turn on board
+  engine->ctx.search_color = board->turn;
+
+  // create position hash to avoid searching for the same position
+  uint64_t new_hash = position_hash((const char (*)[8])engine->ctx.board_ref, board->turn);
+  if (engine->last_pos_hash == new_hash && engine->last_turn == board->turn) {
+    SDL_UnlockMutex(engine->mtx);
     return;
   }
-
-  sf->thinking = true;
-  sf->last_pos_hash = new_hash;
-  sf->last_turn = board->turn;
-  sf->thr = SDL_CreateThread(sf_search_thread, "SockfishSearchThread", sf);
-  SDL_UnlockMutex(sf->mtx);
-}
-
-static int sf_search_thread(void *data) {
-  Sockfish *sf = (Sockfish *)(data); if (!sf) return -1;
   
-  for (int i = 0; i < 8; ++i) {
-    if (i==0) SDL_Delay(500);
-    SDL_Log("Sockfish searching [%d/8]", i+1);
-    if (i==7) break;
-    SDL_Delay(500);
-  }
+  // search thread is about to spawn
+  engine->last_pos_hash = new_hash;
+  engine->last_turn = board->turn;
+  engine->ctx.thinking = true;
+  engine->thr = SDL_CreateThread(engine_thread, "EngineThread", engine);
+  SDL_UnlockMutex(engine->mtx);
+}
 
-  SDL_LockMutex(sf->mtx);
-  sf->thinking = false;
-  sf->best = (Move){0,0,0,0};
-  sf->search_color = sf->search_color == WHITE ? BLACK : WHITE;
-  SDL_DetachThread(sf->thr);
-  sf->thr = NULL;
-  SDL_UnlockMutex(sf->mtx);
+static int engine_thread(void *data) {
+  Engine *engine = (Engine*)(data); if (!engine) return -1;
+
+  SF_Context ctx = engine->ctx;
+
+  SDL_LockMutex(engine->mtx);
+  memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
+  SDL_UnlockMutex(engine->mtx);
+
+  Move best = sf_search(&ctx);
+
+  SDL_LockMutex(engine->mtx);
+  engine->ctx.best = best;
+  SDL_DetachThread(engine->thr);
+  engine->thr = NULL;
+  engine->ctx.thinking = false;
+  SDL_UnlockMutex(engine->mtx);
 
   return 0;
 }
 
-static uint64_t position_hash(BoardState *b, Turn t) {
-  const uint64_t FNV_OFFSET = 1469598103934665603ULL;
+static uint64_t position_hash(const char b[8][8], Turn t) {
+  const uint64_t FNV_OFFSET = 14695981039346656037ULL;
   const uint64_t FNV_PRIME = 1099511628211ULL;
   uint64_t h = FNV_OFFSET;
 
   for (int r = 0; r < 8; ++r) {
     for (int c = 0; c < 8; ++c) {
-      unsigned char v = (unsigned char)b->board[r][c];
-      h ^= (uint64_t)v;
+      unsigned char v = (unsigned char)b[r][c];
+      h ^= v;
+      h *= FNV_PRIME;
+      h ^= (r << 4 | c);
       h *= FNV_PRIME;
     }
   }
 
   h ^= (uint64_t)t;
   h *= FNV_PRIME;
+  
   return h;
 }
 
-void sf_destroy(Sockfish *sf) {
-  SDL_LockMutex(sf->mtx);
-  if (sf->thr != NULL)
+void engine_destroy(Engine *engine) {
+  SDL_LockMutex(engine->mtx);
+  if (engine->thr != NULL)
   {
-    SDL_DetachThread(sf->thr);
-    sf->thr = NULL;
+    SDL_DetachThread(engine->thr);
+    engine->thr = NULL;
   }
-  SDL_UnlockMutex(sf->mtx);
+  SDL_UnlockMutex(engine->mtx);
 
-  SDL_DestroyMutex(sf->mtx);
+  SDL_DestroyMutex(engine->mtx);
 }
