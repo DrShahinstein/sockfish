@@ -6,7 +6,7 @@
 static int engine_thread(void *data);
 static uint64_t position_hash(const char b[8][8], Turn t);
 
-void engine_init(Engine *engine) {
+void engine_init(EngineWrapper *engine) {
   engine->thr               = NULL;
   engine->mtx               = SDL_CreateMutex();
   engine->last_pos_hash     = 0ULL;
@@ -17,7 +17,7 @@ void engine_init(Engine *engine) {
   memset(engine->ctx.board_ref, 0, sizeof(engine->ctx.board_ref));
 }
 
-void engine_req_search(Engine *engine, const BoardState *board) {
+void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   if (!engine) return;
   if (board->promo.active) return;
 
@@ -51,7 +51,7 @@ void engine_req_search(Engine *engine, const BoardState *board) {
 }
 
 static int engine_thread(void *data) {
-  Engine *engine = (Engine*)(data); if (!engine) return -1;
+  EngineWrapper *engine = (EngineWrapper*)(data); if (!engine) return -1;
 
   SF_Context ctx = engine->ctx;
 
@@ -92,7 +92,7 @@ static uint64_t position_hash(const char b[8][8], Turn t) {
   return h;
 }
 
-void engine_destroy(Engine *engine) {
+void engine_destroy(EngineWrapper *engine) {
   SDL_LockMutex(engine->mtx);
   if (engine->thr != NULL)
   {

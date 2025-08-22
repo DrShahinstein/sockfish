@@ -37,7 +37,7 @@ void ui_init(UI_State *ui) {
   if (!ui->fen_loader.font) SDL_Log("Could not load font: %s", SDL_GetError());
 }
 
-void ui_draw(SDL_Renderer *r, UI_State *ui, Engine *engine, BoardState *board) {
+void ui_draw(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState *board) {
   // panel
   SDL_FRect panel = {BOARD_SIZE, 0, UI_WIDTH, BOARD_SIZE};
   SDL_SetRenderDrawColor(r, 40, 44, 52, 255);

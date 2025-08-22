@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
   }
   
   UI_State ui;
-  Engine engine; 
+  EngineWrapper engine; 
   BoardState board = {
     .running = true,
   };
