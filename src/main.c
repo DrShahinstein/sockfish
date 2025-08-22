@@ -1,9 +1,9 @@
 #include "window.h"
+#include "ui.h"
+#include "cursor.h"
 #include "board.h"
 #include "board_event.h"
-#include "ui.h"
-#include "sockfish.h"
-#include "cursor.h"
+#include "engine.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdint.h>
@@ -33,13 +33,13 @@ int main(int argc, char *argv[]) {
   }
   
   UI_State ui;
-  Sockfish sockfish; 
+  Engine engine; 
   BoardState board = {
     .running = true,
   };
 
   board_init(renderer, &board);
-  sf_init(&sockfish);
+  engine_init(&engine);
   ui_init(&ui);
 
   while (board.running) {
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     }
     
     draw_board(renderer, &board);
-    ui_draw(renderer, &ui, &sockfish, &board);
+    ui_draw(renderer, &ui, &engine, &board);
     SDL_RenderPresent(renderer);
 
     uint64_t now = SDL_GetPerformanceCounter();
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   cleanup_cursors();
   ui_destroy(&ui);
   TTF_Quit();
-  sf_destroy(&sockfish);
+  engine_destroy(&engine);
   cleanup_textures(&board);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
