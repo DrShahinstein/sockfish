@@ -41,7 +41,4 @@ typedef struct BoardState {
 
 void load_fen(const char *fen, BoardState *board);
 void load_board(const char *fen, BoardState *board);
-void load_piece_textures(SDL_Renderer *renderer, BoardState *board);
-void board_init(SDL_Renderer *renderer, BoardState *board);
-void cleanup_textures(BoardState *board);
-void draw_board(SDL_Renderer *renderer, BoardState *board);
+void board_init(BoardState *board);
