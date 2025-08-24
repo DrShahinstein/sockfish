@@ -10,10 +10,6 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
   float mx; float my; int sq_row; int sq_col;
 
   switch (e->type) {
-  case SDL_EVENT_QUIT:
-    board->running = false;
-    break;
-
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
