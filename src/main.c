@@ -2,11 +2,11 @@
 #include "ui.h"
 #include "cursor.h"
 #include "board.h"
+#include "board_render.h"
 #include "board_event.h"
 #include "engine.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <stdint.h>
 
 int main(int argc, char *argv[]) {
   (void)argc; (void)argv;
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     .running = true,
   };
 
-  board_init(renderer, &board);
+  board_init(&board); render_board_init(renderer, &board);
   engine_init(&engine);
   ui_init(&ui);
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
       ui_handle_event(&e, &ui, &board);
     }
     
-    draw_board(renderer, &board);
+    render_board(renderer, &board);
     ui_draw(renderer, &ui, &engine, &board);
     SDL_RenderPresent(renderer);
 
@@ -61,10 +61,9 @@ int main(int argc, char *argv[]) {
   
   cleanup_cursors();
   ui_destroy(&ui);
-  TTF_Quit();
   engine_destroy(&engine);
-  cleanup_textures(&board);
-  SDL_DestroyRenderer(renderer);
+  render_board_cleanup(renderer, &board);
+  TTF_Quit();
   SDL_DestroyWindow(window);
   SDL_Quit();
 
