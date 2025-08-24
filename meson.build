@@ -16,8 +16,8 @@ sources = files(
   'src/ui/ui.c',
   'src/ui/ui_helpers.c',
   'src/ui/cursor.c',
-  'src/sockfish/engine.c',
-  'src/sockfish/sockfish.c',
+  'src/engine/engine.c',
+  'src/engine/sockfish/sockfish.c',
 )
 
 executable('sockfish',
