@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
   engine_destroy(&engine);
   render_board_cleanup(renderer, &board);
   TTF_Quit();
+  SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
 
