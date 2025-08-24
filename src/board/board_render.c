@@ -77,12 +77,12 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 }
 
 void render_board_cleanup(SDL_Renderer *renderer, BoardState *board) {
+  (void)(renderer);
+
   for (int i = 0; i < 128; ++i) {
     if (board->tex[i]) {
       SDL_DestroyTexture(board->tex[i]);
       board->tex[i] = NULL;
     }
   }
-
-  SDL_DestroyRenderer(renderer);
 }
