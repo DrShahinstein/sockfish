@@ -32,5 +32,10 @@ void ui_destroy(UI_State *ui) {
     ui->font = NULL;
   }
 
+  if (ui->fen_loader.font) {
+    TTF_CloseFont(ui->fen_loader.font);
+    ui->fen_loader.font = NULL;
+  }
+
   SDL_StopTextInput(SDL_GetKeyboardFocus());
 }
