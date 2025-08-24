@@ -93,11 +93,8 @@ static uint64_t position_hash(const char b[8][8], Turn t) {
 
 void engine_destroy(EngineWrapper *engine) {
   SDL_LockMutex(engine->mtx);
-  if (engine->thr != NULL)
-  {
-    SDL_DetachThread(engine->thr);
-    engine->thr = NULL;
-  }
+  SDL_DetachThread(engine->thr); // passing NULL to SDL_DetachThread is safe (no-op)
+  engine->thr = NULL;
   SDL_UnlockMutex(engine->mtx);
 
   SDL_DestroyMutex(engine->mtx);
