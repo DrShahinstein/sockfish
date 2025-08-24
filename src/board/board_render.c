@@ -25,6 +25,11 @@ void render_board_init(SDL_Renderer *renderer, BoardState *board) {
 }
 
 void render_board(SDL_Renderer *renderer, BoardState *board) {
+  if (!renderer || !board) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "render_board: invalid parameters\n");
+    return;
+  }
+
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
       SDL_FRect sq = {col * SQ, row * SQ, SQ, SQ};
