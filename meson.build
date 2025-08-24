@@ -11,6 +11,7 @@ sources = files(
   'src/main.c',
   'src/board/board.c',
   'src/board/board_event.c',
+  'src/board/board_render.c',
   'src/board/special_moves.c',
   'src/ui/ui.c',
   'src/ui/ui_helpers.c',
