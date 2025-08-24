@@ -22,7 +22,6 @@ typedef struct {
 } Promotion;
 
 typedef struct BoardState {
-  bool running;
   char board[8][8];
   uint8_t castling;
   Turn turn;
