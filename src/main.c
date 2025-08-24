@@ -32,9 +32,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   
-  UI_State ui;
-  EngineWrapper engine; 
-  BoardState board;
+  UI_State ui={0};
+  EngineWrapper engine={0}; 
+  BoardState board={0};
 
   board_init(&board); render_board_init(renderer, &board);
   engine_init(&engine);
