@@ -1,8 +1,6 @@
 #include "window.h"
 #include "ui.h"
-#include "engine.h"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_mouse.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
 void ui_init(UI_State *ui) {
