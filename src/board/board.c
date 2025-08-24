@@ -9,8 +9,20 @@ void board_init(BoardState *board) {
   SDL_memset(board->board, 0, sizeof(board->board));
   SDL_memset(board->tex, 0, sizeof(board->tex));
   SDL_memset(&board->promo, 0, sizeof(board->promo));
+  SDL_memset(board->promo.choices, 0, sizeof(board->promo.choices));
   board->castling = 0;
+  board->turn = WHITE;
+  board->ep_row = -1;
+  board->ep_col = -1;
+  board->drag.active = false;
+  board->drag.row = -1;
+  board->drag.col = -1;
+  board->drag.from_row = -1;
+  board->drag.from_col = -1;
   board->promo.active = false;
+  board->promo.row = -1;
+  board->promo.col = -1;
+  board->promo.captured = 0;
 
   load_fen(START_FEN, board);
 }
