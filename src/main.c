@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     }
     
     render_board(renderer, &board);
-    ui_draw(renderer, &ui, &engine, &board);
+    ui_render(renderer, &ui, &engine, &board);
     SDL_RenderPresent(renderer);
 
     uint64_t now = SDL_GetPerformanceCounter();
