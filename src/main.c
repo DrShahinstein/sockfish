@@ -59,13 +59,13 @@ int main(int argc, char *argv[]) {
     prev = SDL_GetPerformanceCounter();
   }
   
-  cleanup_cursors();
   ui_destroy(&ui);
+  cleanup_cursors();
   engine_destroy(&engine);
   render_board_cleanup(renderer, &board);
-  TTF_Quit();
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
+  TTF_Quit();
   SDL_Quit();
 
   return 0;
