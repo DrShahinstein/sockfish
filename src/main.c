@@ -34,17 +34,17 @@ int main(int argc, char *argv[]) {
   
   UI_State ui;
   EngineWrapper engine; 
-  BoardState board = {
-    .running = true,
-  };
+  BoardState board;
 
   board_init(&board); render_board_init(renderer, &board);
   engine_init(&engine);
   ui_init(&ui);
 
-  while (board.running) {
+  bool running = true;
+  while (running) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
+      if (e.type == SDL_EVENT_QUIT) running = false;
       board_handle_event(&e, &board);
       ui_handle_event(&e, &ui, &board);
     }
