@@ -11,7 +11,6 @@ typedef struct {
 } Move;
 
 typedef struct SF_Context {
-  char board_ref[8][8];
   Turn search_color;
   Move best;
   bool thinking;
