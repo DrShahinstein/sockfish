@@ -17,6 +17,9 @@ void engine_init(EngineWrapper *engine);
 void engine_req_search(EngineWrapper *engine, const BoardState *board);
 void engine_destroy(EngineWrapper *engine);
 
+void make_bitboards_from_charboard(const char board[8][8], SF_Context *ctx); // bitboard_maker.c
+uint64_t position_hash(const char b[8][8], Turn t);                          // position_hasher.c
+
 /*
 
   EngineWrapper: A wrapper for the chess engine context and threading.
