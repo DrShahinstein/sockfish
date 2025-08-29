@@ -13,7 +13,6 @@ void engine_init(EngineWrapper *engine) {
   engine->ctx.search_color  = WHITE;
   engine->ctx.best          = (Move){-1,-1,-1,-1};
   engine->ctx.thinking      = false;
-  SDL_memset(engine->ctx.board_ref, 0, sizeof(engine->ctx.board_ref));
 }
 
 void engine_req_search(EngineWrapper *engine, const BoardState *board) {
@@ -28,14 +27,11 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
     return;
   }
 
-  // make board_ref from board->board
-  SDL_memcpy(engine->ctx.board_ref, board->board, sizeof(engine->ctx.board_ref));
-
   // match search color with actual turn on board
   engine->ctx.search_color = board->turn;
 
   // create position hash to avoid searching for the same position
-  uint64_t new_hash = position_hash((const char (*)[8])engine->ctx.board_ref, board->turn);
+  uint64_t new_hash = position_hash(board->board, board->turn);
   if (engine->last_pos_hash == new_hash && engine->last_turn == board->turn) {
     SDL_UnlockMutex(engine->mtx);
     return;
@@ -43,16 +39,16 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   
   // search thread is about to spawn
   engine->last_pos_hash = new_hash;
-  engine->last_turn = board->turn;
-  engine->ctx.thinking = true;
-  engine->thr = SDL_CreateThread(engine_thread, "EngineThread", engine);
+  engine->last_turn     = board->turn;
+  engine->ctx.thinking  = true;
+  engine->thr           = SDL_CreateThread(engine_thread, "EngineThread", engine);
   SDL_UnlockMutex(engine->mtx);
 }
 
 static int engine_thread(void *data) {
   EngineWrapper *engine = (EngineWrapper*)(data); if (!engine) return -1;
 
-  SF_Context ctx = engine->ctx;
+  SF_Context ctx;
 
   SDL_LockMutex(engine->mtx);
   SDL_memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
