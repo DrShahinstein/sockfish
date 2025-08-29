@@ -19,7 +19,7 @@ sources = files(
   'src/ui/ui_helpers.c',
   'src/ui/cursor.c',
   'src/engine/engine.c',
-  'src/engine/sockfish/sockfish.c',
+  'src/engine/sockfish/search.c',
 )
 
 executable('sockfish',
