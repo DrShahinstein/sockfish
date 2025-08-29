@@ -1,9 +1,11 @@
 #pragma once
 
+#include "bitboard.h"
 #include <stdbool.h>
-#include <stdint.h>
 
-typedef enum { WHITE, BLACK } Turn;
+typedef enum {
+  WHITE, BLACK
+} Turn;
 
 typedef struct {
   int fr; int fc;
@@ -11,9 +13,10 @@ typedef struct {
 } Move;
 
 typedef struct SF_Context {
+  BitboardSet bitboard_set;
   Turn search_color;
   Move best;
   bool thinking;
 } SF_Context;
 
-Move sf_search(const SF_Context *ctx);
+Move sf_search(const SF_Context *ctx); // search.c
