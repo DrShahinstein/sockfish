@@ -4,7 +4,7 @@ sdl3_dep       = dependency('sdl3')
 sdl3_image_dep = dependency('sdl3-image')
 sdl3_ttf_dep   = dependency('sdl3-ttf')
 
-inc      = include_directories('include', 'src/engine/sockfish')
+inc      = include_directories('include', 'src/engine/')
 sdl3_inc = include_directories(sdl3_dep.get_variable(pkgconfig: 'includedir'))
 
 sources = files(
