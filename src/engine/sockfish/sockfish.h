@@ -37,3 +37,9 @@ typedef struct SF_Context {
   Move best;
   bool thinking;
 } SF_Context;
+
+/*
+
+Move sf_search(const SF_Context *ctx); // search.c
+
+*/
