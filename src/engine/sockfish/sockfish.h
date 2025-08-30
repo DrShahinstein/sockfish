@@ -1,17 +1,14 @@
 /*
 
   * sockfish.h is the main header file for the Sockfish chess engine.
-  * It includes common types used throughout the engine. (primarily: SF_Context)  
-  * Also brings all other related headers together into one place.
-    Therefore, including this header is sufficient to access all engine functionality.
-  ! Because it has this kind of a mission, it does not have a corresponding sockfish.c file.
+  * It defines the core data structures and types used throughout the engine. (primarily: SF_Context)
+  ! Because it has this kind of a mission, it does not have a corresponding .c file.
 
 */
 
 #pragma once
 
 #include "bitboard.h"
-#include "search.h"
 #include <stdbool.h>
 
 typedef enum {
@@ -29,7 +26,7 @@ typedef enum {
   WHITE, BLACK
 } Turn;
 
-typedef struct Move {
+typedef struct {
   int fr; int fc;
   int tr; int tc;
 } Move;
