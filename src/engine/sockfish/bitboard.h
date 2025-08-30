@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+typedef uint64_t U64;
 typedef uint64_t Bitboard;
 typedef struct {
   Bitboard pawns[2];
@@ -20,3 +21,6 @@ typedef struct {
 #define POP_BIT(bb, square)   (GET_BIT(bb, square) ? (CLEAR_BIT(bb, square), 1) : 0)
 
 void print_bitboard(Bitboard bb);
+inline int pop_lsb(U64 *bb);
+inline int get_lsb(U64 bb);
+inline int count_bits(U64 bb);
