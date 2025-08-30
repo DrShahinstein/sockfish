@@ -1,5 +1,5 @@
 #pragma once
 
-#include "sockfish.h"
+#include "sockfish/sockfish.h"
 
 Move sf_search(const SF_Context *ctx);

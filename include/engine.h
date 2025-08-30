@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sockfish.h"
+#include "sockfish/sockfish.h"
 #include <SDL3/SDL.h>
 
 typedef struct BoardState BoardState;
