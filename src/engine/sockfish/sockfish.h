@@ -14,7 +14,7 @@
 #include "search.h"
 #include <stdbool.h>
 
-typedef enum Square {
+typedef enum {
   A1, B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,
   A3, B3, C3, D3, E3, F3, G3, H3,
@@ -25,7 +25,7 @@ typedef enum Square {
   A8, B8, C8, D8, E8, F8, G8, H8
 } Square;
 
-typedef enum Turn {
+typedef enum {
   WHITE, BLACK
 } Turn;
 
