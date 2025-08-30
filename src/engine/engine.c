@@ -1,4 +1,6 @@
 #include "engine.h"
+#include "sockfish/sockfish.h"
+#include "sockfish/search.h"
 #include "board.h"
 #include <SDL3/SDL.h>
 
