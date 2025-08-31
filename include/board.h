@@ -5,7 +5,7 @@
 #define PIECE_PATH "assets/pieces/%c.png"
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
-#include "sockfish/sockfish.h" /* Move, Turn */
+#include "sockfish/sockfish.h" /* MoveRC, Turn */
 #include <SDL3/SDL.h>
 
 #define CASTLE_WK 0x01
