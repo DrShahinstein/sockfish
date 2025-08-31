@@ -87,7 +87,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           return;
         }
 
-        Move move;
+        MoveRC move;
         move.fr = board->drag.from_row;
         move.fc = board->drag.from_col;
         move.tr = my / SQ;
