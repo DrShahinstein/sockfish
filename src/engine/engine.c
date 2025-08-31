@@ -12,7 +12,7 @@ void engine_init(EngineWrapper *engine) {
   engine->last_pos_hash     = 0ULL;
   engine->last_turn         = WHITE;
   engine->ctx.search_color  = WHITE;
-  engine->ctx.best          = (Move){-1,-1,-1,-1};
+  engine->ctx.best          = (MoveSQ){-1,-1};
   engine->ctx.thinking      = false;
 }
 
@@ -51,7 +51,7 @@ static int engine_thread(void *data) {
   SDL_memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
   SDL_UnlockMutex(engine->mtx);
 
-  Move best = sf_search(&ctx);
+  MoveSQ best = sf_search(&ctx);
 
   SDL_LockMutex(engine->mtx);
   engine->ctx.best = best;
