@@ -18,7 +18,7 @@ void gen_pawns(Bitboard pawns, MoveList *movelist) {
   (void)pawns;
 
   for (int i = 0; i < 8; ++i) {
-    movelist->moves[movelist->count++] = (Move){.fr = 1, .fc = 1, .tr = 2, .tc = 1};
+    movelist->moves[movelist->count++] = (MoveSQ){5,13};
   }
 }
 
