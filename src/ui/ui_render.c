@@ -101,9 +101,12 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
     engine_req_search(engine, board);
     
+    MoveSQ sf_best;
+    bool thinking;
+
     SDL_LockMutex(engine->mtx);
-    Move best = engine->ctx.best;
-    bool thinking = engine->ctx.thinking;
+    sf_best  = engine->ctx.best;
+    thinking = engine->ctx.thinking;
     SDL_UnlockMutex(engine->mtx);
 
     float x = ui->turn_changer.rect.x;
@@ -111,8 +114,13 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
     if (thinking) draw_text(r, ui->font, "Thinking...", FWHITE, x, y);
     else {
-      char move_str[32];
-      SDL_snprintf(move_str, sizeof(move_str), "BEST: (%d,%d) -> (%d,%d)", best.fc, best.fr, best.tc, best.tr);
+      char from_alg[3], to_alg[3];
+      sq_to_alg(sf_best.from, from_alg);
+      sq_to_alg(sf_best.to, to_alg);
+
+      char move_str[16];
+      SDL_snprintf(move_str, sizeof(move_str), "BEST: %s%s", from_alg, to_alg);
+
       draw_text(r, ui->font, move_str, FWHITE, x, y);
     }
   }
