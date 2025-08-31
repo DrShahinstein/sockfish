@@ -1,6 +1,6 @@
 #include "special_moves.h"
 
-void update_castling_rights(BoardState *board, char moving_piece, Move *move) {
+void update_castling_rights(BoardState *board, char moving_piece, MoveRC *move) {
   if (moving_piece == 'K')      board->castling &= ~(CASTLE_WK | CASTLE_WQ);
   else if (moving_piece == 'k') board->castling &= ~(CASTLE_BK | CASTLE_BQ);
 
@@ -15,7 +15,7 @@ void update_castling_rights(BoardState *board, char moving_piece, Move *move) {
   }
 }
 
-bool is_castling_move(BoardState *board, Move *move) {
+bool is_castling_move(BoardState *board, MoveRC *move) {
   char piece = board->board[move->fr][move->fc];
 
   if ((piece != 'K' && piece != 'k') || (move->fr != move->tr) || SDL_abs(move->fc - move->tc) != 2) {
@@ -40,7 +40,7 @@ bool is_castling_move(BoardState *board, Move *move) {
   return (board->castling & required_right) != 0;
 }
 
-void perform_castling(BoardState *board, Move *move) {
+void perform_castling(BoardState *board, MoveRC *move) {
   char piece      = board->board[move->fr][move->fc];
   bool kingside   = (move->tc > move->fc);
   int rook_fr_col = kingside ? 7 : 0;
@@ -60,7 +60,7 @@ void perform_castling(BoardState *board, Move *move) {
   }
 }
 
-bool is_en_passant_capture(BoardState *board, Move *move) {
+bool is_en_passant_capture(BoardState *board, MoveRC *move) {
   char piece = board->board[move->fr][move->fc];
   
   if ((piece != 'p' && piece != 'P') || move->fc == move->tc || board->board[move->tr][move->tc] != 0) {
