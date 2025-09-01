@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "sockfish/sockfish.h"
 #include "sockfish/search.h"
+#include "sockfish/movegen.h"
 #include "board.h"
 #include <SDL3/SDL.h>
 
@@ -14,6 +15,9 @@ void engine_init(EngineWrapper *engine) {
   engine->ctx.search_color  = WHITE;
   engine->ctx.best          = (MoveSQ){-1,-1};
   engine->ctx.thinking      = false;
+
+  init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
+  init_magic_bitboards(); // init magic bitboards for sliding pieces in move generation logic
 }
 
 void engine_req_search(EngineWrapper *engine, const BoardState *board) {
