@@ -10,7 +10,9 @@ U64 king_attacks[64];
 U64 rook_magics[64]   = {0};
 U64 bishop_magics[64] = {0};
 
+static void attack_table_for_pawn(void);
 static void attack_table_for_knight(void);
+static void attack_table_for_king(void);
 void init_attack_tables(void) {
   attack_table_for_knight();
 }
@@ -23,9 +25,9 @@ MoveList sf_generate_moves(const BitboardSet *bbset, Turn color) {
   MoveList movelist;
   movelist.count = 0;
 
-  U64 occupancy = bbset->occupied;
+  U64 occupancy       = bbset->occupied;
   U64 friendly_pieces = bbset->all_pieces[color];
-  U64 enemy_pieces = bbset->all_pieces[1-color];
+  U64 enemy_pieces    = bbset->all_pieces[1-color];
 
   gen_pawns  (bbset->pawns  [color], &movelist, occupancy, friendly_pieces, enemy_pieces);
   gen_rooks  (bbset->rooks  [color], &movelist, occupancy, friendly_pieces);
@@ -41,20 +43,14 @@ void gen_pawns(Bitboard pawns, MoveList *movelist, U64 occupancy, U64 friendly_p
   (void)pawns; (void)movelist; (void)occupancy; (void)friendly_pieces; (void)enemy_pieces;
 }
 
-void gen_rooks(Bitboard rooks,   MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
-  (void)rooks; (void)movelist; (void)occupancy; (void)friendly_pieces;
-}
-
 void gen_knights(Bitboard knights, MoveList *movelist, U64 friendly_pieces) {
-  (void)knights; (void)movelist;
-
   U64 knights_copy = knights;
 
   while (knights_copy) {
     int knight_square = POP_LSB(&knights_copy);
-    U64 attacks = knight_attacks[knight_square] & ~friendly_pieces;
+    U64 attacks       = knight_attacks[knight_square] & ~friendly_pieces;
+    U64 attacks_copy  = attacks;
 
-    U64 attacks_copy = attacks;
     while (attacks_copy) {
       int target_square = POP_LSB(&attacks_copy);
       movelist->moves[movelist->count++] = (MoveSQ){knight_square, target_square};
@@ -62,28 +58,38 @@ void gen_knights(Bitboard knights, MoveList *movelist, U64 friendly_pieces) {
   }
 }
 
+void gen_kings(Bitboard kings,   MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
+  (void)kings; (void)movelist; (void)occupancy; (void)friendly_pieces;
+}
+
 void gen_bishops(Bitboard bishops, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
   (void)bishops; (void)movelist; (void)occupancy; (void)friendly_pieces;
+}
+
+void gen_rooks(Bitboard rooks,   MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
+  (void)rooks; (void)movelist; (void)occupancy; (void)friendly_pieces;
 }
 
 void gen_queens(Bitboard queens, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
   (void)queens; (void)movelist; (void)occupancy; (void)friendly_pieces;
 }
 
-void gen_kings(Bitboard kings,   MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
-  (void)kings; (void)movelist; (void)occupancy; (void)friendly_pieces;
+static void attack_table_for_pawn(void) {
+  return;
 }
 
 static void attack_table_for_knight(void) {
-  int knight_moves[8][2] = {{1, 2},   {2, 1},   {2, -1}, {1, -2},
-                            {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
+  int knight_moves[8][2] = {{+2,-1},{+2,+1},
+                            {+1,-2},{+1,+2},
+                            {-1,-2},{-1,+2},
+                            {-2,-1},{-2,+1}};
 
-  for (int square = 0; square < 64; square++) {
+  for (int square = 0; square < 64; ++square) {
     knight_attacks[square] = 0;
     int file = square % 8;
     int rank = square / 8;
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; ++i) {
       int new_file = file + knight_moves[i][0];
       int new_rank = rank + knight_moves[i][1];
 
@@ -93,4 +99,8 @@ static void attack_table_for_knight(void) {
       }
     }
   }
+}
+
+static void attack_table_for_king(void) {
+  return;
 }
