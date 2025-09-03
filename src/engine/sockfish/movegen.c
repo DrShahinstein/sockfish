@@ -60,7 +60,7 @@ void gen_knights(Bitboard knights, MoveList *movelist, U64 friendly_pieces) {
   }
 }
 
-void gen_kings(Bitboard kings,   MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
+void gen_kings(Bitboard kings, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
   (void)kings; (void)movelist; (void)occupancy; (void)friendly_pieces;
 }
 
@@ -68,7 +68,7 @@ void gen_bishops(Bitboard bishops, MoveList *movelist, U64 occupancy, U64 friend
   (void)bishops; (void)movelist; (void)occupancy; (void)friendly_pieces;
 }
 
-void gen_rooks(Bitboard rooks,   MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
+void gen_rooks(Bitboard rooks, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
   (void)rooks; (void)movelist; (void)occupancy; (void)friendly_pieces;
 }
 
