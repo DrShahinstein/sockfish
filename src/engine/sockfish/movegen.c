@@ -14,7 +14,9 @@ static void attack_table_for_pawn(void);
 static void attack_table_for_knight(void);
 static void attack_table_for_king(void);
 void init_attack_tables(void) {
+  attack_table_for_pawn();
   attack_table_for_knight();
+  attack_table_for_king();
 }
 
 void init_magic_bitboards(void) {
