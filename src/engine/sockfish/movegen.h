@@ -20,8 +20,8 @@ extern U64 king_attacks[64];
 extern U64 rook_magics[64];   extern MagicEntry rook_magic[64];
 extern U64 bishop_magics[64]; extern MagicEntry bishop_magic[64];
 
-void init_attack_tables(void);
-void init_magic_bitboards(void);
+void init_attack_tables(void);   // for leaping pieces (pawn, knight, king)
+void init_magic_bitboards(void); // for sliding pieces (bishop, rook, queen)
 
 void gen_pawns  (Bitboard pawns,   MoveList *movelist, U64 occupancy, U64 friendly_pieces, U64 enemy_pieces);
 void gen_rooks  (Bitboard rooks,   MoveList *movelist, U64 occupancy, U64 friendly_pieces);
