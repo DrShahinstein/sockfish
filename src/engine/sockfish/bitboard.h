@@ -20,9 +20,9 @@ typedef struct {
 #define GET_BIT(bb, square)   ((bb) & (1ULL << (square)))
 #define POP_BIT(bb, square)   (GET_BIT(bb, square) ? (CLEAR_BIT(bb, square), 1) : 0)
 
-#define GET_LSB(bb)    (__builtin_ctzll(bb))
-#define GET_MSB(bb)    (__builtin_clzll(bb))
-#define COUNT_BITS(bb) (__builtin_popcountll(bb))
+#define GET_LSB(bb)       (__builtin_ctzll(bb))
+#define GET_MSB(bb)    (63-__builtin_clzll(bb))
+#define COUNT_BITS(bb)    (__builtin_popcountll(bb))
 
 static inline int POP_LSB(U64 *bb) {
   if (*bb == 0) return -1;
