@@ -23,87 +23,39 @@ void init_magic_bitboards(void) {
   return;
 }
 
-U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
-  U64 attacks = 0;
-  
-  /* == Leaping Pieces == */
-  Bitboard pawns = bbset->pawns[enemy_color];
-  while (pawns) {
-    int square = POP_LSB(&pawns);
-    attacks   |= pawn_attacks[enemy_color][square];
-  }
-
-  Bitboard knights = bbset->knights[enemy_color];
-  while (knights) {
-    int square = POP_LSB(&knights);
-    attacks   |= knight_attacks[square];
-  }
-
-  Bitboard kings = bbset->kings[enemy_color];
-  if (kings) {
-    int square = GET_LSB(kings);
-    attacks   |= king_attacks[square];
-  }
-  
-  /* == Sliding Pieces == */
-//  Bitboard bishops = bbset->bishops[enemy_color];
-//  while (bishops) {
-//    int square = POP_LSB(&bishops);
-//    attacks   |= get_bishop_attacks(square, bbset->occupied);
-//  }
-
-//  Bitboard rooks = bbset->rooks[enemy_color];
-//  while (rooks) {
-//    int square = POP_LSB(&rooks);
-//    attacks   |= get_rook_attacks(square, bbset->occupied);
-//  }
-
-//  Bitboard queens = bbset->queens[enemy_color];
-//  while (queens) {
-//    int square = POP_LSB(&queens);
-//    attacks   |= get_rook_attacks  (square, bbset->occupied) |
-//                 get_bishop_attacks(square, bbset->occupied);
-//  }
-
-  return attacks;
-}
-
 MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights) {
   MoveList movelist;
   movelist.count = 0;
-  
-  U64 occupancy       = bbset->occupied;
-  U64 friendly_pieces = bbset->all_pieces[color];
-  U64 enemy_pieces    = bbset->all_pieces[1-color];
-  U64 enemy_attacks   = compute_attacks(bbset, 1-color); // for king
 
-  gen_pawns  (bbset->pawns  [color], &movelist, occupancy,    /*noneed*/    enemy_pieces, color);
-  gen_rooks  (bbset->rooks  [color], &movelist, occupancy, friendly_pieces);
-  gen_knights(bbset->knights[color], &movelist, /*noneed*/ friendly_pieces);
-  gen_bishops(bbset->bishops[color], &movelist, occupancy, friendly_pieces);
-  gen_queens (bbset->queens [color], &movelist, occupancy, friendly_pieces);
-  gen_kings  (bbset->kings  [color], &movelist, /*noneed*/ friendly_pieces, enemy_attacks, castling_rights);
+  gen_pawns  (bbset, &movelist, color);
+  gen_rooks  (bbset, &movelist, color);
+  gen_knights(bbset, &movelist, color);
+  gen_bishops(bbset, &movelist, color);
+  gen_queens (bbset, &movelist, color);
+  gen_kings  (bbset, &movelist, color, castling_rights);
 
   return movelist;
 }
 
 // incomplete: en-passant, promotion
-void gen_pawns(Bitboard pawns, MoveList *movelist, U64 occupancy, U64 enemy_pieces, Turn pawn_color) {
-  U64 pawns_copy = pawns;
-  int direction  = (pawn_color == WHITE) ? 1 : -1;
+void gen_pawns(const BitboardSet *bbset, MoveList *movelist, Turn color) {
+  U64 pawns        = bbset->pawns[color];
+  U64 enemy_pieces = bbset->all_pieces[!color];
+  U64 occupancy    = bbset->occupied;
+  int direction    = (color == WHITE) ? 1 : -1;
 
-  while (pawns_copy) {
-    int pawn_square = POP_LSB(&pawns_copy);
+  while (pawns) {
+    int pawn_square = POP_LSB(&pawns);
     int rank        = pawn_square / 8;
 
-    U64 attacks        = pawn_attacks[pawn_color][pawn_square] & enemy_pieces;
+    U64 attacks        = pawn_attacks[color][pawn_square] & enemy_pieces;
     U64 forward_moves  = 0;
     int forward_square = pawn_square + (8 * direction);
 
     if (forward_square >= 0 && forward_square < 64 && !GET_BIT(occupancy, forward_square)) {
       SET_BIT(forward_moves, forward_square);
 
-      if ((pawn_color == WHITE && rank == 1) || (pawn_color == BLACK && rank == 6)) {
+      if ((color == WHITE && rank == 1) || (color == BLACK && rank == 6)) {
         int double_square = forward_square + (8 * direction);
         if (double_square >= 0 && double_square < 64 && !GET_BIT(occupancy, double_square)) {
           SET_BIT(forward_moves, double_square);
@@ -121,11 +73,12 @@ void gen_pawns(Bitboard pawns, MoveList *movelist, U64 occupancy, U64 enemy_piec
   }
 }
 
-void gen_knights(Bitboard knights, MoveList *movelist, U64 friendly_pieces) {
-  U64 knights_copy = knights;
+void gen_knights(const BitboardSet *bbset, MoveList *movelist, Turn color) {
+  U64 knights         = bbset->knights[color];
+  U64 friendly_pieces = bbset->all_pieces[color];
 
-  while (knights_copy) {
-    int knight_square = POP_LSB(&knights_copy);
+  while (knights) {
+    int knight_square = POP_LSB(&knights);
     U64 attacks       = knight_attacks[knight_square] & ~friendly_pieces;
     U64 attacks_copy  = attacks;
 
@@ -137,12 +90,15 @@ void gen_knights(Bitboard knights, MoveList *movelist, U64 friendly_pieces) {
 }
 
 // incomplete: castling
-void gen_kings(Bitboard kings, MoveList *movelist, U64 friendly_pieces, U64 enemy_attacks, uint8_t castling_rights) {
+void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t castling_rights) {
   (void)castling_rights;
-  U64 kings_copy = kings;
 
-  while (kings_copy) {
-    int king_square  = POP_LSB(&kings_copy);
+  U64 kings           = bbset->kings[color];
+  U64 friendly_pieces = bbset->all_pieces[color];
+  U64 enemy_attacks   = compute_attacks(bbset, !color);
+
+  while (kings) {
+    int king_square  = POP_LSB(&kings);
     U64 attacks      = king_attacks[king_square] & ~friendly_pieces & ~enemy_attacks;
     U64 attacks_copy = attacks;
 
@@ -153,16 +109,16 @@ void gen_kings(Bitboard kings, MoveList *movelist, U64 friendly_pieces, U64 enem
   }
 }
 
-void gen_bishops(Bitboard bishops, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
-  (void)bishops; (void)movelist; (void)occupancy; (void)friendly_pieces;
+void gen_bishops(const BitboardSet *bbset, MoveList *movelist, Turn color) {
+  (void)bbset; (void)movelist; (void)color;
 }
 
-void gen_rooks(Bitboard rooks, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
-  (void)rooks; (void)movelist; (void)occupancy; (void)friendly_pieces;
+void gen_rooks(const BitboardSet *bbset, MoveList *movelist, Turn color) {
+  (void)bbset; (void)movelist; (void)color;
 }
 
-void gen_queens(Bitboard queens, MoveList *movelist, U64 occupancy, U64 friendly_pieces) {
-  (void)queens; (void)movelist; (void)occupancy; (void)friendly_pieces;
+void gen_queens(const BitboardSet *bbset, MoveList *movelist, Turn color) {
+  (void)bbset; (void)movelist; (void)color;
 }
 
 static void attack_table_for_pawn(void) {
@@ -228,4 +184,49 @@ static void attack_table_for_king(void) {
       }
     }
   }
+}
+
+U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
+  U64 attacks = 0;
+  
+  /* == Leaping Pieces == */
+  Bitboard pawns = bbset->pawns[enemy_color];
+  while (pawns) {
+    int square = POP_LSB(&pawns);
+    attacks   |= pawn_attacks[enemy_color][square];
+  }
+
+  Bitboard knights = bbset->knights[enemy_color];
+  while (knights) {
+    int square = POP_LSB(&knights);
+    attacks   |= knight_attacks[square];
+  }
+
+  Bitboard kings = bbset->kings[enemy_color];
+  if (kings) {
+    int square = GET_LSB(kings);
+    attacks   |= king_attacks[square];
+  }
+  
+  /* == Sliding Pieces == */
+//  Bitboard bishops = bbset->bishops[enemy_color];
+//  while (bishops) {
+//    int square = POP_LSB(&bishops);
+//    attacks   |= get_bishop_attacks(square, bbset->occupied);
+//  }
+
+//  Bitboard rooks = bbset->rooks[enemy_color];
+//  while (rooks) {
+//    int square = POP_LSB(&rooks);
+//    attacks   |= get_rook_attacks(square, bbset->occupied);
+//  }
+
+//  Bitboard queens = bbset->queens[enemy_color];
+//  while (queens) {
+//    int square = POP_LSB(&queens);
+//    attacks   |= get_rook_attacks  (square, bbset->occupied) |
+//                 get_bishop_attacks(square, bbset->occupied);
+//  }
+
+  return attacks;
 }
