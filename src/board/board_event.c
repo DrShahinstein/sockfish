@@ -30,9 +30,9 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       }
 
       if (piece != 0) {
-        board->drag.active = true;
-        board->drag.row = sq_row;
-        board->drag.col = sq_col;
+        board->drag.active   = true;
+        board->drag.row      = sq_row;
+        board->drag.col      = sq_col;
         board->drag.from_row = sq_row;
         board->drag.from_col = sq_col;
       }
@@ -77,7 +77,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         board->board[board->promo.row][board->promo.col] = piece;
         board->turn = (board->turn == WHITE) ? BLACK : WHITE;
         board->promo.active = false;
-        board->drag.active = false;
+        board->drag.active  = false;
         return;
       }
 
@@ -87,30 +87,32 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           return;
         }
 
-        MoveRC move;
-        move.fr = board->drag.from_row;
-        move.fc = board->drag.from_col;
-        move.tr = my / SQ;
-        move.tc = mx / SQ;
-        char moving_piece = board->board[move.fr][move.fc];
+        int fr            = board->drag.from_row; // from row
+        int fc            = board->drag.from_col; // from col
+        int tr            = my / SQ;              // to row
+        int tc            = mx / SQ;              // to col
+        Square from_sq    = rowcol_to_sq(fr, fc);
+        Square to_sq      = rowcol_to_sq(tr, tc);
+        Move move         = create_move(from_sq, to_sq);
+        char moving_piece = board->board[fr][fc];
 
-        bool dropped_same = move.fr == move.tr && move.fc == move.tc;
+        bool dropped_same = fr == tr && fc == tc;
         if (dropped_same) {
           board->drag.active = false;
           return;
         }
 
-        if (is_castling_move(board, &move)) {
-          perform_castling(board, &move);
+        if (is_castling_move(board, move)) {
+          perform_castling(board, move);
           board->turn = (board->turn == WHITE) ? BLACK : WHITE;
           return;
         }
 
-        if (is_en_passant_capture(board, &move)) {
-          int captured_row = board->turn == WHITE ? move.tr + 1 : move.tr - 1;
-          board->board[captured_row][move.tc] = 0;
-          board->board[move.tr][move.tc] = moving_piece;
-          board->board[move.fr][move.fc] = 0;
+        if (is_en_passant_capture(board, move)) {
+          int captured_row = board->turn == WHITE ? (tr + 1) : (tr - 1);
+          board->board[captured_row][tc] = 0;
+          board->board[tr][tc] = moving_piece;
+          board->board[fr][fc] = 0;
           board->ep_row = -1;
           board->ep_col = -1;
           board->turn = (board->turn == WHITE) ? BLACK : WHITE;
@@ -121,26 +123,27 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         bool legal = true; // for now
 
         if (legal) {
-          if ((moving_piece == 'p' || moving_piece == 'P') && SDL_abs(move.fr - move.tr) == 2) {
-            board->ep_row = (move.fr + move.tr) / 2;
-            board->ep_col = move.fc;
+          if ((moving_piece == 'p' || moving_piece == 'P') && SDL_abs(fr - tr) == 2) {
+            board->ep_row = (fr + tr) / 2;
+            board->ep_col = fc;
           } else {
             board->ep_row = -1;
             board->ep_col = -1;
           }
-          board->promo.captured = board->board[move.tr][move.tc];
-          board->board[move.tr][move.tc] = moving_piece;
-          board->board[move.fr][move.fc] = 0;
 
-          update_castling_rights(board, moving_piece, &move);
+          board->promo.captured = board->board[tr][tc];
+          board->board[tr][tc]  = moving_piece;
+          board->board[fr][fc]  = 0;
+
+          update_castling_rights (board, moving_piece, move);
           update_enpassant_rights(board, moving_piece);
 
-          bool promotion = (move.tr == 0 || move.tr == 7) && (moving_piece == 'p' || moving_piece == 'P');
+          bool promotion = (tr == 0 || tr == 7) && (moving_piece == 'p' || moving_piece == 'P');
 
           if (promotion) {
             board->promo.active = true;
-            board->promo.row    = move.tr;
-            board->promo.col    = move.tc;
+            board->promo.row    = tr;
+            board->promo.col    = tc;
 
             bool w = board->turn == WHITE;
             board->promo.choices[0] = w ? 'Q':'q';
