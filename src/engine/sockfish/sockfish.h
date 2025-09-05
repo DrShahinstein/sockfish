@@ -50,6 +50,7 @@ typedef struct SF_Context {
   Turn search_color;
   Move best;
   bool thinking;
+  uint8_t castling_rights;
 } SF_Context;
 
 /* ===== Move Utilities ===== */
