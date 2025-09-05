@@ -28,9 +28,9 @@ void gen_rooks  (Bitboard rooks,   MoveList *movelist, U64 occupancy, U64 friend
 void gen_knights(Bitboard knights, MoveList *movelist,   /*noneed*/   U64 friendly_pieces);
 void gen_bishops(Bitboard bishops, MoveList *movelist, U64 occupancy, U64 friendly_pieces);
 void gen_queens (Bitboard queens,  MoveList *movelist, U64 occupancy, U64 friendly_pieces);
-void gen_kings  (Bitboard kings,   MoveList *movelist,   /*noneed*/   U64 friendly_pieces, U64 enemy_attacks);
-U64 compute_enemy_attacks(const BitboardSet *bbset, Turn enemy_color);
-MoveList sf_generate_moves(const BitboardSet *bbset, Turn color);
+void gen_kings  (Bitboard kings,   MoveList *movelist,   /*noneed*/   U64 friendly_pieces, U64 enemy_attacks, uint8_t castling_rights);
+U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color);
+MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights);
 
 /*
 
