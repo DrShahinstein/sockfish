@@ -31,7 +31,8 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   }
 
   make_bitboards_from_charboard(board->board, &engine->ctx);
-  engine->ctx.search_color = board->turn;
+  engine->ctx.search_color    = board->turn;
+  engine->ctx.castling_rights = board->castling;
 
   uint64_t new_hash = position_hash(board->board, board->turn);
   if (engine->last_pos_hash == new_hash && engine->last_turn == board->turn) {
