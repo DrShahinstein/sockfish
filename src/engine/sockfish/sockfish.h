@@ -3,7 +3,7 @@
   * sockfish.h is the main header file for the Sockfish chess engine.
   * It defines the core data structures and types used throughout the engine. (primarily: SF_Context)
   * Therefore, it can also be considered as 'sf_types.h'
-  * Any file in the project can include this header to utilize the benefits of the types here. (e.g MoveRC, MoveSQ)
+  * Any file in the project can include this header to utilize the benefits of the types here. (e.g Move)
   ! Because it has this kind of a mission, it does not have a corresponding .c file.
 
 */
@@ -28,44 +28,57 @@ typedef enum {
   WHITE, BLACK
 } Turn;
 
-// MoveRC => move with row-col coordinates (board/ui friendly)
-typedef struct {
-  int fr; int fc; // (0-7),(0,7)
-  int tr; int tc; // (0-7),(0,7)
-} MoveRC;
-
-// MoveSQ => move with bit coordinates (engine friendly)
-typedef struct {
-  Square from; // 0-63
-  Square to;   // 0-63
-} MoveSQ;
+/* == 16bit Move == */
+typedef uint16_t Move;
+typedef enum {
+  MOVE_NORMAL     = 0,
+  MOVE_PROMOTION  = 1 << 14,
+  MOVE_EN_PASSANT = 2 << 14,
+  MOVE_CASTLING   = 3 << 14,
+} MoveType;
+typedef enum {
+  PROMOTE_QUEEN,
+  PROMOTE_ROOK,
+  PROMOTE_BISHOP,
+  PROMOTE_KNIGHT,
+} PromotionType;
+// EXAMPLE: 00  -  00   - 000000 - 000000   |   0000011100001100 => E2=12 to E4=28
+//         type   promo     to      from
 
 typedef struct SF_Context {
   BitboardSet bitboard_set;
   Turn search_color;
-  MoveSQ best;
+  Move best;
   bool thinking;
 } SF_Context;
 
-/* ===== (sq - rowcol) convertions ===== */
-static inline void sq_to_rowcol(Square sq, int *row, int *col) {
-  *row = sq / 8;
-  *col = sq % 8;
-}
-static inline int rowcol_to_sq(int row, int col) {
-  return row * 8 + col;
-}
+/* ===== Move Utilities ===== */
+#define create_move(from, to)             ((from) | ((to) << 6) | MOVE_NORMAL)
+#define create_promotion(from, to, promo) ((from) | ((to) << 6) | ((promo) << 12) | MOVE_PROMOTION)
+#define create_en_passant(from, to)       ((from) | ((to) << 6) | MOVE_EN_PASSANT)
+#define create_castling(from, to)         ((from) | ((to) << 6) | MOVE_CASTLING)
+
+#define move_from(move)      ((move) & 0x3F)         // bits 0-5
+#define move_to(move)        (((move) >> 6) & 0x3F)  // bits 6-11
+#define move_promotion(move) (((move) >> 12) & 0x3)  // bits 12-13
+#define move_type(move)      ((move) & 0xC000)       // bits 14-15
+
+#define square_to_row(sq)     (sq / 8)
+#define square_to_col(sq)     (sq % 8)
+#define rowcol_to_sq(row,col) (row * 8 + col)
+
 static inline void sq_to_alg(Square sq, char buf[3]) {
-  int row, col;
-  sq_to_rowcol(sq, &row, &col);
+  /* square (from-to) -> algebraic (e2-e4) */
+  int row = square_to_row(sq);
+  int col = square_to_col(sq);
   buf[0] = 'a' + col;
   buf[1] = '1' + row;
   buf[2] = '\0';
-} //
+}
 
 /* ===== Sockish Functions & Algorithm =====
 
-Move sf_search(const SF_Context *ctx);                             // search.c
+Move     sf_search(const SF_Context *ctx);                         // search.c
 MoveList sf_generate_moves(const BitboardSet *bbset, Turn color);  // movegen.c
 
 */
