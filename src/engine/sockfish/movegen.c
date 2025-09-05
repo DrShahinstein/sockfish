@@ -116,7 +116,7 @@ void gen_pawns(Bitboard pawns, MoveList *movelist, U64 occupancy, U64 enemy_piec
 
     while (moves_copy) {
       int target_square = POP_LSB(&moves_copy);
-      movelist->moves[movelist->count++] = (MoveSQ){pawn_square, target_square};
+      movelist->moves[movelist->count++] = create_move(pawn_square, target_square);
     }
   }
 }
@@ -131,7 +131,7 @@ void gen_knights(Bitboard knights, MoveList *movelist, U64 friendly_pieces) {
 
     while (attacks_copy) {
       int target_square = POP_LSB(&attacks_copy);
-      movelist->moves[movelist->count++] = (MoveSQ){knight_square, target_square};
+      movelist->moves[movelist->count++] = create_move(knight_square, target_square);
     }
   }
 }
@@ -147,7 +147,7 @@ void gen_kings(Bitboard kings, MoveList *movelist, U64 friendly_pieces, U64 enem
 
     while (attacks_copy) {
       int target_square = POP_LSB(&attacks_copy);
-      movelist->moves[movelist->count++] = (MoveSQ){king_square, target_square};
+      movelist->moves[movelist->count++] = create_move(king_square, target_square);
     }
   }
 }

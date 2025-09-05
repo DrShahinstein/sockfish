@@ -2,4 +2,4 @@
 
 #include "sockfish/sockfish.h"
 
-MoveSQ sf_search(const SF_Context *ctx);
+Move sf_search(const SF_Context *ctx);

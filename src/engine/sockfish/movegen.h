@@ -3,7 +3,7 @@
 #include "sockfish/sockfish.h"
 
 typedef struct {
-  MoveSQ moves[256]; // max possible moves in a chess position is =218
+  Move moves[256]; // max possible moves in a chess position is =218
   int count;
 } MoveList;
 
