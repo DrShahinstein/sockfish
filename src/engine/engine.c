@@ -13,7 +13,7 @@ void engine_init(EngineWrapper *engine) {
   engine->last_pos_hash     = 0ULL;
   engine->last_turn         = WHITE;
   engine->ctx.search_color  = WHITE;
-  engine->ctx.best          = (MoveSQ){-1,-1};
+  engine->ctx.best          = create_move(0,0);
   engine->ctx.thinking      = false;
 
   init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
@@ -55,7 +55,7 @@ static int engine_thread(void *data) {
   SDL_memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
   SDL_UnlockMutex(engine->mtx);
 
-  MoveSQ best = sf_search(&ctx);
+  Move best = sf_search(&ctx);
 
   SDL_LockMutex(engine->mtx);
   engine->ctx.best = best;
@@ -74,4 +74,5 @@ void engine_destroy(EngineWrapper *engine) {
   SDL_UnlockMutex(engine->mtx);
 
   SDL_DestroyMutex(engine->mtx);
+  engine->mtx = NULL;
 }
