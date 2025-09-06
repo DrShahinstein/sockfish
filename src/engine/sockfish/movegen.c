@@ -95,6 +95,7 @@ void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t
 
   U64 kings           = bbset->kings[color];
   U64 friendly_pieces = bbset->all_pieces[color];
+  U64 occupied        = bbset->occupied;
   U64 enemy_attacks   = compute_attacks(bbset, !color);
 
   while (kings) {
@@ -105,6 +106,59 @@ void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t
     while (attacks_copy) {
       int target_square = POP_LSB(&attacks_copy);
       movelist->moves[movelist->count++] = create_move(king_square, target_square);
+    }
+
+    /* castling */
+    bool legal;
+
+    if (color == WHITE) {
+      // white-kingside
+      legal = (
+       castling_rights & CASTLE_WK  &&
+       !(occupied & (1ULL << F1))   &&
+       !(occupied & (1ULL << G1))   &&
+       !(square_attacked(bbset, E1, BLACK)) &&
+       !(square_attacked(bbset, F1, BLACK)) &&
+       !(square_attacked(bbset, G1, BLACK))
+      );
+      if (legal) movelist->moves[movelist->count++] = create_castling(E1, G1);
+
+      // white-queenside
+      legal = (
+       castling_rights & CASTLE_WQ &&
+       !(occupied & (1ULL << B1))  &&
+       !(occupied & (1ULL << C1))  &&
+       !(occupied & (1ULL << D1))  &&
+       !(square_attacked(bbset, E1, BLACK)) &&
+       !(square_attacked(bbset, D1, BLACK)) &&
+       !(square_attacked(bbset, C1, BLACK))
+      );
+      if (legal) movelist->moves[movelist->count++] = create_castling(E1, C1);
+    }
+
+    else {
+      // black-kingside
+      legal = (
+       castling_rights & CASTLE_BK &&
+       !(occupied & (1ULL << F8))  &&
+       !(occupied & (1ULL << G8))  &&
+       !(square_attacked(bbset, E8, WHITE)) &&
+       !(square_attacked(bbset, F8, WHITE)) &&
+       !(square_attacked(bbset, G8, WHITE))
+      );
+      if (legal) movelist->moves[movelist->count++] = create_castling(E8, G8);
+
+      // black-queenside
+      legal = (
+       castling_rights & CASTLE_BQ &&
+       !(occupied & (1ULL << B8))  &&
+       !(occupied & (1ULL << C8))  &&
+       !(occupied & (1ULL << D8))  &&
+       !(square_attacked(bbset, E8, WHITE)) &&
+       !(square_attacked(bbset, D8, WHITE)) &&
+       !(square_attacked(bbset, C8, WHITE))
+      );
+      if (legal) movelist->moves[movelist->count++] = create_castling(E8, C8);
     }
   }
 }
@@ -229,4 +283,19 @@ U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
 //  }
 
   return attacks;
+}
+
+bool square_attacked(const BitboardSet *bbset, Square square, Turn color) {
+  U64 pawn_attacks_ = pawn_attacks[!color][square] & bbset->pawns[color];
+  if (pawn_attacks_) return true;
+
+  U64 knight_attacks_ = knight_attacks[square] & bbset->knights[color];
+  if (knight_attacks_) return true;
+
+  U64 king_attacks_ = king_attacks[square] & bbset->kings[color];
+  if (king_attacks_) return true;
+
+  // incomplete: sliding pieces should also be checked.
+
+  return false;
 }
