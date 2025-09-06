@@ -28,10 +28,12 @@ typedef enum {
   WHITE, BLACK
 } Turn;
 
-#define CASTLE_WK 0x01
-#define CASTLE_WQ 0x02
-#define CASTLE_BK 0x04
-#define CASTLE_BQ 0x08
+#define NO_ENPASSANT -1
+#define CASTLE_NONE 0x00
+#define CASTLE_WK   0x01
+#define CASTLE_WQ   0x02
+#define CASTLE_BK   0x04
+#define CASTLE_BQ   0x08
 
 /* == 16bit Move == */
 typedef uint16_t Move;
@@ -56,6 +58,7 @@ typedef struct SF_Context {
   Move best;
   bool thinking;
   uint8_t castling_rights;
+  Square enpassant_sq; // -1 for none
 } SF_Context;
 
 /* ===== Move Utilities ===== */
