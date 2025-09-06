@@ -2,7 +2,9 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
-void render_board_init(SDL_Renderer *renderer, BoardState *board) {
+SDL_Texture *tex[128];
+
+void render_board_init(SDL_Renderer *renderer) {
   const char *pieces = "rnbqkpRNBQKP";
   char path[256];
 
@@ -15,10 +17,10 @@ void render_board_init(SDL_Renderer *renderer, BoardState *board) {
       continue;
     }
 
-    board->tex[(int)*c] = SDL_CreateTextureFromSurface(renderer, surf);
+    tex[(int)*c] = SDL_CreateTextureFromSurface(renderer, surf);
     SDL_DestroySurface(surf);
 
-    if (!board->tex[(int)*c]) {
+    if (!tex[(int)*c]) {
       SDL_LogError(SDL_LOG_CATEGORY_ERROR, "CreateTexture '%s' failed: %s\n", path, SDL_GetError());
     }
   }
@@ -46,9 +48,9 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
       char pc = board->board[row][col];
 
-      if (pc && board->tex[(int)pc]) {
+      if (pc && tex[(int)pc]) {
         SDL_FRect dst = {col * SQ, row * SQ, SQ, SQ};
-        SDL_RenderTexture(renderer, board->tex[(int)pc], NULL, &dst);
+        SDL_RenderTexture(renderer, tex[(int)pc], NULL, &dst);
       }
     }
   }
@@ -58,9 +60,9 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     float x, y;
     SDL_GetMouseState(&x, &y);
 
-    if (pc && board->tex[(int)pc]) {
+    if (pc && tex[(int)pc]) {
       SDL_FRect dst = {x - SQ / 2.0f, y - SQ / 2.0f, SQ, SQ};
-      SDL_RenderTexture(renderer, board->tex[(int)pc], NULL, &dst);
+      SDL_RenderTexture(renderer, tex[(int)pc], NULL, &dst);
     }
   }
 
@@ -74,20 +76,18 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
       SDL_RenderFillRect(renderer, &dst);
 
       char pc = board->promo.choices[i];
-      if (pc && board->tex[(int)pc]) {
-        SDL_RenderTexture(renderer, board->tex[(int)pc], NULL, &dst);
+      if (pc && tex[(int)pc]) {
+        SDL_RenderTexture(renderer, tex[(int)pc], NULL, &dst);
       }
     }
   }
 }
 
-void render_board_cleanup(SDL_Renderer *renderer, BoardState *board) {
-  (void)(renderer);
-
+void render_board_cleanup(void) {
   for (int i = 0; i < 128; ++i) {
-    if (board->tex[i]) {
-      SDL_DestroyTexture(board->tex[i]);
-      board->tex[i] = NULL;
+    if (tex[i]) {
+      SDL_DestroyTexture(tex[i]);
+      tex[i] = NULL;
     }
   }
 }
