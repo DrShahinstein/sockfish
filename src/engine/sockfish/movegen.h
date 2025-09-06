@@ -23,7 +23,7 @@ extern U64 bishop_magics[64]; extern MagicEntry bishop_magic[64];
 void init_attack_tables(void);   // for leaping pieces (pawn, knight, king)
 void init_magic_bitboards(void); // for sliding pieces (bishop, rook, queen)
 
-void gen_pawns  (const BitboardSet *bbset, MoveList *movelist, Turn color);
+void gen_pawns  (const BitboardSet *bbset, MoveList *movelist, Turn color, Square enpassant_sq);
 void gen_rooks  (const BitboardSet *bbset, MoveList *movelist, Turn color);
 void gen_knights(const BitboardSet *bbset, MoveList *movelist, Turn color);
 void gen_bishops(const BitboardSet *bbset, MoveList *movelist, Turn color);
@@ -32,7 +32,7 @@ void gen_kings  (const BitboardSet *bbset, MoveList *movelist, Turn color, uint8
 
 bool square_attacked(const BitboardSet *bbset, Square square, Turn color);
 U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color);
-MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights);
+MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights, Square enpassant_sq);
 
 /*
 
