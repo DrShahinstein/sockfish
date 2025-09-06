@@ -4,6 +4,7 @@
 #include "sockfish/movegen.h"
 #include "board.h"
 #include <SDL3/SDL.h>
+#include <stdio.h>
 
 static int engine_thread(void *data);
 
@@ -32,17 +33,12 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
     return;
   }
 
+  bool ep_valid = board->ep_row >= 0 && board->ep_col >= 0;
+
   make_bitboards_from_charboard(board->board, &engine->ctx);
   engine->ctx.search_color    = board->turn;
   engine->ctx.castling_rights = board->castling;
-  //engine->ctx.enpassant_sq    = ?;
-
-  if (board->ep_row >= 0 && board->ep_col >= 0) {
-    int engine_row = 7 - board->ep_row;
-    engine->ctx.enpassant_sq = rowcol_to_sq(engine_row, board->ep_col);
-  } else {
-    engine->ctx.enpassant_sq = NO_ENPASSANT;
-  }
+  engine->ctx.enpassant_sq    = ep_valid ? rowcol_to_sq((7 - board->ep_row), board->ep_col) : NO_ENPASSANT;
 
   uint64_t new_hash = position_hash(board->board, board->turn);
   if (engine->last_pos_hash == new_hash && engine->last_turn == board->turn) {
