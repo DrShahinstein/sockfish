@@ -97,7 +97,7 @@ bool is_en_passant_capture(BoardState *board, Move move) {
 
 void update_enpassant_rights(BoardState *board, char moving_piece) {
   if (moving_piece != 'p' && moving_piece != 'P') {
-    board->ep_row = -1;
-    board->ep_col = -1;
+    board->ep_row = NO_ENPASSANT;
+    board->ep_col = NO_ENPASSANT;
   }
 }
