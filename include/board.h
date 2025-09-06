@@ -21,10 +21,8 @@ typedef struct BoardState {
   uint8_t castling;
   Turn turn;
   struct {
-    int row;
-    int col;
-    int from_row;
-    int from_col;
+    int from_row; int from_col;
+    int to_row; int to_col;
     bool active;
   } drag;
   Promotion promo;
