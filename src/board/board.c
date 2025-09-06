@@ -12,8 +12,8 @@ void board_init(BoardState *board) {
   SDL_memset(board->promo.choices, 0, sizeof(board->promo.choices));
   board->castling = 0;
   board->turn = WHITE;
-  board->ep_row = -1;
-  board->ep_col = -1;
+  board->ep_row = NO_ENPASSANT;
+  board->ep_col = NO_ENPASSANT;
   board->drag.active = false;
   board->drag.row = -1;
   board->drag.col = -1;
@@ -37,8 +37,8 @@ void load_fen(const char *fen, BoardState *board) {
   SDL_memset(board->board, 0, sizeof(board->board));
   board->turn     = WHITE;
   board->castling = 0;
-  board->ep_row   = -1;
-  board->ep_col   = -1;
+  board->ep_row   = NO_ENPASSANT;
+  board->ep_col   = NO_ENPASSANT;
 
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
   int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
@@ -53,6 +53,9 @@ void load_fen(const char *fen, BoardState *board) {
   if (count >= 4 && SDL_strcmp(ep, "-") != 0) {
     board->ep_col = ep[0] - 'a';
     board->ep_row = 7 - (ep[1]-'1');  // convert rank to row (0-7)
+  } else {
+    board->ep_row = NO_ENPASSANT;
+    board->ep_col = NO_ENPASSANT;
   }
 
   if (active[0] == 'w' || active[0] == 'W') {
