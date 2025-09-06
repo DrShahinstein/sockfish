@@ -14,8 +14,8 @@ void board_init(BoardState *board) {
   board->ep_row = NO_ENPASSANT;
   board->ep_col = NO_ENPASSANT;
   board->drag.active = false;
-  board->drag.row = -1;
-  board->drag.col = -1;
+  board->drag.to_row = -1;
+  board->drag.to_col = -1;
   board->drag.from_row = -1;
   board->drag.from_col = -1;
   board->promo.active = false;

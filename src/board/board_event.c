@@ -31,8 +31,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
       if (piece != 0) {
         board->drag.active   = true;
-        board->drag.row      = sq_row;
-        board->drag.col      = sq_col;
+        board->drag.to_row   = sq_row;
+        board->drag.to_col   = sq_col;
         board->drag.from_row = sq_row;
         board->drag.from_col = sq_col;
       }
@@ -123,7 +123,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         bool legal = true; // for now
 
         if (legal) {
-          if ((moving_piece == 'p' || moving_piece == 'P') && SDL_abs(fr - tr) == 2) {
+          bool double_pawn_push = (moving_piece == 'p' || moving_piece == 'P') && SDL_abs(fr - tr) == 2;
+          if (double_pawn_push) {
             board->ep_row = (fr + tr) / 2;
             board->ep_col = fc;
           } else {

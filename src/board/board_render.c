@@ -44,7 +44,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
-      if (board->drag.active && row == board->drag.row && col == board->drag.col) continue;
+      if (board->drag.active && row == board->drag.to_row && col == board->drag.to_col) continue;
 
       char pc = board->board[row][col];
 
@@ -56,7 +56,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   }
 
   if (board->drag.active) {
-    char pc = board->board[board->drag.row][board->drag.col];
+    char pc = board->board[board->drag.to_row][board->drag.to_col];
     float x, y;
     SDL_GetMouseState(&x, &y);
 
