@@ -23,11 +23,11 @@ void init_magic_bitboards(void) {
   return;
 }
 
-MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights) {
+MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights, Square enpassant_sq) {
   MoveList movelist;
   movelist.count = 0;
 
-  gen_pawns  (bbset, &movelist, color);
+  gen_pawns  (bbset, &movelist, color, enpassant_sq);
   gen_rooks  (bbset, &movelist, color);
   gen_knights(bbset, &movelist, color);
   gen_bishops(bbset, &movelist, color);
@@ -37,38 +37,58 @@ MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castlin
   return movelist;
 }
 
-// incomplete: en-passant, promotion
-void gen_pawns(const BitboardSet *bbset, MoveList *movelist, Turn color) {
+void gen_pawns(const BitboardSet *bbset, MoveList *movelist, Turn color, Square enpassant_sq) {
   U64 pawns        = bbset->pawns[color];
   U64 enemy_pieces = bbset->all_pieces[!color];
   U64 occupancy    = bbset->occupied;
-  int direction    = (color == WHITE) ? 1 : -1;
+  int direction    = (color == WHITE) ? +1 : -1;
+  int promo_rank   = (color == WHITE) ? +7 : +0;
+  int start_rank   = (color == WHITE) ? +1 : +6;
 
   while (pawns) {
-    int pawn_square = POP_LSB(&pawns);
-    int rank        = pawn_square / 8;
-
-    U64 attacks        = pawn_attacks[color][pawn_square] & enemy_pieces;
-    U64 forward_moves  = 0;
+    int pawn_square    = POP_LSB(&pawns);
     int forward_square = pawn_square + (8 * direction);
+    int rank           = pawn_square / 8;
 
+    /* - Moving - */
     if (forward_square >= 0 && forward_square < 64 && !GET_BIT(occupancy, forward_square)) {
-      SET_BIT(forward_moves, forward_square);
+      if (forward_square / 8 == promo_rank) {
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, forward_square, PROMOTE_QUEEN);
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, forward_square, PROMOTE_ROOK);
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, forward_square, PROMOTE_BISHOP);
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, forward_square, PROMOTE_KNIGHT);
+      } else {
+        movelist->moves[movelist->count++] = create_move(pawn_square, forward_square);
 
-      if ((color == WHITE && rank == 1) || (color == BLACK && rank == 6)) {
-        int double_square = forward_square + (8 * direction);
-        if (double_square >= 0 && double_square < 64 && !GET_BIT(occupancy, double_square)) {
-          SET_BIT(forward_moves, double_square);
+        // check double push
+        if (rank == start_rank) {
+          int double_square = forward_square + (8 * direction);
+          if (double_square >= 0 && double_square < 64 && !GET_BIT(occupancy, double_square)) {
+            movelist->moves[movelist->count++] = create_move(pawn_square, double_square);
+          }
         }
       }
     }
 
-    U64 all_moves  = attacks | forward_moves;
-    U64 moves_copy = all_moves;
+    /* - Capturing - */
+    U64 attacks = pawn_attacks[color][pawn_square] & enemy_pieces;
 
-    while (moves_copy) {
-      int target_square = POP_LSB(&moves_copy);
-      movelist->moves[movelist->count++] = create_move(pawn_square, target_square);
+    while (attacks) {
+      int target_square = POP_LSB(&attacks);
+
+      if (target_square / 8 == promo_rank) {
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, target_square, PROMOTE_QUEEN);
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, target_square, PROMOTE_ROOK);
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, target_square, PROMOTE_BISHOP);
+        movelist->moves[movelist->count++] = create_promotion(pawn_square, target_square, PROMOTE_KNIGHT);
+      } else {
+        movelist->moves[movelist->count++] = create_move(pawn_square, target_square);
+      }
+    }
+
+    if (enpassant_sq >= 0 && enpassant_sq < 64) {
+      U64 ep_attack = pawn_attacks[color][pawn_square] & (1ULL << enpassant_sq);
+      if (ep_attack) movelist->moves[movelist->count++] = create_en_passant(pawn_square, enpassant_sq);
     }
   }
 }
@@ -89,10 +109,7 @@ void gen_knights(const BitboardSet *bbset, MoveList *movelist, Turn color) {
   }
 }
 
-// incomplete: castling
 void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t castling_rights) {
-  (void)castling_rights;
-
   U64 kings           = bbset->kings[color];
   U64 friendly_pieces = bbset->all_pieces[color];
   U64 occupied        = bbset->occupied;
