@@ -113,8 +113,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           board->board[captured_row][tc] = 0;
           board->board[tr][tc] = moving_piece;
           board->board[fr][fc] = 0;
-          board->ep_row = -1;
-          board->ep_col = -1;
+          board->ep_row = NO_ENPASSANT;
+          board->ep_col = NO_ENPASSANT;
           board->turn = (board->turn == WHITE) ? BLACK : WHITE;
           board->drag.active = false;
           return;
@@ -127,8 +127,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
             board->ep_row = (fr + tr) / 2;
             board->ep_col = fc;
           } else {
-            board->ep_row = -1;
-            board->ep_col = -1;
+            board->ep_row = NO_ENPASSANT;
+            board->ep_col = NO_ENPASSANT;
           }
 
           board->promo.captured = board->board[tr][tc];
