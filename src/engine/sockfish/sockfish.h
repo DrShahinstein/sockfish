@@ -28,6 +28,11 @@ typedef enum {
   WHITE, BLACK
 } Turn;
 
+#define CASTLE_WK 0x01
+#define CASTLE_WQ 0x02
+#define CASTLE_BK 0x04
+#define CASTLE_BQ 0x08
+
 /* == 16bit Move == */
 typedef uint16_t Move;
 typedef enum {
