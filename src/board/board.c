@@ -7,7 +7,6 @@ static bool validate_castling(const char *str);
 
 void board_init(BoardState *board) {
   SDL_memset(board->board, 0, sizeof(board->board));
-  SDL_memset(board->tex, 0, sizeof(board->tex));
   SDL_memset(&board->promo, 0, sizeof(board->promo));
   SDL_memset(board->promo.choices, 0, sizeof(board->promo.choices));
   board->castling = 0;
