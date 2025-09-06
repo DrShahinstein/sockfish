@@ -4,7 +4,7 @@
 #include "special_moves.h"
 #include <SDL3/SDL.h>
 
-static bool is_mouse_in_board(float mx, float my);
+static inline bool is_mouse_in_board(float mx, float my);
 
 void board_handle_event(SDL_Event *e, BoardState *board) {
   float mx; float my; int sq_row; int sq_col;
@@ -52,8 +52,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         int p = -1;
 
         for (int i = 0; i < 4; ++i) {
-          float choice_x = board->promo.col * SQ;
-          float choice_y = board->turn == WHITE ? (i * SQ) : ((7-i) * SQ);
+          float choice_x      = board->promo.col * SQ;
+          float choice_y      = board->turn == WHITE ? (i * SQ) : ((7-i) * SQ);
           bool mouse_on_promo = mx >= choice_x && mx < choice_x + SQ && my >= choice_y && my < choice_y + SQ;
 
           if (mouse_on_promo) {
@@ -165,6 +165,6 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
   }
 }
 
-static bool is_mouse_in_board(float mx, float my) {
+static inline bool is_mouse_in_board(float mx, float my) {
   return mx >= 0 && mx < BOARD_SIZE && my >= 0 && my < BOARD_SIZE;
 }
