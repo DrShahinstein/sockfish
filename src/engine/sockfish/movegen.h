@@ -30,6 +30,7 @@ void gen_bishops(const BitboardSet *bbset, MoveList *movelist, Turn color);
 void gen_queens (const BitboardSet *bbset, MoveList *movelist, Turn color);
 void gen_kings  (const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t castling_rights);
 
+bool square_attacked(const BitboardSet *bbset, Square square, Turn color);
 U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color);
 MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights);
 
