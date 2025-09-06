@@ -17,7 +17,8 @@ Move sf_search(const SF_Context *ctx) {
     "a8","b8","c8","d8","e8","f8","g8","h8"  //temp
   };
 
-  MoveList generated_moves = sf_generate_moves(&ctx->bitboard_set, ctx->search_color, ctx->castling_rights);
+  printf("%d\n", ctx->enpassant_sq);
+  MoveList generated_moves = sf_generate_moves(&ctx->bitboard_set, ctx->search_color, ctx->castling_rights, ctx->enpassant_sq);
 
   for (int i = 0; i < generated_moves.count; ++i) {
     Move move = generated_moves.moves[i];
