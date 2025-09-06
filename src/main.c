@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   EngineWrapper engine={0}; 
   BoardState board={0};
 
-  board_init(&board); render_board_init(renderer, &board);
+  board_init(&board); render_board_init(renderer);
   engine_init(&engine);
   ui_init(&ui);
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   ui_destroy(&ui);
   cleanup_cursors();
   engine_destroy(&engine);
-  render_board_cleanup(renderer, &board);
+  render_board_cleanup();
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   TTF_Quit();
