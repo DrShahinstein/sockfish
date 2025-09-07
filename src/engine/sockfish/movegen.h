@@ -32,7 +32,8 @@ void gen_kings  (const BitboardSet *bbset, MoveList *movelist, Turn color, uint8
 
 bool square_attacked(const BitboardSet *bbset, Square square, Turn color);
 U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color);
-MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights, Square enpassant_sq);
+
+MoveList sf_generate_moves(const SF_Context *ctx);
 
 /*
 
