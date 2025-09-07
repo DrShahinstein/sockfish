@@ -102,17 +102,17 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     engine_req_search(engine, board);
     
     Move sf_best;
-    bool thinking;
+    bool search_thr_active;
 
     SDL_LockMutex(engine->mtx);
-    sf_best  = engine->ctx.best;
-    thinking = engine->ctx.thinking;
+    sf_best           = engine->ctx.best;
+    search_thr_active = engine->thr_working;
     SDL_UnlockMutex(engine->mtx);
 
     float x = ui->turn_changer.rect.x;
     float y = ui->turn_changer.rect.y + 50;
 
-    if (thinking) draw_text(r, ui->font, "Thinking...", FWHITE, x, y);
+    if (search_thr_active) draw_text(r, ui->font, "Thinking...", FWHITE, x, y);
     else {
       char from_alg[3], to_alg[3];
       Square sf_from = move_from(sf_best);
