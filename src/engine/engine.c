@@ -11,11 +11,11 @@ static int engine_thread(void *data);
 void engine_init(EngineWrapper *engine) {
   engine->thr                 = NULL;
   engine->mtx                 = SDL_CreateMutex();
+  engine->thr_working         = false;
   engine->last_pos_hash       = 0ULL;
   engine->last_turn           = WHITE;
   engine->ctx.search_color    = WHITE;
   engine->ctx.best            = create_move(0,0);
-  engine->ctx.thinking        = false;
   engine->ctx.castling_rights = CASTLE_NONE;
   engine->ctx.enpassant_sq    = NO_ENPASSANT;
 
@@ -28,7 +28,7 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   if (board->promo.active) return;
 
   SDL_LockMutex(engine->mtx);
-  if (engine->ctx.thinking) {
+  if (engine->thr_working) {
     SDL_UnlockMutex(engine->mtx);
     return;
   }
@@ -48,7 +48,7 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   
   engine->last_pos_hash = new_hash;
   engine->last_turn     = board->turn;
-  engine->ctx.thinking  = true;
+  engine->thr_working   = true;
   engine->thr           = SDL_CreateThread(engine_thread, "EngineThread", engine);
   SDL_UnlockMutex(engine->mtx);
 }
@@ -67,8 +67,8 @@ static int engine_thread(void *data) {
   SDL_LockMutex(engine->mtx);
   engine->ctx.best = best;
   SDL_DetachThread(engine->thr);
-  engine->thr = NULL;
-  engine->ctx.thinking = false;
+  engine->thr         = NULL;
+  engine->thr_working = false;
   SDL_UnlockMutex(engine->mtx);
 
   return 0;
@@ -82,4 +82,6 @@ void engine_destroy(EngineWrapper *engine) {
 
   SDL_DestroyMutex(engine->mtx);
   engine->mtx = NULL;
+
+  engine->thr_working = false;
 }
