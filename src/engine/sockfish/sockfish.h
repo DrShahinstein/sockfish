@@ -58,6 +58,7 @@ typedef struct SF_Context {
   Move best;
   uint8_t castling_rights;
   Square enpassant_sq; // -1 for none
+  bool *stop_requested;
 } SF_Context;
 
 /* ===== Move Utilities ===== */
