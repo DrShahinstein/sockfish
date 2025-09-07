@@ -56,7 +56,6 @@ typedef struct SF_Context {
   BitboardSet bitboard_set;
   Turn search_color;
   Move best;
-  bool thinking;
   uint8_t castling_rights;
   Square enpassant_sq; // -1 for none
 } SF_Context;
