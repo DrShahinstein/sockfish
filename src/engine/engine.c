@@ -75,6 +75,7 @@ static int engine_thread(void *data) {
 
     SF_Context ctx;
     SDL_memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
+    ctx.stop_requested = &engine->stop_requested;
     SDL_UnlockMutex(engine->mtx);
 
     Move best = sf_search(&ctx);
