@@ -87,7 +87,7 @@ static inline void sq_to_alg(Square sq, char buf[3]) {
 
 /* ===== Sockish Functions & Algorithm =====
 
-Move     sf_search(const SF_Context *ctx);                         // search.c
-MoveList sf_generate_moves(const BitboardSet *bbset, Turn color);  // movegen.c
+Move     sf_search(const SF_Context *ctx);          // search.c
+MoveList sf_generate_moves(const SF_Context *ctx);  // movegen.c
 
 */
