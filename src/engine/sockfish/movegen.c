@@ -23,9 +23,14 @@ void init_magic_bitboards(void) {
   return;
 }
 
-MoveList sf_generate_moves(const BitboardSet *bbset, Turn color, uint8_t castling_rights, Square enpassant_sq) {
+MoveList sf_generate_moves(const SF_Context *ctx) {
   MoveList movelist;
   movelist.count = 0;
+
+  const BitboardSet *bbset = &ctx->bitboard_set;
+  Turn color               =  ctx->search_color;
+  uint8_t castling_rights  =  ctx->castling_rights;
+  Square enpassant_sq      =  ctx->enpassant_sq;
 
   gen_pawns  (bbset, &movelist, color, enpassant_sq);
   gen_rooks  (bbset, &movelist, color);
