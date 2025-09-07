@@ -8,6 +8,7 @@ typedef struct BoardState BoardState;
 typedef struct EngineWrapper {
   SDL_Mutex *mtx;
   SDL_Thread *thr;
+  bool thr_working;
   SF_Context ctx;
   uint64_t last_pos_hash;
   Turn last_turn;
