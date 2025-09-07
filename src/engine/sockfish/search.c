@@ -17,7 +17,6 @@ Move sf_search(const SF_Context *ctx) {
     "a8","b8","c8","d8","e8","f8","g8","h8"  //temp
   };
 
-  printf("%d\n", ctx->enpassant_sq);
   MoveList generated_moves = sf_generate_moves(&ctx->bitboard_set, ctx->search_color, ctx->castling_rights, ctx->enpassant_sq);
 
   for (int i = 0; i < generated_moves.count; ++i) {
@@ -29,6 +28,20 @@ Move sf_search(const SF_Context *ctx) {
   }
 
   printf("\n=> Generated for %s\n", ctx->search_color == WHITE ? "WHITE" : "BLACK");
+  printf("\n-----\n\n");
 
   return create_move(E2, E4);
 }
+
+
+
+/*
+
+NOTE for myself:
+
+You can take advantage of stop_requested available in SF_Context to manage graceful shutdown.
+
+if (ctx->stop_requested && *ctx->stop_requested){
+}
+
+*/
