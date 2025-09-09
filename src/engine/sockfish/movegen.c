@@ -68,6 +68,8 @@ void init_magic_bitboards(void) {
     } while (occupancy);
   }
 
+  /* ! queen is simply rook+bishop ! */
+
   return;
 }
 
@@ -279,8 +281,24 @@ void gen_rooks(const BitboardSet *bbset, MoveList *movelist, Turn color) {
 }
 
 void gen_queens(const BitboardSet *bbset, MoveList *movelist, Turn color) {
-  (void)bbset; (void)movelist; (void)color;
+  U64 queens   = bbset->queens[color];
+  U64 friendly = bbset->all_pieces[color];
+  U64 occupied = bbset->occupied;
+
+  while (queens) {
+    Square queen_square = POP_LSB(&queens);
+    U64 rook_attacks    = get_rook_attacks(queen_square, occupied);
+    U64 bishop_attacks  = get_bishop_attacks(queen_square, occupied);
+    U64 attacks         = (rook_attacks | bishop_attacks) & ~friendly;
+
+    while (attacks) {
+      Square target_square = POP_LSB(&attacks);
+      movelist->moves[movelist->count++] = create_move(queen_square, target_square);
+    }
+  }
 }
+
+/* --- */
 
 static void attack_table_for_pawn(void) {
   for (int square = 0; square < 64; ++square) {
@@ -347,6 +365,8 @@ static void attack_table_for_king(void) {
   }
 }
 
+/* --- */
+
 static U64 rook_mask(Square square) {
   U64 mask = 0;
   int r = square / 8, c = square % 8;
@@ -389,6 +409,8 @@ static U64 get_rook_attacks(Square square, U64 occupancy) {
   U64 index              = (relevant_occupancy * m->magic) >> m->shift;
   return m->attacks[index];
 }
+
+/* --- */
 
 static U64 bishop_mask(Square square) {
   U64 mask = 0;
@@ -437,6 +459,8 @@ static U64 get_bishop_attacks(Square square, U64 occupancy) {
   return m->attacks[index];
 }
 
+/* --- */
+
 U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
   U64 attacks = 0;
   
@@ -472,12 +496,12 @@ U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
     attacks   |= get_rook_attacks(square, bbset->occupied);
   }
 
-//  Bitboard queens = bbset->queens[enemy_color];
-//  while (queens) {
-//    int square = POP_LSB(&queens);
-//    attacks   |= get_rook_attacks  (square, bbset->occupied) |
-//                 get_bishop_attacks(square, bbset->occupied);
-//  }
+  Bitboard queens = bbset->queens[enemy_color];
+  while (queens) {
+    int square = POP_LSB(&queens);
+    attacks   |= get_rook_attacks  (square, bbset->occupied) |
+                 get_bishop_attacks(square, bbset->occupied);
+  }
 
   return attacks;
 }
@@ -492,13 +516,13 @@ bool square_attacked(const BitboardSet *bbset, Square square, Turn color) {
   U64 king_attacks_ = king_attacks[square] & bbset->kings[color];
   if (king_attacks_) return true;
 
-  // incomplete: sliding pieces should also be checked.
-
   U64 bishop_attacks_ = get_bishop_attacks(square, bbset->occupied) & (bbset->bishops[color] | bbset->queens[color]);
   if (bishop_attacks_) return true;
 
   U64 rook_attacks_ = get_rook_attacks(square, bbset->occupied) & (bbset->rooks[color] | bbset->queens[color]);
   if (rook_attacks_) return true;
+
+  /* ! queen is simply rook+bishop ! */
 
   return false;
 }
