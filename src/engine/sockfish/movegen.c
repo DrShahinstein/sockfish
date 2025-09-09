@@ -438,14 +438,10 @@ static U64 bishop_mask(Square square) {
   U64 mask = 0;
   int r = square / 8, c = square % 8;
 
-  for (int i = r + 1, j = c + 1; i <= 6 && j <= 6; i++, j++)
-    mask |= (1ULL << (i * 8 + j));
-  for (int i = r + 1, j = c - 1; i <= 6 && j >= 1; i++, j--)
-    mask |= (1ULL << (i * 8 + j));
-  for (int i = r - 1, j = c + 1; i >= 1 && j <= 6; i--, j++)
-    mask |= (1ULL << (i * 8 + j));
-  for (int i = r - 1, j = c - 1; i >= 1 && j >= 1; i--, j--)
-    mask |= (1ULL << (i * 8 + j));
+  for (int i = r + 1, j = c + 1; i <= 6 && j <= 6; i++, j++) mask |= (1ULL << (i * 8 + j));
+  for (int i = r + 1, j = c - 1; i <= 6 && j >= 1; i++, j--) mask |= (1ULL << (i * 8 + j));
+  for (int i = r - 1, j = c + 1; i >= 1 && j <= 6; i--, j++) mask |= (1ULL << (i * 8 + j));
+  for (int i = r - 1, j = c - 1; i >= 1 && j >= 1; i--, j--) mask |= (1ULL << (i * 8 + j));
 
   return mask;
 }
