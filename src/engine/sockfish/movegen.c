@@ -1,4 +1,5 @@
 #include "sockfish/movegen.h"
+#include "sockfish/move_helper.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -87,6 +88,27 @@ void cleanup_magic_bitboards(void) {
 }
 
 MoveList sf_generate_moves(const SF_Context *ctx) {
+  MoveList pseudo_moves = generate_pseudo_legal_moves(ctx);
+  MoveList legal_moves;
+  legal_moves.count = 0;
+
+  SF_Context temp_ctx = *ctx;
+
+  for (int i = 0; i < pseudo_moves.count; i++) {
+    MoveHistory history;
+    make_move(&temp_ctx, pseudo_moves.moves[i], &history);
+
+    if (!king_in_check(&temp_ctx, ctx->search_color)) {
+      legal_moves.moves[legal_moves.count++] = pseudo_moves.moves[i];
+    }
+
+    unmake_move(&temp_ctx, &history);
+  }
+
+  return legal_moves;
+}
+
+MoveList generate_pseudo_legal_moves(const SF_Context *ctx) {
   MoveList movelist;
   movelist.count = 0;
 
