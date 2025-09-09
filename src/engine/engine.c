@@ -103,4 +103,6 @@ void engine_destroy(EngineWrapper *engine) {
   engine->mtx         = NULL;
   engine->cond        = NULL;
   engine->thr_working = false;
+
+  cleanup_magic_bitboards();
 }
