@@ -1,5 +1,6 @@
 #include "sockfish/movegen.h"
 #include <stdlib.h>
+#include <string.h>
 
 MagicEntry rook_magic[64];
 MagicEntry bishop_magic[64];
@@ -7,7 +8,7 @@ MagicEntry bishop_magic[64];
 U64 pawn_attacks[2][64];
 U64 knight_attacks[64];
 U64 king_attacks[64];
-U64 rook_magics[64]   = {0};
+U64 rook_magics[64];
 U64 bishop_magics[64] = {0};
 
 static void attack_table_for_pawn(void);
@@ -19,8 +20,41 @@ void init_attack_tables(void) {
   attack_table_for_king();
 }
 
+static U64 rook_mask(Square square);
+static U64 compute_rook_attacks(Square square, U64 occupancy);
+static U64 get_rook_attacks(Square square, U64 occupancy);
 void init_magic_bitboards(void) {
+  memcpy(rook_magics, MAGIC_NUMBERS_FOR_ROOK, sizeof(rook_magics));
+
+  /* - Initialize Rook Magic Entries - */
+  for (Square square = 0; square < 64; square++) {
+    U64 mask = rook_mask(square);
+    int bits = COUNT_BITS(mask);
+
+    rook_magic[square].mask    = mask;
+    rook_magic[square].magic   = rook_magics[square];
+    rook_magic[square].shift   = 64 - bits;
+    rook_magic[square].attacks = (U64 *)malloc((1 << bits) * sizeof(U64));
+
+    U64 occupancy = 0;
+    do {
+      U64 attacks                       = compute_rook_attacks(square, occupancy);
+      U64 index                         = (occupancy * rook_magic[square].magic) >> rook_magic[square].shift;
+      rook_magic[square].attacks[index] = attacks;
+      occupancy                         = (occupancy - mask) & mask;
+    } while (occupancy);
+  }
+
   return;
+}
+
+void cleanup_magic_bitboards(void) {
+  for (int square = 0; square < 64; square++) {
+    if (rook_magic[square].attacks) {
+      free(rook_magic[square].attacks);
+      rook_magic[square].attacks = NULL;
+    }
+  }
 }
 
 MoveList sf_generate_moves(const SF_Context *ctx) {
@@ -190,7 +224,19 @@ void gen_bishops(const BitboardSet *bbset, MoveList *movelist, Turn color) {
 }
 
 void gen_rooks(const BitboardSet *bbset, MoveList *movelist, Turn color) {
-  (void)bbset; (void)movelist; (void)color;
+  U64 rooks    = bbset->rooks[color];
+  U64 friendly = bbset->all_pieces[color];
+  U64 occupied = bbset->occupied;
+
+  while (rooks) {
+    Square rook_square = POP_LSB(&rooks);
+    U64 attacks        = get_rook_attacks(rook_square, occupied) & ~friendly;
+
+    while (attacks) {
+      Square target_square = POP_LSB(&attacks);
+      movelist->moves[movelist->count++] = create_move(rook_square, target_square);
+    }
+  }
 }
 
 void gen_queens(const BitboardSet *bbset, MoveList *movelist, Turn color) {
@@ -262,6 +308,49 @@ static void attack_table_for_king(void) {
   }
 }
 
+static U64 rook_mask(Square square) {
+  U64 mask = 0;
+  int r = square / 8, c = square % 8;
+
+  for (int i = r + 1; i <= 6; i++) mask |= (1ULL << (i * 8 + c));
+  for (int i = r - 1; i >= 1; i--) mask |= (1ULL << (i * 8 + c));
+  for (int j = c + 1; j <= 6; j++) mask |= (1ULL << (r * 8 + j));
+  for (int j = c - 1; j >= 1; j--) mask |= (1ULL << (r * 8 + j));
+
+  return mask;
+}
+
+static U64 compute_rook_attacks(Square square, U64 occupancy) {
+  U64 attacks = 0;
+  int r = square / 8, c = square % 8;
+
+  for (int i = r + 1; i < 8; i++) {
+    attacks |= (1ULL << (i * 8 + c));
+    if (occupancy & (1ULL << (i * 8 + c))) break;
+  }
+  for (int i = r - 1; i >= 0; i--) {
+    attacks |= (1ULL << (i * 8 + c));
+    if (occupancy & (1ULL << (i * 8 + c))) break;
+  }
+  for (int j = c + 1; j < 8; j++) {
+    attacks |= (1ULL << (r * 8 + j));
+    if (occupancy & (1ULL << (r * 8 + j))) break;
+  }
+  for (int j = c - 1; j >= 0; j--) {
+    attacks |= (1ULL << (r * 8 + j));
+    if (occupancy & (1ULL << (r * 8 + j))) break;
+  }
+
+  return attacks;
+}
+
+static U64 get_rook_attacks(Square square, U64 occupancy) {
+  MagicEntry *m = &rook_magic[square];
+  U64 relevant_occupancy = occupancy & m->mask;
+  U64 index = (relevant_occupancy * m->magic) >> m->shift;
+  return m->attacks[index];
+}
+
 U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
   U64 attacks = 0;
   
@@ -291,11 +380,11 @@ U64 compute_attacks(const BitboardSet *bbset, Turn enemy_color) {
 //    attacks   |= get_bishop_attacks(square, bbset->occupied);
 //  }
 
-//  Bitboard rooks = bbset->rooks[enemy_color];
-//  while (rooks) {
-//    int square = POP_LSB(&rooks);
-//    attacks   |= get_rook_attacks(square, bbset->occupied);
-//  }
+  Bitboard rooks = bbset->rooks[enemy_color];
+  while (rooks) {
+    int square = POP_LSB(&rooks);
+    attacks   |= get_rook_attacks(square, bbset->occupied);
+  }
 
 //  Bitboard queens = bbset->queens[enemy_color];
 //  while (queens) {
@@ -318,6 +407,9 @@ bool square_attacked(const BitboardSet *bbset, Square square, Turn color) {
   if (king_attacks_) return true;
 
   // incomplete: sliding pieces should also be checked.
+
+  U64 rook_attacks_ = get_rook_attacks(square, bbset->occupied) & (bbset->rooks[color] | bbset->queens[color]);
+  if (rook_attacks_) return true;
 
   return false;
 }
