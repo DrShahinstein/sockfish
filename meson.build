@@ -24,6 +24,7 @@ sources = files(
   'src/engine/sockfish/bitboard.c',
   'src/engine/sockfish/search.c',
   'src/engine/sockfish/movegen.c',
+  'src/engine/sockfish/move_helper.c',
 )
 
 executable('sockfish',
