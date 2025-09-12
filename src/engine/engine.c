@@ -43,12 +43,10 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
 
   bool ep_valid = board->ep_row >= 0 && board->ep_col >= 0;
 
-  // update sockfish's context
   make_bitboards_from_charboard(board->board, &engine->ctx);
   engine->ctx.search_color    = board->turn;
   engine->ctx.castling_rights = board->castling;
-  engine->ctx.enpassant_sq    = ep_valid ? rowcol_to_sq((7 - board->ep_row), board->ep_col) : NO_ENPASSANT;
-  // update engine attributes
+  engine->ctx.enpassant_sq    = ep_valid ? rowcol_to_sq_for_engine(board->ep_row, board->ep_col) : NO_ENPASSANT;
   engine->last_pos_hash       = new_hash;
   engine->last_turn           = board->turn;
   engine->thr_working         = true;
