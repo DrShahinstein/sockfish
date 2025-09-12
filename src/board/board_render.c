@@ -81,6 +81,41 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
       }
     }
   }
+
+  if (board->selected_piece.active) {
+    char pc = board->board[board->selected_piece.row][board->selected_piece.col];
+
+    if (pc && tex[(int)pc]) {
+      SelectedPiece s    = board->selected_piece;
+      Square selected_sq = rowcol_to_sq_for_engine(s.row, s.col);
+
+      for (int i = 0; i < board->valid_moves.count; ++i) {
+        Move mv = board->valid_moves.moves[i];
+
+        if (move_from(mv) != selected_sq) continue;
+
+        Square to = move_to(mv);
+        int row   = 7 - square_to_row(to);
+        int col   = square_to_col(to);
+        
+        /* == Rendering Dots On Valid Squares == */
+        float radius  = 8.0f;
+        float outer_r = radius + 2.5f;
+        float centerX = col * SQ + (SQ / 2.0f);
+        float centerY = row * SQ + (SQ / 2.0f);
+
+        SDL_SetRenderDrawColor(renderer, 150, 20, 20, 255);
+
+        int r_out = (int)SDL_ceilf(outer_r);
+        for (int dy = -r_out; dy <= r_out; ++dy) {
+          float dyf = (float)dy;
+          float dx = SDL_sqrtf(SDL_max(0.0f, outer_r*outer_r - dyf * dyf));
+          SDL_FRect span = {centerX - dx, centerY + dyf - 0.5f, dx * 2.0f, 1.0f};
+          SDL_RenderFillRect(renderer, &span);
+        }
+      } 
+    }
+  }
 }
 
 void render_board_cleanup(void) {
