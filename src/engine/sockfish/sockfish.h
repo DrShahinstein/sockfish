@@ -82,6 +82,9 @@ typedef struct SF_Context {
 #define square_to_col(sq)     (sq % 8)
 #define rowcol_to_sq(row,col) (row * 8 + col)
 
+// Engine: (A1 = 0) | Board/UI: (A8=0)
+#define rowcol_to_sq_for_engine(row,col) ((7-row) * 8 + col)
+
 static inline void sq_to_alg(Square sq, char buf[3]) {
   /* square (from-to) -> algebraic (e2-e4) */
   int row = square_to_row(sq);
