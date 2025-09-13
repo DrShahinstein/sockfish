@@ -4,6 +4,8 @@
 
 SDL_Texture *tex[128];
 
+static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col);
+
 void render_board_init(SDL_Renderer *renderer) {
   const char *pieces = "rnbqkpRNBQKP";
   char path[256];
@@ -156,22 +158,32 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
         bool is_drag_hovered_square = board->drag.active && mouse_row != -1 && mouse_col != -1 && row == mouse_row && col == mouse_col;
         if (is_drag_hovered_square) continue;
 
-        float radius  = 8.0f;
-        float outer_r = radius + 2.5f;
-        int   r_out   = (int)SDL_ceilf(outer_r);
-        float centerX = col * SQ + (SQ / 2.0f);
-        float centerY = row * SQ + (SQ / 2.0f);
+        bool is_capture = board->board[row][col] != 0;
+        float centerX   = col * SQ + (SQ / 2.0f);
+        float centerY   = row * SQ + (SQ / 2.0f);
 
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, 80);
 
-        for (int dy = -r_out; dy <= r_out; ++dy) {
-          float dyf      = (float)dy;
-          float dx       = SDL_sqrtf(SDL_max(0.0f, outer_r * outer_r - dyf * dyf));
-          SDL_FRect span = {centerX - dx, centerY + dyf - 0.5f, dx * 2.0f, 1.0f};
+        /* Dot */
+        if (!is_capture) {
+          float radius  = 8.0f;
+          float outer_r = radius + 2.5f;
+          int r_out     = (int)SDL_ceilf(outer_r);
 
-          SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-          SDL_RenderFillRect(renderer, &span);
-          SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+          for (int dy = -r_out; dy <= r_out; ++dy) {
+            float dyf      = (float)dy;
+            float dx       = SDL_sqrtf(SDL_max(0.0f, outer_r * outer_r - dyf * dyf));
+            SDL_FRect span = {centerX - dx, centerY + dyf - 0.5f, dx * 2.0f, 1.0f};
+
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_RenderFillRect(renderer, &span);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+          }
+        }
+
+        /* Triangles */
+        else {
+          draw_capture_indicator(renderer, row, col);
         }
       }
     }
@@ -185,4 +197,40 @@ void render_board_cleanup(void) {
       tex[i] = NULL;
     }
   }
+}
+
+static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col) {
+    float triangle_size = 15.0f;
+    SDL_FColor c        = {20.0f/255.0f, 20.0f/255.0f, 20.0f/255.0f, 80.0f/255.0f};
+    
+    SDL_Vertex vertices[12]; // 4 triangles * 3 vertices each
+    
+    float x = col * SQ;
+    float y = row * SQ;
+
+    // colors
+    for (int i = 0; i < 12; i++) {
+      vertices[i].color = c;
+    }
+
+    // top-left triangle
+    vertices[0].position = (SDL_FPoint){x, y};
+    vertices[1].position = (SDL_FPoint){x + triangle_size, y};
+    vertices[2].position = (SDL_FPoint){x, y + triangle_size};
+    // top-right triangle
+    vertices[3].position = (SDL_FPoint){x + SQ, y};
+    vertices[4].position = (SDL_FPoint){x + SQ - triangle_size, y};
+    vertices[5].position = (SDL_FPoint){x + SQ, y + triangle_size};
+    // bottom-right triangle
+    vertices[6].position = (SDL_FPoint){x + SQ, y + SQ};
+    vertices[7].position = (SDL_FPoint){x + SQ - triangle_size, y + SQ};
+    vertices[8].position = (SDL_FPoint){x + SQ, y + SQ - triangle_size};
+    // bottom-left triangle
+    vertices[9].position  = (SDL_FPoint){x, y + SQ};
+    vertices[10].position = (SDL_FPoint){x + triangle_size, y + SQ};
+    vertices[11].position = (SDL_FPoint){x, y + SQ - triangle_size};
+    
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_RenderGeometry(renderer, NULL, vertices, 12, NULL, 0);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
