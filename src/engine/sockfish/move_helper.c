@@ -32,13 +32,17 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
 
   remove_piece(&ctx->bitboard_set, from, moving_piece);
 
+  if (history->captured_piece != NO_PIECE) {
+    remove_piece(&ctx->bitboard_set, history->captured_square, history->captured_piece);
+  }
+
   if (type == MOVE_PROMOTION) {
     PieceType promoted_piece = get_promotion_piece(move, ctx->search_color);
     place_piece(&ctx->bitboard_set, to, promoted_piece);
   } else place_piece(&ctx->bitboard_set, to, moving_piece);
 
   if (history->captured_piece != NO_PIECE) {
-    remove_piece(&ctx->bitboard_set, history->captured_square, history->captured_piece);
+    place_piece(&ctx->bitboard_set, to, moving_piece);
   }
 
   if (type == MOVE_CASTLING) {
