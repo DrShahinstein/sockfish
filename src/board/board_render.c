@@ -1,8 +1,12 @@
 #include "board_render.h"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 SDL_Texture *tex[128];
+TTF_Font    *coord_font;
+SDL_Texture *coord_tex_light['z' + 1];
+SDL_Texture *coord_tex_dark ['z' + 1];
 
 static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col);
 
@@ -24,6 +28,32 @@ void render_board_init(SDL_Renderer *renderer) {
 
     if (!tex[(int)*c]) {
       SDL_LogError(SDL_LOG_CATEGORY_ERROR, "CreateTexture '%s' failed: %s\n", path, SDL_GetError());
+    }
+  }
+
+  coord_font = TTF_OpenFont(DEJAVU_SANS_MONO, 12);
+  if (!coord_font) {
+    SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_OpenFont failed: %s\n", SDL_GetError());
+    return;
+  }
+
+  SDL_Color dark_square_text_color  = {240, 217, 181, 255};
+  SDL_Color light_square_text_color = {181, 136, 99,  255};
+
+  const char *coords = "12345678abcdefgh";
+  for (const char *c = coords; *c; ++c) {
+    char text[] = {*c, '\0'};
+
+    SDL_Surface *surf_light = TTF_RenderText_Blended(coord_font, text, 0, light_square_text_color);
+    if (surf_light) {
+      coord_tex_light[(int)*c] = SDL_CreateTextureFromSurface(renderer, surf_light);
+      SDL_DestroySurface(surf_light);
+    }
+
+    SDL_Surface *surf_dark = TTF_RenderText_Blended(coord_font, text, 0, dark_square_text_color);
+    if (surf_dark) {
+      coord_tex_dark[(int)*c] = SDL_CreateTextureFromSurface(renderer, surf_dark);
+      SDL_DestroySurface(surf_dark);
     }
   }
 }
@@ -54,6 +84,31 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
       if (light) SDL_SetRenderDrawColor(renderer, 240, 217, 181, 255);
       else       SDL_SetRenderDrawColor(renderer, 181, 136, 99, 255);
       SDL_RenderFillRect(renderer, &sq);
+    }
+  }
+
+  /* Render Coordination (a1,a2...) */
+  for (int i = 0; i < 8; ++i) {
+    char rank              = '8' - i;
+    bool is_light          = ((i + 7) & 1) == 0;
+    SDL_Texture *coord_tex = is_light ? coord_tex_light[(int)rank] : coord_tex_dark[(int)rank];
+
+    if (coord_tex) {
+      float w, h;
+      SDL_GetTextureSize(coord_tex, &w, &h);
+      SDL_FRect dst = {7 * SQ + SQ - w - 2.0f, i * SQ + 2.0f, w, h};
+      SDL_RenderTexture(renderer, coord_tex, NULL, &dst);
+    }
+
+    char file = 'a' + i;
+    is_light  = ((7 + i) & 1) == 0;
+    coord_tex = is_light ? coord_tex_light[(int)file] : coord_tex_dark[(int)file];
+
+    if (coord_tex) {
+      float w, h;
+      SDL_GetTextureSize(coord_tex, &w, &h);
+      SDL_FRect dst = {i * SQ + 2.0f, 7 * SQ + SQ - h - 2.0f, w, h};
+      SDL_RenderTexture(renderer, coord_tex, NULL, &dst);
     }
   }
 
@@ -196,6 +251,22 @@ void render_board_cleanup(void) {
       SDL_DestroyTexture(tex[i]);
       tex[i] = NULL;
     }
+  }
+
+  for (int i = 0; i < 'z' + 1; ++i) {
+    if (coord_tex_light[i]) {
+      SDL_DestroyTexture(coord_tex_light[i]);
+      coord_tex_light[i] = NULL;
+    }
+    if (coord_tex_dark[i]) {
+      SDL_DestroyTexture(coord_tex_dark[i]);
+      coord_tex_dark[i] = NULL;
+    }
+  }
+
+  if (coord_font) {
+    TTF_CloseFont(coord_font);
+    coord_font = NULL;
   }
 }
 
