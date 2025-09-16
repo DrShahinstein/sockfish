@@ -79,14 +79,6 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderRect(r, &fenbtn);
   draw_text_centered(r, ui->font, "Load", FBLACK, ui->fen_loader.btn.rect);
 
-  // Reset Button
-  SDL_FRect resetbtn = ui->reset_btn.rect; 
-  SDL_SetRenderDrawColor(r, ui->reset_btn.hovered ? 170 : 200, 200, 200, 255);
-  SDL_RenderFillRect(r, &resetbtn);
-  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
-  SDL_RenderRect(r, &resetbtn);
-  draw_text_centered(r, ui->font, "Reset", FBLACK, ui->reset_btn.rect);
-
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
     SDL_FRect separator = ui->separator.rect;
@@ -136,4 +128,12 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &undobtn);
   draw_text_centered(r, ui->font, "Undo", FBLACK, ui->undo_btn.rect);
+
+  // Reset Button
+  SDL_FRect resetbtn = ui->reset_btn.rect; 
+  SDL_SetRenderDrawColor(r, ui->reset_btn.hovered ? 170 : 200, 200, 200, 255);
+  SDL_RenderFillRect(r, &resetbtn);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &resetbtn);
+  draw_text_centered(r, ui->font, "Reset", FBLACK, ui->reset_btn.rect);
 }
