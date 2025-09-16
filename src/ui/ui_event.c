@@ -95,6 +95,10 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     break;
 
   case SDL_EVENT_KEY_DOWN:
+    if (e->key.key == SDLK_LEFT) {
+      board_undo(board);
+    }
+
     if (ui->fen_loader.active) {
       SDL_Keycode kc = e->key.key;
 
