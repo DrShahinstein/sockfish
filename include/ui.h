@@ -6,8 +6,12 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
-#define UI_WIDTH 250
-#define UI_PADDING 10
+#define UI_WIDTH    250.0f
+#define UI_PADDING  10.0f
+#define UI_MIDDLE   (BOARD_SIZE + UI_WIDTH/2.0f)
+#define UI_START_X  (BOARD_SIZE + UI_PADDING)
+#define UI_START_Y  (UI_PADDING)
+#define UI_FILLER_W (UI_WIDTH - UI_PADDING * 2)
 #define ROBOTO "assets/Roboto-Regular.ttf"
 #define JBMONO "assets/JetBrainsMonoNL-Regular.ttf" 
 #define MAX_FEN 128
@@ -22,8 +26,8 @@ typedef struct {
 } UI_Element;
 
 typedef struct {
-  TTF_Font *font;
   bool active;
+  TTF_Font *font;
   UI_Element area;
   UI_Element btn;
   char input[MAX_FEN];
@@ -32,13 +36,13 @@ typedef struct {
 
 typedef struct {
   bool engine_on;
+  TTF_Font *font;
   UI_Element engine_toggler;
-  UI_Element undo_btn;
-  UI_Element turn_changer;
-  UI_Element reset_btn;
   UI_FenLoader fen_loader;
   UI_Element separator;
-  TTF_Font *font;
+  UI_Element turn_changer;
+  UI_Element undo_btn;
+  UI_Element reset_btn;
 } UI_State;
 
 void ui_init(UI_State *ui);
