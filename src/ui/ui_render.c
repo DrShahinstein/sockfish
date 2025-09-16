@@ -3,18 +3,18 @@
 #include <SDL3/SDL.h>
 
 void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState *board) {
-  // panel
+  // Panel
   SDL_FRect panel = {BOARD_SIZE, 0, UI_WIDTH, BOARD_SIZE};
   SDL_SetRenderDrawColor(r, 40, 44, 52, 255);
   SDL_RenderFillRect(r, &panel);
 
-  // toggler
+  // Engine Toggler
   SDL_FRect tog = ui->engine_toggler.rect;
   SDL_SetRenderDrawColor(r, ui->engine_on ? 100 : 200, ui->engine_on ? 200 : 100, 100, 255);
   SDL_RenderFillRect(r, &tog);
   draw_text(r, ui->font, ui->engine_on ? "Engine: ON" : "Engine: OFF", FWHITE, tog.x + tog.w + 10, tog.y + 5);
 
-  /* --- fen loader --- */
+  /* --- FEN Input Area --- */
   SDL_FRect fen = ui->fen_loader.area.rect;
   SDL_SetRenderDrawColor(r, 255, 255, 255, 0);
   SDL_RenderFillRect(r, &fen);
@@ -71,6 +71,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     SDL_RenderFillRect(r, &caret);
   }
 
+  // FEN Button
   SDL_FRect fenbtn = ui->fen_loader.btn.rect;
   SDL_SetRenderDrawColor(r, ui->fen_loader.btn.hovered ? 170 : 200, 200, 200, 255);
   SDL_RenderFillRect(r, &fenbtn);
@@ -78,6 +79,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderRect(r, &fenbtn);
   draw_text_centered(r, ui->font, "Load", FBLACK, ui->fen_loader.btn.rect);
 
+  // Reset Button
   SDL_FRect resetbtn = ui->reset_btn.rect; 
   SDL_SetRenderDrawColor(r, ui->reset_btn.hovered ? 170 : 200, 200, 200, 255);
   SDL_RenderFillRect(r, &resetbtn);
@@ -85,7 +87,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderRect(r, &resetbtn);
   draw_text_centered(r, ui->font, "Reset", FBLACK, ui->reset_btn.rect);
 
-  /* --- sockfish engine --- */
+  /* --- Sockfish Engine --- */
   if (ui->engine_on) {
     SDL_FRect separator = ui->separator.rect;
     SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
@@ -126,4 +128,12 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
       draw_text(r, ui->font, move_str, FWHITE, x, y);
     }
   }
+
+  // Undo Button
+  SDL_FRect undobtn = ui->undo_btn.rect;
+  SDL_SetRenderDrawColor(r, ui->undo_btn.hovered ? 170 : 200, 200, 200, 255);
+  SDL_RenderFillRect(r, &undobtn);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &undobtn);
+  draw_text_centered(r, ui->font, "Undo", FBLACK, ui->undo_btn.rect);
 }
