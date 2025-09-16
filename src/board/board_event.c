@@ -113,6 +113,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         bool valid = check_valid(board, move);
 
         if (valid) {
+          board_save_history(board, fr, fc, tr, tc);
+
           if (is_castling_move(board, move)) {
             perform_castling(board, move);
             board->turn = (board->turn == WHITE) ? BLACK : WHITE;
