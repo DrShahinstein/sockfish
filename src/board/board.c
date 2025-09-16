@@ -26,12 +26,14 @@ void board_init(BoardState *board) {
   board->selected_piece.active = false;
   board->selected_piece.row    = -1;
   board->selected_piece.col    = -1;
+  board->history_count         = 0;
 
   load_fen(START_FEN, board);
 }
 
 void load_board(const char *fen, BoardState *board) {
-  board->promo.active = false;
+  board->promo.active  = false;
+  board->history_count = 0;
   SDL_memset(board->board, 0, sizeof(board->board));
   load_fen(fen, board);
 }
@@ -89,6 +91,71 @@ void load_fen(const char *fen, BoardState *board) {
     } else {
       if (col < 8) board->board[row][col++] = *p;
     }
+  }
+}
+
+void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col) {
+  if (board->history_count >= MAX_HISTORY)
+    return;
+
+  BoardMoveHistory *h = &board->history[board->history_count++];
+  h->from_row      = from_row;
+  h->from_col      = from_col;
+  h->to_row        = to_row;
+  h->to_col        = to_col;
+  h->moving_piece  = board->board[from_row][from_col];
+  h->prev_castling = board->castling;
+  h->prev_ep_row   = board->ep_row;
+  h->prev_ep_col   = board->ep_col;
+  h->prev_turn     = board->turn;
+
+  char moving_piece = board->board[from_row][from_col];
+  bool en_passant   = (moving_piece == 'p' || moving_piece == 'P') && from_col != to_col && board->board[to_row][to_col] == 0 && to_row == board->ep_row && to_col == board->ep_col;
+  if (en_passant) {
+    int captured_row  = board->turn == WHITE ? (to_row + 1) : (to_row - 1);
+    h->captured_piece = board->board[captured_row][to_col];
+    h->captured_row   = captured_row;
+    h->captured_col   = to_col;
+  } else {
+    h->captured_piece = board->board[to_row][to_col];
+    h->captured_row   = to_row;
+    h->captured_col   = to_col;
+  }
+}
+
+void board_undo(BoardState *board) {
+  if (board->history_count <= 0)
+    return;
+
+  BoardMoveHistory *h = &board->history[--board->history_count];
+
+  board->turn                                    = h->prev_turn;
+  board->castling                                = h->prev_castling;
+  board->ep_row                                  = h->prev_ep_row;
+  board->ep_col                                  = h->prev_ep_col;
+  board->board[h->from_row][h->from_col]         = h->moving_piece;
+  board->board[h->captured_row][h->captured_col] = h->captured_piece;
+
+  char moving_piece = h->moving_piece;
+  bool castling     = (moving_piece == 'K' || moving_piece == 'k') && SDL_abs(h->from_col - h->to_col) == 2;
+  if (castling) {
+    int rook_from_col, rook_to_col;
+
+    if (h->to_col > h->from_col) {
+      rook_from_col = h->to_col - 1;
+      rook_to_col   = 7;
+    } else {
+      rook_from_col = h->to_col + 1;
+      rook_to_col   = 0;
+    }
+    
+    char rook = (moving_piece == 'K') ? 'R' : 'r';
+    board->board[h->from_row][rook_to_col]   = rook;
+    board->board[h->from_row][rook_from_col] = 0;
+  }
+
+  if (board->ep_row && board->ep_col) {
+    board->board[board->ep_row][board->ep_col] = 0;
   }
 }
 
