@@ -17,6 +17,8 @@ void ui_init(UI_State *ui) {
   ui->fen_loader.btn.rect     = (SDL_FRect){ui->fen_loader.area.rect.x,ui->fen_loader.area.rect.y+100,100,30};
   ui->fen_loader.btn.hovered  = false;
   ui->reset_btn.rect          = (SDL_FRect){ui->fen_loader.area.rect.x+ui->fen_loader.area.rect.w-100,ui->fen_loader.btn.rect.y,100,ui->fen_loader.btn.rect.h};
+  ui->undo_btn.rect           = (SDL_FRect){BOARD_SIZE + UI_WIDTH/2 - 50, BOARD_SIZE-50, 100, 30};
+  ui->undo_btn.hovered        = false;
   ui->reset_btn.hovered       = false;
   ui->separator.rect          = (SDL_FRect){ui->fen_loader.area.rect.x,ui->reset_btn.rect.y+80,ui->fen_loader.area.rect.w,4};
   ui->turn_changer.rect       = (SDL_FRect){ui->fen_loader.area.rect.x,ui->separator.rect.y+25,30,30};
