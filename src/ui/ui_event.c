@@ -18,7 +18,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     bool over_fen_area  = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
     bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
     bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
-    bool over_any       = over_board || over_toggler || over_fen_btn || over_reset_btn || over_tchanger;
+    bool over_undo_btn  = cursor_in_rect(mx, my, &ui->undo_btn.rect);
+    bool over_any       = over_board || over_toggler || over_fen_btn || over_reset_btn || over_tchanger || over_undo_btn;
 
     if (over_any != last_over) {
       SDL_SetCursor(over_any ? cursor_pointer : cursor_default);
@@ -35,6 +36,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     ui->fen_loader.area.hovered = over_fen_area;
     ui->fen_loader.btn.hovered  = over_fen_btn;
     ui->reset_btn.hovered       = over_reset_btn;
+    ui->undo_btn.hovered        = over_undo_btn;
     break;
 
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -56,16 +58,26 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
 
-      if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) ui->engine_on = !ui->engine_on;
-
-      if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
-        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, board);
+      if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) {
+        ui->engine_on = !ui->engine_on;
       }
 
-      if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) load_board(START_FEN, board);
+      if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
+        if (ui->fen_loader.length > 0) {
+          load_board(ui->fen_loader.input, board);
+        }
+      }
+
+      if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) {
+        load_board(START_FEN, board);
+      }
+
+      if (cursor_in_rect(mx, my, &ui->undo_btn.rect)) {
+        board_undo(board);
+      }
 
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
-        if (board->turn == WHITE) board->turn = BLACK;
+        if  (board->turn == WHITE) board->turn = BLACK;
         else board->turn = WHITE;
       } 
     }
