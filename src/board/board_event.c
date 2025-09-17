@@ -91,6 +91,12 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         board->turn = (board->turn == WHITE) ? BLACK : WHITE;
         board->promo.active = false;
         board->drag.active  = false;
+
+        // help history to follow up promoted piece
+        if (board->undo_count > 0) {
+          board->history[board->undo_count - 1].promoted_piece = piece;
+        }
+
         return;
       }
 
