@@ -16,6 +16,7 @@ typedef struct {
   int to_row;
   int to_col;
   char moving_piece;
+  char promoted_piece;
   char captured_piece;
   int captured_row;
   int captured_col;
