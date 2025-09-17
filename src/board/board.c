@@ -141,6 +141,7 @@ void board_undo(BoardState *board) {
   board->ep_col                                  = h->ep_col;
   board->board[h->from_row][h->from_col]         = h->moving_piece;
   board->board[h->captured_row][h->captured_col] = h->captured_piece;
+  board->selected_piece.active                   = false;
 
   char moving_piece = h->moving_piece;
 
@@ -179,6 +180,7 @@ void board_redo(BoardState *board) {
   board->board[h->to_row][h->to_col]     = moving_piece;
   board->board[h->from_row][h->from_col] = 0;
   board->turn                            = (h->turn == WHITE) ? BLACK : WHITE;
+  board->selected_piece.active           = false;
 
   bool castling = (moving_piece == 'K' || moving_piece == 'k') && SDL_abs(h->from_col - h->to_col) == 2;
   if (castling) {
@@ -202,10 +204,18 @@ void board_redo(BoardState *board) {
     board->board[h->captured_row][h->captured_col] = 0;
   }
 
+  bool double_pawn_push = (moving_piece == 'p' || moving_piece == 'P') && SDL_abs(h->from_row - h->to_row) == 2;
+  if (double_pawn_push) {
+    board->ep_row = (h->from_row + h->to_row) / 2;
+    board->ep_col = h->from_col;
+  } else {
+    board->ep_row = NO_ENPASSANT;
+    board->ep_col = NO_ENPASSANT;
+  }
+
   /*
   
   TODO:
-  - En-Passant rights need to be updated.
   - Promoted pieces seem to be as pawns. Promotions should also be handled.
   
   */
