@@ -19,7 +19,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
     bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
     bool over_undo_btn  = cursor_in_rect(mx, my, &ui->undo_btn.rect);
-    bool over_any       = over_board || over_toggler || over_fen_btn || over_reset_btn || over_tchanger || over_undo_btn;
+    bool over_redo_btn  = cursor_in_rect(mx, my, &ui->redo_btn.rect);
+    bool over_any       = over_board || over_toggler || over_fen_btn || over_reset_btn || over_tchanger || over_undo_btn || over_redo_btn;
 
     if (over_any != last_over) {
       SDL_SetCursor(over_any ? cursor_pointer : cursor_default);
@@ -37,6 +38,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     ui->fen_loader.btn.hovered  = over_fen_btn;
     ui->reset_btn.hovered       = over_reset_btn;
     ui->undo_btn.hovered        = over_undo_btn;
+    ui->redo_btn.hovered        = over_redo_btn;
     break;
 
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -76,6 +78,10 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
         board_undo(board);
       }
 
+      if (cursor_in_rect(mx, my, &ui->redo_btn.rect)) {
+        board_redo(board);
+      }
+
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
         if  (board->turn == WHITE) board->turn = BLACK;
         else board->turn = WHITE;
@@ -95,10 +101,6 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     break;
 
   case SDL_EVENT_KEY_DOWN:
-    if (e->key.key == SDLK_LEFT) {
-      board_undo(board);
-    }
-
     if (ui->fen_loader.active) {
       SDL_Keycode kc = e->key.key;
 
@@ -131,6 +133,15 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
         }
       }
     }
+
+    else if (e->key.key == SDLK_LEFT) {
+      board_undo(board);
+    }
+
+    else if (e->key.key == SDLK_RIGHT) {
+      board_redo(board);
+    }
+
     break;
   }
 }
