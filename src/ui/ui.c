@@ -19,9 +19,11 @@ void ui_init(UI_State *ui) {
   ui->separator.rect          = (SDL_FRect){UI_START_X, ui->fen_loader.btn.rect.y + 50, UI_FILLER_W, 4};
   ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->separator.rect.y + 25, 30, 30};
   ui->turn_changer.hovered    = false;
-  ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-50, BOARD_SIZE-80, 100, 30};
+  ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
   ui->undo_btn.hovered        = false;
-  ui->reset_btn.rect          = (SDL_FRect){UI_MIDDLE-50, BOARD_SIZE-40, 100, 30};
+  ui->redo_btn.rect           = (SDL_FRect){UI_MIDDLE+4,   BOARD_SIZE-80, 100, 30};
+  ui->redo_btn.hovered        = false;
+  ui->reset_btn.rect          = (SDL_FRect){UI_MIDDLE-50,  BOARD_SIZE-40, 100, 30};
   ui->reset_btn.hovered       = false;
 
   if (!ui->font)            SDL_Log("Could not load font: %s", SDL_GetError());
