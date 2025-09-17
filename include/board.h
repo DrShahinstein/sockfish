@@ -19,10 +19,10 @@ typedef struct {
   char captured_piece;
   int captured_row;
   int captured_col;
-  uint8_t prev_castling;
-  int prev_ep_row;
-  int prev_ep_col;
-  Turn prev_turn;
+  uint8_t castling;
+  int ep_row;
+  int ep_col;
+  Turn turn;
 } BoardMoveHistory;
 
 typedef struct {
@@ -57,8 +57,7 @@ typedef struct BoardState {
   Promotion promo;
   int ep_row; // en-passant row (-1 for none)
   int ep_col; // en-passant col (-1 for none)
-  BoardMoveHistory history[MAX_HISTORY];
-  int history_count;
+  BoardMoveHistory history[MAX_HISTORY]; int undo_count; int redo_count;
 } BoardState ;
 
 void load_fen(const char *fen, BoardState *board);
@@ -66,3 +65,4 @@ void load_board(const char *fen, BoardState *board);
 void board_init(BoardState *board);
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col);
 void board_undo(BoardState *board);
+void board_redo(BoardState *board);
