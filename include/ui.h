@@ -42,6 +42,7 @@ typedef struct {
   UI_Element separator;
   UI_Element turn_changer;
   UI_Element undo_btn;
+  UI_Element redo_btn;
   UI_Element reset_btn;
 } UI_State;
 
