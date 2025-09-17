@@ -129,6 +129,14 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderRect(r, &undobtn);
   draw_text_centered(r, ui->font, "Undo", FBLACK, ui->undo_btn.rect);
 
+  // Redo Button
+  SDL_FRect redobtn = ui->redo_btn.rect;
+  SDL_SetRenderDrawColor(r, ui->redo_btn.hovered ? 170 : 200, 200, 200, 255);
+  SDL_RenderFillRect(r, &redobtn);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &redobtn);
+  draw_text_centered(r, ui->font, "Redo", FBLACK, ui->redo_btn.rect);
+
   // Reset Button
   SDL_FRect resetbtn = ui->reset_btn.rect; 
   SDL_SetRenderDrawColor(r, ui->reset_btn.hovered ? 170 : 200, 200, 200, 255);
