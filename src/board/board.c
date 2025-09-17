@@ -112,6 +112,7 @@ void board_save_history(BoardState *board, int from_row, int from_col, int to_ro
   h->ep_row           = board->ep_row;
   h->ep_col           = board->ep_col;
   h->turn             = board->turn;
+  h->promoted_piece   = 0;
 
   char moving_piece = board->board[from_row][from_col];
 
@@ -177,8 +178,8 @@ void board_redo(BoardState *board) {
 
   BoardMoveHistory *h                    = &board->history[board->undo_count - 1];
   char moving_piece                      = h->moving_piece;
-  board->board[h->to_row][h->to_col]     = moving_piece;
   board->board[h->from_row][h->from_col] = 0;
+  board->board[h->to_row][h->to_col]     = (h->promoted_piece) ? h->promoted_piece : moving_piece;;
   board->turn                            = (h->turn == WHITE) ? BLACK : WHITE;
   board->selected_piece.active           = false;
 
@@ -212,13 +213,6 @@ void board_redo(BoardState *board) {
     board->ep_row = NO_ENPASSANT;
     board->ep_col = NO_ENPASSANT;
   }
-
-  /*
-  
-  TODO:
-  - Promoted pieces seem to be as pawns. Promotions should also be handled.
-  
-  */
 }
 
 static uint8_t parse_castling(const char *str) {
