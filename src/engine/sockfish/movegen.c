@@ -94,11 +94,11 @@ MoveList sf_generate_moves(const SF_Context *ctx) {
 
   SF_Context temp_ctx = *ctx;
 
-  for (int i = 0; i < pseudo_moves.count; i++) {
+  for (int i = 0; i < pseudo_moves.count; ++i) {
     MoveHistory history;
     make_move(&temp_ctx, pseudo_moves.moves[i], &history);
 
-    if (!king_in_check(&temp_ctx, ctx->search_color)) {
+    if (!king_in_check(&temp_ctx.bitboard_set, ctx->search_color)) {
       legal_moves.moves[legal_moves.count++] = pseudo_moves.moves[i];
     }
 
