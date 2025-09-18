@@ -15,30 +15,40 @@
 #define ROBOTO "assets/Roboto-Regular.ttf"
 #define JBMONO "assets/JetBrainsMonoNL-Regular.ttf" 
 #define MAX_FEN 128
-#define FEN_PLACEHOLDER "Enter FEN here..."
+#define MAX_PGN 8192
+#define FEN_PLACEHOLDER "Paste FEN here..."
+#define PGN_PLACEHOLDER "Paste PGN here..."
 #define FWHITE (SDL_Color){255,255,255,255}
 #define FBLACK (SDL_Color){0,0,0,255}
 #define FGRAY  (SDL_Color){150,150,150,255}
+
+typedef struct {
+  TTF_Font *roboto;
+  TTF_Font *jbmono;
+} FontMenu;
 
 typedef struct {
   SDL_FRect rect;
   bool hovered;
 } UI_Element;
 
+enum InputType { FEN, PGN };
 typedef struct {
   bool active;
-  TTF_Font *font;
+  enum InputType type;
   UI_Element area;
   UI_Element btn;
-  char input[MAX_FEN];
+  char *buf;
+  char placeholder[32];
   size_t length;
-} UI_FenLoader;
+} UI_TextInput;
 
 typedef struct {
   bool engine_on;
-  TTF_Font *font;
+  FontMenu fonts;
   UI_Element engine_toggler;
-  UI_FenLoader fen_loader;
+  UI_TextInput fen_loader;
+  UI_TextInput pgn_loader;
   UI_Element separator;
   UI_Element turn_changer;
   UI_Element undo_btn;
