@@ -66,7 +66,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
         if (ui->fen_loader.length > 0) {
-          load_board(ui->fen_loader.input, board);
+          load_board(ui->fen_loader.buf, board);
         }
       }
 
@@ -94,8 +94,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       const char *txt = e->text.text;
       size_t avail = MAX_FEN - ui->fen_loader.length - 1;
       if (avail > 0) {
-        SDL_strlcat(ui->fen_loader.input, txt, avail);
-        ui->fen_loader.length = SDL_strlen(ui->fen_loader.input);
+        SDL_strlcat(ui->fen_loader.buf, txt, avail);
+        ui->fen_loader.length = SDL_strlen(ui->fen_loader.buf);
       }
     }
     break;
@@ -107,16 +107,16 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       if (kc == SDLK_BACKSPACE) {
         if (ui->fen_loader.length > 0) {
           ui->fen_loader.length--;
-          ui->fen_loader.input[ui->fen_loader.length] = '\0';
+          ui->fen_loader.buf[ui->fen_loader.length] = '\0';
         }
       }
 
       else if (kc == SDLK_RETURN || kc == SDLK_KP_ENTER) {
-        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.input, board);
+        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.buf, board);
       }
 
       else if (kc == SDLK_A && (SDL_GetModState() & SDL_KMOD_CTRL)) {
-        ui->fen_loader.input[0] = '\0';
+        ui->fen_loader.buf[0] = '\0';
         ui->fen_loader.length = 0;
       }
       
@@ -126,8 +126,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
         if (clip) {
           size_t avail = MAX_FEN - ui->fen_loader.length - 1;
           if (avail > 0) {
-            SDL_strlcat(ui->fen_loader.input, clip, avail);
-            ui->fen_loader.length = SDL_strlen(ui->fen_loader.input);
+            SDL_strlcat(ui->fen_loader.buf, clip, avail);
+            ui->fen_loader.length = SDL_strlen(ui->fen_loader.buf);
           }
           SDL_free(clip);
         }
