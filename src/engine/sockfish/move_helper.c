@@ -139,10 +139,10 @@ void unmake_move(SF_Context *ctx, const MoveHistory *history) {
   ctx->enpassant_sq    = history->prev_ep_sq;
 }
 
-bool king_in_check(const SF_Context *ctx, Turn color) {
-  Square king_sq = GET_LSB(ctx->bitboard_set.kings[color]);
+bool king_in_check(const BitboardSet *bbset, Turn color) {
+  Square king_sq = GET_LSB(bbset->kings[color]);
   Turn opponent  = !color;
-  U64 attacks    = compute_attacks(&ctx->bitboard_set, opponent);
+  U64 attacks    = compute_attacks(bbset, opponent);
   return (attacks & (1ULL << king_sq)) != 0;
 }
 
