@@ -12,7 +12,7 @@ typedef struct {
 
 void make_move(SF_Context *ctx, Move move, MoveHistory *history);
 void unmake_move(SF_Context *ctx, const MoveHistory *history);
-bool king_in_check(const SF_Context *ctx, Turn color);
+bool king_in_check(const BitboardSet *bbset, Turn color);
 
 /*
 
