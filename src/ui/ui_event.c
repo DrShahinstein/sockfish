@@ -2,6 +2,9 @@
 #include "cursor.h"
 #include <SDL3/SDL.h>
 
+static void handle_text_input_activation(UI_TextInput *ui_text_input, float mx, float my);
+static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max_len, void (*load_callback)(const char *, BoardState *), BoardState *board);
+
 void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
   float mx, my;
   static bool last_over;
@@ -52,14 +55,8 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     if (e->button.button == SDL_BUTTON_LEFT) {
       SDL_GetMouseState(&mx, &my);
 
-      if (cursor_in_rect(mx, my, &ui->fen_loader.area.rect)) {
-        ui->fen_loader.active = true;
-        SDL_StartTextInput(SDL_GetKeyboardFocus());
-      }
-      else if (ui->fen_loader.active) {
-        ui->fen_loader.active = false;
-        SDL_StopTextInput(SDL_GetKeyboardFocus());
-      }
+      handle_text_input_activation(&ui->fen_loader, mx, my);
+      handle_text_input_activation(&ui->pgn_loader, mx, my);
     }
     break;
 
@@ -73,12 +70,18 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
         if (ui->fen_loader.length > 0) {
-          load_board(ui->fen_loader.buf, board);
+          load_fen(ui->fen_loader.buf, board);
+        }
+      }
+
+      if (cursor_in_rect(mx, my, &ui->pgn_loader.btn.rect)) {
+        if (ui->pgn_loader.length > 0) {
+          load_pgn(ui->pgn_loader.buf, board);
         }
       }
 
       if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) {
-        load_board(START_FEN, board);
+        load_fen(START_FEN, board);
       }
 
       if (cursor_in_rect(mx, my, &ui->undo_btn.rect)) {
@@ -100,48 +103,31 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     if (ui->fen_loader.active) {
       const char *txt = e->text.text;
       size_t avail = MAX_FEN - ui->fen_loader.length - 1;
+
       if (avail > 0) {
         SDL_strlcat(ui->fen_loader.buf, txt, avail);
         ui->fen_loader.length = SDL_strlen(ui->fen_loader.buf);
       }
     }
+
+    else if (ui->pgn_loader.active) {
+      const char *txt = e->text.text;
+      size_t avail = MAX_PGN - ui->pgn_loader.length - 1;
+
+      if (avail > 0) {
+        SDL_strlcat(ui->pgn_loader.buf, txt, avail);
+        ui->pgn_loader.length = SDL_strlen(ui->pgn_loader.buf);
+      }
+    }
     break;
 
   case SDL_EVENT_KEY_DOWN:
-    if (ui->fen_loader.active) {
-      SDL_Keycode kc = e->key.key;
+    handle_text_input_keys(e, &ui->fen_loader, MAX_FEN, load_fen, board);
+    handle_text_input_keys(e, &ui->pgn_loader, MAX_PGN, load_pgn, board);
 
-      if (kc == SDLK_BACKSPACE) {
-        if (ui->fen_loader.length > 0) {
-          ui->fen_loader.length--;
-          ui->fen_loader.buf[ui->fen_loader.length] = '\0';
-        }
-      }
+    if (&ui->fen_loader.active || &ui->pgn_loader.active) return;
 
-      else if (kc == SDLK_RETURN || kc == SDLK_KP_ENTER) {
-        if (ui->fen_loader.length > 0) load_board(ui->fen_loader.buf, board);
-      }
-
-      else if (kc == SDLK_A && (SDL_GetModState() & SDL_KMOD_CTRL)) {
-        ui->fen_loader.buf[0] = '\0';
-        ui->fen_loader.length = 0;
-      }
-      
-      else if (kc == SDLK_V && (SDL_GetModState() & SDL_KMOD_CTRL)) {
-        char *clip = SDL_GetClipboardText();
-
-        if (clip) {
-          size_t avail = MAX_FEN - ui->fen_loader.length - 1;
-          if (avail > 0) {
-            SDL_strlcat(ui->fen_loader.buf, clip, avail);
-            ui->fen_loader.length = SDL_strlen(ui->fen_loader.buf);
-          }
-          SDL_free(clip);
-        }
-      }
-    }
-
-    else if (e->key.key == SDLK_LEFT) {
+    if (e->key.key == SDLK_LEFT) {
       board_undo(board);
     }
 
@@ -149,6 +135,62 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       board_redo(board);
     }
 
+    break;
+  }
+}
+
+static void handle_text_input_activation(UI_TextInput *ui_text_input, float mx, float my) {
+  if (cursor_in_rect(mx, my, &ui_text_input->area.rect)) {
+    ui_text_input->active = true;
+    SDL_StartTextInput(SDL_GetKeyboardFocus());
+  } else if (ui_text_input->active) {
+    ui_text_input->active = false;
+    SDL_StopTextInput(SDL_GetKeyboardFocus());
+  }
+}
+
+static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max_len, void (*load_callback)(const char *, BoardState *), BoardState *board) {
+  if (!input->active)
+    return;
+
+  SDL_Keycode kc = e->key.key;
+  SDL_Keymod mod = SDL_GetModState();
+
+  switch (kc) {
+  case SDLK_BACKSPACE:
+    if (input->length > 0) {
+      input->length--;
+      input->buf[input->length] = '\0';
+    }
+    break;
+
+  case SDLK_RETURN:
+  case SDLK_KP_ENTER:
+    if (input->length > 0 && load_callback) {
+      load_callback(input->buf, board);
+    }
+    break;
+
+  case SDLK_A:
+    if (mod & SDL_KMOD_CTRL) {
+      input->buf[0] = '\0';
+      input->length = 0;
+    }
+    break;
+
+  case SDLK_V:
+    if (mod & SDL_KMOD_CTRL) {
+      char *clip = SDL_GetClipboardText();
+
+      if (clip) {
+        size_t avail = max_len - input->length - 1;
+        if (avail > 0) {
+          SDL_strlcat(input->buf, clip, avail);
+          input->length = SDL_strlen(input->buf);
+        }
+        SDL_free(clip);
+      }
+    }
     break;
   }
 }
