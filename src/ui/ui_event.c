@@ -125,7 +125,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
     handle_text_input_keys(e, &ui->fen_loader, MAX_FEN, load_fen, board);
     handle_text_input_keys(e, &ui->pgn_loader, MAX_PGN, load_pgn, board);
 
-    if (&ui->fen_loader.active || &ui->pgn_loader.active) return;
+    if (ui->fen_loader.active || ui->pgn_loader.active) return;
 
     if (e->key.key == SDLK_LEFT) {
       board_undo(board);
