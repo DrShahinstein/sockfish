@@ -32,20 +32,15 @@ void board_init(BoardState *board) {
   load_fen(START_FEN, board);
 }
 
-void load_board(const char *fen, BoardState *board) {
+void load_fen(const char *fen, BoardState *board) {
+  SDL_memset(board->board, 0, sizeof(board->board));
+  board->turn         = WHITE;
+  board->castling     = 0;
+  board->ep_row       = NO_ENPASSANT;
+  board->ep_col       = NO_ENPASSANT;
   board->promo.active = false;
   board->undo_count   = 0;
   board->redo_count   = 0;
-  SDL_memset(board->board, 0, sizeof(board->board));
-  load_fen(fen, board);
-}
-
-void load_fen(const char *fen, BoardState *board) {
-  SDL_memset(board->board, 0, sizeof(board->board));
-  board->turn     = WHITE;
-  board->castling = 0;
-  board->ep_row   = NO_ENPASSANT;
-  board->ep_col   = NO_ENPASSANT;
 
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
   int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
@@ -94,6 +89,16 @@ void load_fen(const char *fen, BoardState *board) {
       if (col < 8) board->board[row][col++] = *p;
     }
   }
+}
+
+void load_pgn(const char *pgn, BoardState *board) {
+  (void)board;
+  /*
+  codecode
+  codecode
+  */
+  SDL_Log("Load PGN!!!");
+  SDL_Log("%s\n--", pgn);
 }
 
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col) {
