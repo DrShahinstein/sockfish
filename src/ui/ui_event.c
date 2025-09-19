@@ -5,37 +5,44 @@
 void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
   float mx, my;
   static bool last_over;
-  static bool last_over_fen_area;
+  static bool last_over_text_area;
 
   switch (e->type) {
   case SDL_EVENT_MOUSE_MOTION:
     mx = (float)e->motion.x;
     my = (float)e->motion.y;
-   
+
     bool over_board     = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
     bool over_toggler   = cursor_in_rect(mx, my, &ui->engine_toggler.rect);
     bool over_tchanger  = cursor_in_rect(mx, my, &ui->turn_changer.rect) && ui->engine_on;
-    bool over_fen_area  = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
     bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
+    bool over_pgn_btn   = cursor_in_rect(mx, my, &ui->pgn_loader.btn.rect);
     bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
     bool over_undo_btn  = cursor_in_rect(mx, my, &ui->undo_btn.rect);
     bool over_redo_btn  = cursor_in_rect(mx, my, &ui->redo_btn.rect);
-    bool over_any       = over_board || over_toggler || over_fen_btn || over_reset_btn || over_tchanger || over_undo_btn || over_redo_btn;
+    bool over_any       = over_board     || over_toggler  || over_fen_btn  || over_pgn_btn   ||
+                          over_reset_btn || over_tchanger || over_undo_btn || over_redo_btn;
+
+    bool over_fen_area      = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
+    bool over_pgn_area      = cursor_in_rect(mx, my, &ui->pgn_loader.area.rect);
+    bool over_any_text_area = over_fen_area || over_pgn_area;
 
     if (over_any != last_over) {
       SDL_SetCursor(over_any ? cursor_pointer : cursor_default);
       last_over = over_any;
     }
 
-    if (over_fen_area != last_over_fen_area) {
-      SDL_SetCursor(over_fen_area ? cursor_text : cursor_default);
-      last_over_fen_area = over_fen_area;
+    if (over_any_text_area != last_over_text_area) {
+      SDL_SetCursor(over_any_text_area ? cursor_text : cursor_default);
+      last_over_text_area = over_any_text_area;
     }
 
     ui->engine_toggler.hovered  = over_toggler;
     ui->turn_changer.hovered    = over_tchanger;
     ui->fen_loader.area.hovered = over_fen_area;
     ui->fen_loader.btn.hovered  = over_fen_btn;
+    ui->pgn_loader.area.hovered = over_pgn_area;
+    ui->pgn_loader.btn.hovered  = over_pgn_btn;
     ui->reset_btn.hovered       = over_reset_btn;
     ui->undo_btn.hovered        = over_undo_btn;
     ui->redo_btn.hovered        = over_redo_btn;
