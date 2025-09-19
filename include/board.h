@@ -61,9 +61,9 @@ typedef struct BoardState {
   BoardMoveHistory history[MAX_HISTORY]; int undo_count; int redo_count;
 } BoardState ;
 
-void load_fen(const char *fen, BoardState *board);
-void load_board(const char *fen, BoardState *board);
 void board_init(BoardState *board);
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col);
 void board_undo(BoardState *board);
 void board_redo(BoardState *board);
+void load_fen(const char *fen, BoardState *board);
+void load_pgn(const char *pgn, BoardState *board);
