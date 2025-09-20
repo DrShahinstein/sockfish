@@ -1,4 +1,5 @@
 #include "board.h"
+#include "engine.h" /* make_bitboards_from_charboard() */
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
@@ -28,8 +29,27 @@ void board_init(BoardState *board) {
   board->selected_piece.col    = -1;
   board->undo_count            = 0;
   board->redo_count            = 0;
+  board->board_changed         = true;
 
   load_fen(START_FEN, board);
+}
+
+void board_update_valid_moves(BoardState *b) {
+  if (!b->board_changed)
+    return;
+
+  SF_Context ctx;
+  bool ep_valid = b->ep_row >= 0 && b->ep_col >= 0;
+
+  make_bitboards_from_charboard((const char (*)[8]) b->board, &ctx);
+  ctx.search_color    = b->turn;
+  ctx.castling_rights = b->castling;
+  ctx.enpassant_sq    = ep_valid ? rowcol_to_sq_for_engine(b->ep_row, b->ep_col) : NO_ENPASSANT;
+
+  MoveList valids = sf_generate_moves(&ctx);
+
+  b->valid_moves   = valids;
+  b->board_changed = false;
 }
 
 void load_fen(const char *fen, BoardState *board) {
@@ -89,6 +109,8 @@ void load_fen(const char *fen, BoardState *board) {
       if (col < 8) board->board[row][col++] = *p;
     }
   }
+
+  board->board_changed = true;
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
@@ -99,6 +121,8 @@ void load_pgn(const char *pgn, BoardState *board) {
   */
   SDL_Log("Load PGN!!!");
   SDL_Log("%s\n--", pgn);
+
+  // board->board_changed = true;
 }
 
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col) {
@@ -172,6 +196,8 @@ void board_undo(BoardState *board) {
   if (en_passant) {
     board->board[board->ep_row][board->ep_col] = 0;
   }
+
+  board->board_changed = true;
 }
 
 void board_redo(BoardState *board) {
@@ -218,6 +244,8 @@ void board_redo(BoardState *board) {
     board->ep_row = NO_ENPASSANT;
     board->ep_col = NO_ENPASSANT;
   }
+
+  board->board_changed = true;
 }
 
 static uint8_t parse_castling(const char *str) {
