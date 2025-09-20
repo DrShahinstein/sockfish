@@ -11,31 +11,31 @@ void board_init(BoardState *board) {
   SDL_memset(&board->promo,        0, sizeof(board->promo));
   SDL_memset(board->promo.choices, 0, sizeof(board->promo.choices));
   SDL_memset(&board->valid_moves,  0, sizeof(board->valid_moves));
-  board->castling              = 0;
-  board->turn                  = WHITE;
-  board->ep_row                = NO_ENPASSANT;
-  board->ep_col                = NO_ENPASSANT;
-  board->drag.active           = false;
-  board->drag.to_row           = -1;
-  board->drag.to_col           = -1;
-  board->drag.from_row         = -1;
-  board->drag.from_col         = -1;
-  board->promo.active          = false;
-  board->promo.row             = -1;
-  board->promo.col             = -1;
-  board->promo.captured        = 0;
-  board->selected_piece.active = false;
-  board->selected_piece.row    = -1;
-  board->selected_piece.col    = -1;
-  board->undo_count            = 0;
-  board->redo_count            = 0;
-  board->board_changed         = true;
+  board->castling                = 0;
+  board->turn                    = WHITE;
+  board->ep_row                  = NO_ENPASSANT;
+  board->ep_col                  = NO_ENPASSANT;
+  board->drag.active             = false;
+  board->drag.to_row             = -1;
+  board->drag.to_col             = -1;
+  board->drag.from_row           = -1;
+  board->drag.from_col           = -1;
+  board->promo.active            = false;
+  board->promo.row               = -1;
+  board->promo.col               = -1;
+  board->promo.captured          = 0;
+  board->selected_piece.active   = false;
+  board->selected_piece.row      = -1;
+  board->selected_piece.col      = -1;
+  board->undo_count              = 0;
+  board->redo_count              = 0;
+  board->should_update_valid_moves = true;
 
   load_fen(START_FEN, board);
 }
 
 void board_update_valid_moves(BoardState *b) {
-  if (!b->board_changed)
+  if (!b->should_update_valid_moves)
     return;
 
   SF_Context ctx;
@@ -48,8 +48,8 @@ void board_update_valid_moves(BoardState *b) {
 
   MoveList valids = sf_generate_moves(&ctx);
 
-  b->valid_moves   = valids;
-  b->board_changed = false;
+  b->valid_moves               = valids;
+  b->should_update_valid_moves = false;
 }
 
 void load_fen(const char *fen, BoardState *board) {
@@ -110,7 +110,7 @@ void load_fen(const char *fen, BoardState *board) {
     }
   }
 
-  board->board_changed = true;
+  board->should_update_valid_moves = true;
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
@@ -122,7 +122,7 @@ void load_pgn(const char *pgn, BoardState *board) {
   SDL_Log("Load PGN!!!");
   SDL_Log("%s\n--", pgn);
 
-  // board->board_changed = true;
+  // board->should_update_valid_moves = true;
 }
 
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col) {
@@ -197,7 +197,7 @@ void board_undo(BoardState *board) {
     board->board[board->ep_row][board->ep_col] = 0;
   }
 
-  board->board_changed = true;
+  board->should_update_valid_moves = true;
 }
 
 void board_redo(BoardState *board) {
@@ -245,7 +245,7 @@ void board_redo(BoardState *board) {
     board->ep_col = NO_ENPASSANT;
   }
 
-  board->board_changed = true;
+  board->should_update_valid_moves = true;
 }
 
 static uint8_t parse_castling(const char *str) {

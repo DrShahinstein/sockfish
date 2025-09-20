@@ -52,14 +52,13 @@ typedef struct BoardState {
   char board[8][8];
   uint8_t castling;
   Turn turn;
-  MoveList valid_moves;
+  MoveList valid_moves; bool should_update_valid_moves;
   SelectedPiece selected_piece;
   Drag drag;
   Promotion promo;
   int ep_row;                                                                     // en-passant row (-1 for none)
   int ep_col;                                                                     // en-passant col (-1 for none)
   BoardMoveHistory history[MAX_HISTORY]; int undo_count; int redo_count;
-  bool board_changed;
 } BoardState ;
 
 void board_init(BoardState *board);

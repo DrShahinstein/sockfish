@@ -83,7 +83,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           return;
         }
 
-        board->board_changed = true;
+        board->should_update_valid_moves = true;
 
         char piece = board->promo.choices[p];
 
@@ -119,7 +119,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         bool valid = check_valid(board, move);
 
         if (valid) {
-          board->board_changed = true;
+          board->should_update_valid_moves = true;
 
           board_save_history(board, fr, fc, tr, tc);
 
