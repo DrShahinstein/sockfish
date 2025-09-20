@@ -3,11 +3,9 @@
 #include "window.h"
 #include "special_moves.h"
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
-#include "sockfish/movegen.h"  /* MoveList, sf_generate_moves() */
 #include <SDL3/SDL.h>
 
 static inline bool is_mouse_in_board(float mx, float my);
-static void update_valid_moves(BoardState *b);
 static bool check_valid(BoardState *b, Move move);
 
 void board_handle_event(SDL_Event *e, BoardState *board) {
@@ -46,7 +44,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         board->selected_piece.row    = sq_row;
         board->selected_piece.col    = sq_col;
 
-        update_valid_moves(board);
+        board_update_valid_moves(board);
       }
     }
     break;
@@ -85,6 +83,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           return;
         }
 
+        board->board_changed = true;
+
         char piece = board->promo.choices[p];
 
         board->board[board->promo.row][board->promo.col] = piece;
@@ -119,11 +119,14 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         bool valid = check_valid(board, move);
 
         if (valid) {
+          board->board_changed = true;
+
           board_save_history(board, fr, fc, tr, tc);
 
           if (is_castling_move(board, move)) {
             perform_castling(board, move);
-            board->turn = (board->turn == WHITE) ? BLACK : WHITE;
+            board->turn                  = (board->turn == WHITE) ? BLACK : WHITE;
+            board->selected_piece.active = false;
             return;
           }
 
@@ -187,21 +190,6 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
 static inline bool is_mouse_in_board(float mx, float my) {
   return mx >= 0 && mx < BOARD_SIZE && my >= 0 && my < BOARD_SIZE;
-}
-
-static void update_valid_moves(BoardState *b) {
-  SF_Context ctx;
-
-  bool ep_valid = b->ep_row >= 0 && b->ep_col >= 0;
-
-  make_bitboards_from_charboard((const char (*)[8]) b->board, &ctx);
-  ctx.search_color    = b->turn;
-  ctx.castling_rights = b->castling;
-  ctx.enpassant_sq    = ep_valid ? rowcol_to_sq_for_engine(b->ep_row, b->ep_col) : NO_ENPASSANT;
-
-  MoveList valids = sf_generate_moves(&ctx);
-
-  b->valid_moves = valids;
 }
 
 static bool check_valid(BoardState *b, Move move) {
