@@ -56,12 +56,14 @@ typedef struct BoardState {
   SelectedPiece selected_piece;
   Drag drag;
   Promotion promo;
-  int ep_row; // en-passant row (-1 for none)
-  int ep_col; // en-passant col (-1 for none)
+  int ep_row;                                                                     // en-passant row (-1 for none)
+  int ep_col;                                                                     // en-passant col (-1 for none)
   BoardMoveHistory history[MAX_HISTORY]; int undo_count; int redo_count;
+  bool board_changed;
 } BoardState ;
 
 void board_init(BoardState *board);
+void board_update_valid_moves(BoardState *b);
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col);
 void board_undo(BoardState *board);
 void board_redo(BoardState *board);
