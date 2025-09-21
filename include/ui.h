@@ -23,8 +23,9 @@
 #define FGRAY  (SDL_Color){150,150,150,255}
 
 typedef struct {
-  TTF_Font *roboto;
-  TTF_Font *jbmono;
+  TTF_Font *roboto16;
+  TTF_Font *roboto15;
+  TTF_Font *jbmono14;
 } FontMenu;
 
 typedef struct {
