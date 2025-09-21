@@ -12,7 +12,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_FRect tog = ui->engine_toggler.rect;
   SDL_SetRenderDrawColor(r, ui->engine_on ? 100 : 200, ui->engine_on ? 200 : 100, 100, 255);
   SDL_RenderFillRect(r, &tog);
-  draw_text(r, ui->fonts.roboto, ui->engine_on ? "Engine: ON" : "Engine: OFF", FWHITE, tog.x + tog.w + 10, tog.y + 5);
+  draw_text(r, ui->fonts.roboto16, ui->engine_on ? "Engine: ON" : "Engine: OFF", FWHITE, tog.x + tog.w + 10, tog.y + 5);
 
   /* --- FEN Input Area --- */
   render_text_input(r, &ui->fen_loader, &ui->fonts);
@@ -22,9 +22,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderFillRect(r, &fenbtn);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &fenbtn);
-  TTF_SetFontSize(ui->fonts.roboto, 15);
-  draw_text_centered(r, ui->fonts.roboto, "Load Fen", FBLACK, fenbtn);
-  TTF_SetFontSize(ui->fonts.roboto, 16);
+  draw_text_centered(r, ui->fonts.roboto15, "Load Fen", FBLACK, fenbtn);
   
   /* --- PGN Input Area --- */
   render_text_input(r, &ui->pgn_loader, &ui->fonts);
@@ -34,9 +32,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderFillRect(r, &pgnbtn);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &pgnbtn);
-  TTF_SetFontSize(ui->fonts.roboto, 15);
-  draw_text_centered(r, ui->fonts.roboto, "Load Pgn", FBLACK, pgnbtn);
-  TTF_SetFontSize(ui->fonts.roboto, 16);
+  draw_text_centered(r, ui->fonts.roboto15, "Load Pgn", FBLACK, pgnbtn);
 
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
@@ -50,7 +46,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     if (white) SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
     else SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
     SDL_RenderFillRect(r, &turn_changer);
-    draw_text(r, ui->fonts.roboto, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
+    draw_text(r, ui->fonts.roboto16, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
 
     engine_req_search(engine, board);
     
@@ -65,7 +61,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     float x = ui->turn_changer.rect.x;
     float y = ui->turn_changer.rect.y + 50;
 
-    if (search_thr_active) draw_text(r, ui->fonts.roboto, "Thinking...", FWHITE, x, y);
+    if (search_thr_active) draw_text(r, ui->fonts.roboto16, "Thinking...", FWHITE, x, y);
     else {
       char from_alg[3], to_alg[3];
       Square sf_from = move_from(sf_best);
@@ -76,7 +72,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
       char move_str[16];
       SDL_snprintf(move_str, sizeof(move_str), "BEST: %s%s", from_alg, to_alg);
 
-      draw_text(r, ui->fonts.roboto, move_str, FWHITE, x, y);
+      draw_text(r, ui->fonts.roboto16, move_str, FWHITE, x, y);
     }
   }
 
@@ -86,8 +82,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderFillRect(r, &undobtn);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &undobtn);
-  TTF_SetFontSize(ui->fonts.roboto, 15);
-  draw_text_centered(r, ui->fonts.roboto, "Undo", FBLACK, ui->undo_btn.rect);
+  draw_text_centered(r, ui->fonts.roboto15, "Undo", FBLACK, ui->undo_btn.rect);
 
   // Redo Button
   SDL_FRect redobtn = ui->redo_btn.rect;
@@ -95,7 +90,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderFillRect(r, &redobtn);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &redobtn);
-  draw_text_centered(r, ui->fonts.roboto, "Redo", FBLACK, ui->redo_btn.rect);
+  draw_text_centered(r, ui->fonts.roboto15, "Redo", FBLACK, ui->redo_btn.rect);
 
   // Reset Button
   SDL_FRect resetbtn = ui->reset_btn.rect; 
@@ -103,6 +98,5 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderFillRect(r, &resetbtn);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &resetbtn);
-  draw_text_centered(r, ui->fonts.roboto, "Reset", FBLACK, ui->reset_btn.rect);
-  TTF_SetFontSize(ui->fonts.roboto, 16);
+  draw_text_centered(r, ui->fonts.roboto15, "Reset", FBLACK, ui->reset_btn.rect);
 }
