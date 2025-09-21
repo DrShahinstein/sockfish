@@ -81,7 +81,7 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
   float text_x = rect.x + 6;
   float text_y = rect.y + 6;
 
-  int line_h = TTF_GetFontHeight(fonts->jbmono);
+  int line_h = TTF_GetFontHeight(fonts->jbmono14);
   if (line_h <= 0) line_h = 16;
 
   int max_vis_lines = (int) (rect.h / (float)line_h);
@@ -97,7 +97,7 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
   }
 
   int total_lines
-    = wrap_text_into_lines(fonts->jbmono, ui_text_input->buf, rect.w - 8.0f, wrapped, MAX_WRAP_LINES, max_buf_size);
+    = wrap_text_into_lines(fonts->jbmono14, ui_text_input->buf, rect.w - 8.0f, wrapped, MAX_WRAP_LINES, max_buf_size);
 
   int first_line = 0;
   if (total_lines > max_vis_lines) {
@@ -110,17 +110,15 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
 
   for (int li = first_line, row_i = 0; li < last_line; ++li, ++row_i) {
     float y = text_y + row_i * (float)line_h;
-    draw_text(r, fonts->jbmono, wrapped[li], FBLACK, text_x, y);
+    draw_text(r, fonts->jbmono14, wrapped[li], FBLACK, text_x, y);
   }
 
   if (ui_text_input->length == 0 && !ui_text_input->active) {
-    TTF_SetFontSize(fonts->roboto, 15);
-    draw_text(r, fonts->roboto, ui_text_input->placeholder, FGRAY, text_x, text_y);
-    TTF_SetFontSize(fonts->roboto, 16);
+    draw_text(r, fonts->roboto15, ui_text_input->placeholder, FGRAY, text_x, text_y);
   }
 
   else if (ui_text_input->length > 0) {
-    draw_text(r, fonts->jbmono, ui_text_input->buf, FBLACK, text_x, text_y);
+    draw_text(r, fonts->jbmono14, ui_text_input->buf, FBLACK, text_x, text_y);
   }
 
   else {}
@@ -133,7 +131,7 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
       visible_count = last_line - first_line;
       int last_visible_idx = (visible_count > 0) ? (last_line - 1) : -1; 
       w = 0;
-      if (last_visible_idx >= 0) TTF_MeasureString(fonts->jbmono, wrapped[last_visible_idx], 0, 0, &w, NULL);
+      if (last_visible_idx >= 0) TTF_MeasureString(fonts->jbmono14, wrapped[last_visible_idx], 0, 0, &w, NULL);
       else w = 0;
     }
 
