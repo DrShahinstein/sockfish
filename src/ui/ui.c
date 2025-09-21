@@ -13,8 +13,9 @@ static void cleanup_text_input_buffer(UI_TextInput *text_inp) {
 
 void ui_init(UI_State *ui) {
   FontMenu fonts = {
-    .roboto = TTF_OpenFont(ROBOTO, 16),
-    .jbmono = TTF_OpenFont(JBMONO, 14),
+    .roboto16 = TTF_OpenFont(ROBOTO, 16),
+    .roboto15 = TTF_OpenFont(ROBOTO, 15),
+    .jbmono14 = TTF_OpenFont(JBMONO, 14),
   };
 
   ui->fonts                   = fonts;
@@ -51,19 +52,23 @@ void ui_init(UI_State *ui) {
   SDL_strlcpy(ui->pgn_loader.placeholder, PGN_PLACEHOLDER, sizeof(ui->pgn_loader.placeholder));
   init_text_input_buffer(&ui->pgn_loader, MAX_PGN);
 
-  if (!ui->fonts.roboto) SDL_Log("Could not load font: %s", SDL_GetError());
-  if (!ui->fonts.jbmono) SDL_Log("Could not load font: %s", SDL_GetError());
+  if (!ui->fonts.roboto16) SDL_Log("Could not load font: %s", SDL_GetError());
+  if (!ui->fonts.roboto15) SDL_Log("Could not load font: %s", SDL_GetError());
+  if (!ui->fonts.jbmono14) SDL_Log("Could not load font: %s", SDL_GetError());
 }
 
 void ui_destroy(UI_State *ui) {
   cleanup_text_input_buffer(&ui->fen_loader);
   cleanup_text_input_buffer(&ui->pgn_loader);
 
-  TTF_CloseFont(ui->fonts.roboto);
-  ui->fonts.roboto = NULL;
+  TTF_CloseFont(ui->fonts.roboto16);
+  ui->fonts.roboto16 = NULL;
 
-  TTF_CloseFont(ui->fonts.jbmono);
-  ui->fonts.jbmono = NULL;
+  TTF_CloseFont(ui->fonts.roboto15);
+  ui->fonts.roboto15 = NULL;
+
+  TTF_CloseFont(ui->fonts.jbmono14);
+  ui->fonts.jbmono14 = NULL;
 
   SDL_StopTextInput(SDL_GetKeyboardFocus());
 }
