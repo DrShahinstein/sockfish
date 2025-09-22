@@ -3,7 +3,6 @@
 #include "cursor.h"
 #include "board.h"
 #include "board_render.h"
-#include "board_event.h"
 #include "engine.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -11,8 +10,8 @@
 int main(int argc, char *argv[]) {
   (void)argc; (void)argv;
 
-  uint64_t prev = SDL_GetPerformanceCounter();
-  double freq = (double)SDL_GetPerformanceFrequency();
+  uint64_t prev          = SDL_GetPerformanceCounter();
+  double freq            = (double)SDL_GetPerformanceFrequency();
   const double target_ms = 1000.0 / 60.0; // 60 FPS
 
   SDL_Init(SDL_INIT_VIDEO);
@@ -32,9 +31,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   
-  UI_State ui={0};
+  UI_State      ui={0};
   EngineWrapper engine={0}; 
-  BoardState board={0};
+  BoardState    board={0};
 
   board_init(&board); render_board_init(renderer);
   engine_init(&engine);
