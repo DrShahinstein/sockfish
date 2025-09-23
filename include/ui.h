@@ -42,6 +42,12 @@ typedef struct {
   char *buf;
   char placeholder[32];
   size_t length;
+  char **wrap_lines;
+  int wrap_line_count;
+  int cached_line_count;
+  size_t cached_text_hash;
+  float cached_wrap_width;
+  bool cache_valid;
 } UI_TextInput;
 
 typedef struct {
