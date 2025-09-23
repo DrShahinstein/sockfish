@@ -1,22 +1,25 @@
 #include "ui.h"
+#include "ui_render.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
 void draw_text(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_Color color, float x, float y) {
-  SDL_Surface *surf = TTF_RenderText_Blended(font, text, 0, color);
-  SDL_Texture *tex  = SDL_CreateTextureFromSurface(r, surf);
-  SDL_FRect dst     = {x, y, (float)surf->w, (float)surf->h};
-  SDL_DestroySurface(surf);
-  SDL_RenderTexture(r, tex, NULL, &dst);
-  SDL_DestroyTexture(tex);
+  float width, height;
+  SDL_Texture *tex = get_text_cache(font, text, color, &width, &height);
+
+  if (tex) {
+    SDL_FRect dst = {x, y, width, height};
+    SDL_RenderTexture(r, tex, NULL, &dst);
+  }
 }
 
 void draw_text_centered(SDL_Renderer *r, TTF_Font *font, const char *text, SDL_Color color, SDL_FRect rect) {
-  int text_w = 0;
-  TTF_MeasureString(font, text, 0, 0, &text_w, NULL);
+  float text_w = 0, text_h = 0;
+
+  get_text_cache(font, text, color, &text_w, &text_h);
 
   float x = rect.x + (rect.w - text_w) / 2.0f;
-  float y = rect.y + (rect.h - TTF_GetFontHeight(font)) / 2.0f;
+  float y = rect.y + (rect.h - text_h) / 2.0f;
 
   draw_text(r, font, text, color, x, y);
 }
