@@ -9,4 +9,4 @@ extern SDL_Cursor *cursor_text;
 
 void init_cursors(void);
 void cleanup_cursors(void);
-inline bool cursor_in_rect(float x, float y, SDL_FRect *r);
+bool cursor_in_rect(float x, float y, SDL_FRect *r);
