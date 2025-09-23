@@ -92,7 +92,8 @@ MoveList sf_generate_moves(const SF_Context *ctx) {
   MoveList legal_moves;
   legal_moves.count = 0;
 
-  SF_Context temp_ctx = *ctx;
+  SF_Context temp_ctx;
+  memcpy(&temp_ctx, ctx, sizeof(SF_Context));
 
   for (int i = 0; i < pseudo_moves.count; ++i) {
     MoveHistory history;
