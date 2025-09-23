@@ -16,7 +16,6 @@ void cleanup_cursors(void) {
   if (cursor_text)    SDL_DestroyCursor(cursor_text);
 }
 
-bool cursor_in_rect(float x, float y, SDL_FRect *r) {
+inline bool cursor_in_rect(float x, float y, SDL_FRect *r) {
   return x >= r->x && x < (r->x + r->w) && y >= r->y && y < (r->y + r->h);
 }
-
