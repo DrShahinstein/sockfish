@@ -1,5 +1,6 @@
 #include "window.h"
 #include "ui.h"
+#include "ui_render.h"
 #include "cursor.h"
 #include "board.h"
 #include "board_render.h"
@@ -35,9 +36,9 @@ int main(int argc, char *argv[]) {
   EngineWrapper engine={0}; 
   BoardState    board={0};
 
-  board_init(&board); render_board_init(renderer);
+  board_init(&board);      /**/    render_board_init(renderer);
   engine_init(&engine);
-  ui_init(&ui);
+  ui_init(&ui);            /**/    ui_render_init(renderer);
 
   bool running      = true;
   bool needs_redraw = true;
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
       needs_redraw = false;
     }
 
-    uint64_t now = SDL_GetPerformanceCounter();
+    uint64_t now      = SDL_GetPerformanceCounter();
     double elapsed_ms = (now - prev) * 1000.0 / freq;
     if (elapsed_ms < target_ms) SDL_Delay((Uint32)(target_ms - elapsed_ms));
     prev = SDL_GetPerformanceCounter();
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
   cleanup_cursors();
   engine_destroy(&engine);
   render_board_cleanup();
+  ui_render_cleanup();
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   TTF_Quit();
