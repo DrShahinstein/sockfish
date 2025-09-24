@@ -40,23 +40,18 @@ int main(int argc, char *argv[]) {
   engine_init(&engine);
   ui_init(&ui);            /**/    ui_render_init(renderer);
 
-  bool running      = true;
-  bool needs_redraw = true;
+  bool running = true;
   while (running) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       if (e.type == SDL_EVENT_QUIT) running = false;
       board_handle_event(&e, &board);
       ui_handle_event(&e, &ui, &board);
-      needs_redraw = true;
     }
 
-    if (needs_redraw) {
-      render_board(renderer, &board);
-      ui_render(renderer, &ui, &engine, &board);
-      SDL_RenderPresent(renderer);
-      needs_redraw = false;
-    }
+    render_board(renderer, &board);
+    ui_render(renderer, &ui, &engine, &board);
+    SDL_RenderPresent(renderer);
 
     uint64_t now      = SDL_GetPerformanceCounter();
     double elapsed_ms = (now - prev) * 1000.0 / freq;
