@@ -1,3 +1,5 @@
+If any fellow stumbles upon the repo, it's still very much in development. Honestly it's something very wholesome and fun to work on.
+
 quick refs...
 * https://wiki.libsdl.org/SDL3/README-linux
 * https://wiki.libsdl.org/SDL3/CategoryAPI
