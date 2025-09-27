@@ -114,15 +114,17 @@ void load_fen(const char *fen, BoardState *board) {
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
-  (void)board;
-  /*
-  codecode
-  codecode
-  */
-  SDL_Log("Load PGN!!!");
-  SDL_Log("%s\n--", pgn);
+  SDL_memset(board->history, 0, sizeof(board->history));
 
-  // board->should_update_valid_moves = true;
+/*
+    TODO: Implement pgn loading logic.
+     => Parse given PGN.
+     => Ignore everything except moves. Distinguish real moves from comments and variations.
+     => Capture moves one by one. (1-e4 e5 2-Nf3 Nc6 ...)
+     => Save moves to history accordingly.
+*/
+
+  load_fen(START_FEN, board);
 }
 
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col) {
