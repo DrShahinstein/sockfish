@@ -71,15 +71,32 @@ brew install sdl3 sdl3_image sdl3_ttf meson gcc
 
 ### Windows (MSYS2)
 
-Use mingw terminal.
+The file system in Windows is case-insensitive, which means files like q.png and Q.png are treated as the same file.
 
-```bash
-pacman -S \
-mingw-w64-x86_64-gcc \
-mingw-w64-x86_64-sdl3 \
+So, you would first need to fix this jerky Windows issue. Create an empty folder "Sockfish" by yourself and make it case-sensitive:
+
+```
+# supervisor windows termnial
+fsutil.exe file setCaseSensitiveInfo C:\YourPath\Sockfish enable
+```
+
+You will clone the repo into that directory. Keep going with msys2 **mingw** terminal.
+
+```
+cd Sockfish
+
+pacman -S                   \
+git                         \
+mingw-w64-x86_64-gcc        \
+mingw-w64-x86_64-sdl3       \
 mingw-w64-x86_64-sdl3-image \
-mingw-w64-x86_64-sdl3-ttf \
-mingw-w64-x86_64-meson \
-mingw-w64-x86_64-python \
-mingw-w64-x86_64-ninja
+mingw-w64-x86_64-sdl3-ttf   \
+mingw-w64-x86_64-meson      \
+mingw-w64-x86_64-python     \
+mingw-w64-x86_64-ninja      \
+
+git clone https://github.com/DrShahinstein/sockfish.git
+cd sockfish
+bash build.sh
+bash run.sh
 ```
