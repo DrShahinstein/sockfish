@@ -116,13 +116,64 @@ void load_fen(const char *fen, BoardState *board) {
 void load_pgn(const char *pgn, BoardState *board) {
   SDL_memset(board->history, 0, sizeof(board->history));
 
-/*
-    TODO: Implement pgn loading logic.
-     => Parse given PGN.
-     => Ignore everything except moves. Distinguish real moves from comments and variations.
-     => Capture moves one by one. (1-e4 e5 2-Nf3 Nc6 ...)
-     => Save moves to history accordingly.
-*/
+  char *ptr = SDL_strstr(pgn, "1.") + 2;
+
+  if (!ptr)
+    return;
+
+  while (*ptr != '\0') {
+    while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
+    
+    if (*ptr == '\0')
+      break;
+
+    if (*ptr == '{') {
+      while (*ptr != '}' && *ptr != '\0') ptr++;
+      if    (*ptr == '}'                ) ptr++;
+      continue;
+    }
+
+    bool is_game_result = SDL_strncmp(ptr, "1-0", 3)     == 0 ||
+                          SDL_strncmp(ptr, "0-1", 3)     == 0 ||
+                          SDL_strncmp(ptr, "1/2-1/2", 7) == 0;
+
+    if (is_game_result)
+      break;
+
+    if (SDL_isdigit(*ptr)) {
+      char *ptr_move_number = ptr;
+
+      while (SDL_isdigit(*ptr_move_number))
+        ptr_move_number++;
+
+      if (*ptr_move_number == '.' && *(ptr_move_number + 1) == '.' && *(ptr_move_number + 2) == '.') {
+        ptr = ptr_move_number + 3; // skip "..." seen in annotated pgns
+        continue;
+      }
+
+      if (*ptr_move_number == '.') {
+        ptr = ptr_move_number + 1;
+        continue;
+      }
+    }
+
+    char move[10]  = {0};
+    int move_index =  0;
+
+    while (*ptr != ' ' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r' && move_index < 9) {
+      move[move_index++] = *ptr++;
+    }
+
+    move[move_index] = '\0';
+
+    if (move[0] != '\0') {
+      /*
+        TODO: Parse the move string and save it to board->history      
+      */
+
+      SDL_Log("Move: %s", move);
+    }
+  }
 
   load_fen(START_FEN, board);
 }
