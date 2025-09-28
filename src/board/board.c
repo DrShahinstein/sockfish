@@ -116,10 +116,12 @@ void load_fen(const char *fen, BoardState *board) {
 void load_pgn(const char *pgn, BoardState *board) {
   SDL_memset(board->history, 0, sizeof(board->history));
 
-  char *ptr = SDL_strstr(pgn, "1.") + 2;
+  char *ptr = SDL_strstr(pgn, "1.");
 
   if (!ptr)
     return;
+
+  ptr += 2;
 
   while (*ptr != '\0') {
     while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
