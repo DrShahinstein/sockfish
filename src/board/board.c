@@ -1,5 +1,6 @@
 #include "board.h"
-#include "engine.h" /* make_bitboards_from_charboard() */
+#include "sockfish/move_helper.h" /* king_in_check() */
+#include "engine.h"               /* make_bitboards_from_charboard() */
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
@@ -7,29 +8,33 @@ static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
 
 void board_init(BoardState *board) {
-  SDL_memset(board->board,         0, sizeof(board->board));
-  SDL_memset(&board->promo,        0, sizeof(board->promo));
-  SDL_memset(board->promo.choices, 0, sizeof(board->promo.choices));
-  SDL_memset(&board->valid_moves,  0, sizeof(board->valid_moves));
-  board->castling                = 0;
-  board->turn                    = WHITE;
-  board->ep_row                  = NO_ENPASSANT;
-  board->ep_col                  = NO_ENPASSANT;
-  board->drag.active             = false;
-  board->drag.to_row             = -1;
-  board->drag.to_col             = -1;
-  board->drag.from_row           = -1;
-  board->drag.from_col           = -1;
-  board->promo.active            = false;
-  board->promo.row               = -1;
-  board->promo.col               = -1;
-  board->promo.captured          = 0;
-  board->selected_piece.active   = false;
-  board->selected_piece.row      = -1;
-  board->selected_piece.col      = -1;
-  board->undo_count              = 0;
-  board->redo_count              = 0;
+  SDL_memset(board->board,           0, sizeof(board->board));
+  SDL_memset(&board->promo,          0, sizeof(board->promo));
+  SDL_memset(board->promo.choices,   0, sizeof(board->promo.choices));
+  SDL_memset(&board->valid_moves,    0, sizeof(board->valid_moves));
+  board->castling                  = 0;
+  board->turn                      = WHITE;
+  board->ep_row                    = NO_ENPASSANT;
+  board->ep_col                    = NO_ENPASSANT;
+  board->drag.active               = false;
+  board->drag.to_row               = -1;
+  board->drag.to_col               = -1;
+  board->drag.from_row             = -1;
+  board->drag.from_col             = -1;
+  board->promo.active              = false;
+  board->promo.row                 = -1;
+  board->promo.col                 = -1;
+  board->promo.captured            = 0;
+  board->selected_piece.active     = false;
+  board->selected_piece.row        = -1;
+  board->selected_piece.col        = -1;
+  board->undo_count                = 0;
+  board->redo_count                = 0;
   board->should_update_valid_moves = true;
+  board->king.in_check             = false;
+  board->king.color                = 0;
+  board->king.row                  = -1;
+  board->king.col                  = -1;
 
   load_fen(START_FEN, board);
 }
@@ -48,19 +53,53 @@ void board_update_valid_moves(BoardState *b) {
 
   MoveList valids = sf_generate_moves(&ctx);
 
-  b->valid_moves               = valids;
+  b->valid_moves = valids;
   b->should_update_valid_moves = false;
+}
+
+void board_update_king_in_check(BoardState *b) {
+  SF_Context tmpctx;
+  bool in_check = false;
+  int king_row  = -1;
+  int king_col  = -1;
+
+  make_bitboards_from_charboard((const char (*)[8])b->board, &tmpctx);
+
+  if (king_in_check(&tmpctx.bitboard_set, b->turn)) {
+    in_check = true;
+
+    char king_to_find = (b->turn == WHITE) ? 'K' : 'k';
+
+    for (int r = 0; r < 8; ++r) {
+      for (int c = 0; c < 8; ++c) {
+        if (b->board[r][c] == king_to_find) {
+          king_row = r;
+          king_col = c;
+          break;
+        }
+      }
+    }
+  }
+
+  b->king.in_check = in_check;
+  b->king.color    = b->turn;
+  b->king.row      = king_row;
+  b->king.col      = king_col;
 }
 
 void load_fen(const char *fen, BoardState *board) {
   SDL_memset(board->board, 0, sizeof(board->board));
-  board->turn         = WHITE;
-  board->castling     = 0;
-  board->ep_row       = NO_ENPASSANT;
-  board->ep_col       = NO_ENPASSANT;
-  board->promo.active = false;
-  board->undo_count   = 0;
-  board->redo_count   = 0;
+  board->turn          = WHITE;
+  board->castling      = 0;
+  board->ep_row        = NO_ENPASSANT;
+  board->ep_col        = NO_ENPASSANT;
+  board->promo.active  = false;
+  board->undo_count    = 0;
+  board->redo_count    = 0;
+  board->king.in_check = false;
+  board->king.color    = 0;
+  board->king.row      = -1;
+  board->king.col      = -1;
 
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
   int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
@@ -200,7 +239,7 @@ void board_save_history(BoardState *board, int from_row, int from_col, int to_ro
 
   char moving_piece = board->board[from_row][from_col];
 
-  bool en_passant   = (moving_piece == 'p' || moving_piece == 'P') && from_col != to_col && board->board[to_row][to_col] == 0 && to_row == board->ep_row && to_col == board->ep_col;
+  bool en_passant = (moving_piece == 'p' || moving_piece == 'P') && from_col != to_col && board->board[to_row][to_col] == 0 && to_row == board->ep_row && to_col == board->ep_col;
   if (en_passant) {
     int captured_row  = board->turn == WHITE ? (to_row + 1) : (to_row - 1);
     h->captured_piece = board->board[captured_row][to_col];
@@ -252,6 +291,7 @@ void board_undo(BoardState *board) {
     board->board[board->ep_row][board->ep_col] = 0;
   }
 
+  board_update_king_in_check(board);
   board->should_update_valid_moves = true;
 }
 
@@ -300,6 +340,7 @@ void board_redo(BoardState *board) {
     board->ep_col = NO_ENPASSANT;
   }
 
+  board_update_king_in_check(board);
   board->should_update_valid_moves = true;
 }
 
