@@ -79,26 +79,6 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
-  bool is_in_check = false;
-  int king_row = -1, king_col = -1;
-
-  SF_Context tmpctx;
-  make_bitboards_from_charboard((const char (*)[8])board->board, &tmpctx);
-  if (king_in_check(&tmpctx.bitboard_set, board->turn)) {
-    is_in_check = true;
-    char king_to_find = (board->turn == WHITE) ? 'K' : 'k';
-    for (int r = 0; r < 8; ++r) {
-      for (int c = 0; c < 8; ++c) {
-        if (board->board[r][c] == king_to_find) {
-          king_row = r;
-          king_col = c;
-          goto found_king;
-        }
-      }
-    }
-  found_king:;
-  }
-
   /* Render Squares (light/dark) */
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
@@ -268,14 +248,14 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   }
 
   /* Attention Over Checks */
-  if (is_in_check && (king_row != -1 || king_col != -1)) {
+  if (board->king.in_check) {
     SDL_SetRenderDrawColor(renderer, 255, 20, 20, 200); // red
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     int border_thickness = 2;
     for (int i = 0; i < border_thickness; ++i) {
-      SDL_FRect border_rect = {(float)(king_col * SQ + i),
-                               (float)(king_row * SQ + i), (float)(SQ - i * 2),
+      SDL_FRect border_rect = {(float)(board->king.col * SQ + i),
+                               (float)(board->king.row * SQ + i), (float)(SQ - i * 2),
                                (float)(SQ - i * 2)};
       SDL_RenderRect(renderer, &border_rect);
     }
