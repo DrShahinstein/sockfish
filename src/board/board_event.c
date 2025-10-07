@@ -126,6 +126,9 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
             perform_castling(board, move);
             board->turn                  = (board->turn == WHITE) ? BLACK : WHITE;
             board->selected_piece.active = false;
+
+            board_update_king_in_check(board);
+            
             return;
           }
 
@@ -138,6 +141,9 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
             board->ep_col                  = NO_ENPASSANT;
             board->turn                    = (board->turn == WHITE) ? BLACK : WHITE;
             board->drag.active             = false;
+
+            board_update_king_in_check(board);
+
             return;
           }
 
@@ -178,6 +184,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
               else board->turn = WHITE;
             }
           }
+
+          board_update_king_in_check(board);
         }
 
         board->drag.active = false;
