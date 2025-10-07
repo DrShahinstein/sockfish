@@ -71,6 +71,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
         if (ui->fen_loader.length > 0) {
           load_fen(ui->fen_loader.buf, board);
+          board_update_king_in_check(board);
         }
       }
 
