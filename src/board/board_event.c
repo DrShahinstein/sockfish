@@ -119,8 +119,11 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
         if (valid) {
           board->should_update_valid_moves = true;
-
-          board_save_history(board, fr, fc, tr, tc);
+          
+          if (board->undo_count <= MAX_HISTORY) {
+            board->redo_count = 0;
+            board_save_history(board, fr, fc, tr, tc, board->undo_count++);
+          }
 
           if (is_castling_move(board, move)) {
             perform_castling(board, move);
