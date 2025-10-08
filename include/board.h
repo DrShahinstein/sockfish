@@ -66,7 +66,7 @@ void board_init(BoardState *board);
 void board_handle_event(SDL_Event *e, BoardState *board);
 void board_update_king_in_check(BoardState *b);
 void board_update_valid_moves(BoardState *b);
-void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col);
+void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col, int history_index);
 void board_undo(BoardState *board);
 void board_redo(BoardState *board);
 
