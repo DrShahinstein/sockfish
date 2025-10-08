@@ -153,7 +153,11 @@ void load_fen(const char *fen, BoardState *board) {
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
+  load_fen(START_FEN, board);
+
   SDL_memset(board->history, 0, sizeof(board->history));
+  board->undo_count = 0;
+  board->redo_count = 0;
 
   char *ptr = SDL_strstr(pgn, "1.");
 
@@ -198,7 +202,7 @@ void load_pgn(const char *pgn, BoardState *board) {
       }
     }
 
-    char move[10]  = {0};
+    char move[8]  = {0};
     int move_index =  0;
 
     while (*ptr != ' ' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r' && move_index < 9) {
@@ -213,31 +217,36 @@ void load_pgn(const char *pgn, BoardState *board) {
       */
 
       SDL_Log("Move: %s", move);
+
+      if (board->redo_count >= MAX_HISTORY)
+        break;
+
+      int fr, fc, tr, tc;
+
+      // parse_pgn_move(move, &fr, &fc, &tr, &tc);         (unimplemented)
+      fr = 6; fc = 4;
+      tr = 4; tc = 4;
+      /* e4 trial */
+
+      board_save_history(board, fr, fc, tr, tc, board->redo_count++);
     }
   }
-
-  load_fen(START_FEN, board);
 }
 
-void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col) {
-  if (board->undo_count >= MAX_HISTORY)
-    return;
+void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col, int history_index) {
+  char moving_piece = board->board[from_row][from_col];
 
-  board->redo_count = 0;
-
-  BoardMoveHistory *h = &board->history[board->undo_count++];
+  BoardMoveHistory *h = &board->history[history_index];
   h->from_row         = from_row;
   h->from_col         = from_col;
   h->to_row           = to_row;
   h->to_col           = to_col;
-  h->moving_piece     = board->board[from_row][from_col];
+  h->moving_piece     = moving_piece;
   h->castling         = board->castling;
   h->ep_row           = board->ep_row;
   h->ep_col           = board->ep_col;
   h->turn             = board->turn;
   h->promoted_piece   = 0;
-
-  char moving_piece = board->board[from_row][from_col];
 
   bool en_passant = (moving_piece == 'p' || moving_piece == 'P') && from_col != to_col && board->board[to_row][to_col] == 0 && to_row == board->ep_row && to_col == board->ep_col;
   if (en_passant) {
