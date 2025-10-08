@@ -202,10 +202,10 @@ void load_pgn(const char *pgn, BoardState *board) {
       }
     }
 
-    char move[8]  = {0};
+    char move[8]   = {0};
     int move_index =  0;
 
-    while (*ptr != ' ' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r' && move_index < 9) {
+    while (*ptr != ' ' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r' && move_index < 8) {
       move[move_index++] = *ptr++;
     }
 
