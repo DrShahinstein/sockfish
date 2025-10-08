@@ -216,7 +216,7 @@ void load_pgn(const char *pgn, BoardState *board) {
         break;
 
       int fr, fc, tr, tc;
-      parse_pgn_move(move, &fr, &fc, &tr, &tc);
+      parse_pgn_move(move, board->turn, &fr, &fc, &tr, &tc);
       
       board_save_history(board, fr, fc, tr, tc, board->redo_count);
       board->redo_count += 1;
