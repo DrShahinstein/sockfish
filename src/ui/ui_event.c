@@ -172,6 +172,8 @@ static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max
   case SDLK_KP_ENTER:
     if (input->length > 0 && load_callback) {
       load_callback(input->buf, board);
+      input->active = false;
+      SDL_StopTextInput(SDL_GetKeyboardFocus());
     }
     break;
 
