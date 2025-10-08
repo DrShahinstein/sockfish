@@ -212,22 +212,12 @@ void load_pgn(const char *pgn, BoardState *board) {
     move[move_index] = '\0';
 
     if (move[0] != '\0') {
-      /*
-        TODO: Parse the move string and save it to board->history      
-      */
-
-      SDL_Log("Move: %s", move);
-
       if (board->redo_count >= MAX_HISTORY)
         break;
 
       int fr, fc, tr, tc;
-
-      // parse_pgn_move(move, &fr, &fc, &tr, &tc);         (unimplemented)
-      fr = 6; fc = 4;
-      tr = 4; tc = 4;
-      /* e4 trial */
-
+      parse_pgn_move(move, &fr, &fc, &tr, &tc);
+      
       board_save_history(board, fr, fc, tr, tc, board->redo_count++);
     }
   }
