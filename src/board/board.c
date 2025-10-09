@@ -106,7 +106,6 @@ void load_fen(const char *fen, BoardState *board) {
     placement, active, castling, ep, halfmove, fullmove);
 
   if (count < 2) {
-    SDL_Log("Invalid FEN: %s", fen);
     load_fen(START_FEN, board);
     return;
   }
@@ -123,13 +122,10 @@ void load_fen(const char *fen, BoardState *board) {
     board->turn = WHITE;
   } else if (active[0] == 'b' || active[0] == 'B') {
     board->turn = BLACK;
-  } else {
-    SDL_Log("Invalid active color in FEN: %c", active[0]);
   }
 
   if (count >= 3) {
     if (!validate_castling(castling)) {
-      SDL_Log("Invalid castling rights in FEN: %s", castling);
       SDL_strlcpy(castling, "KQkq", sizeof(castling));
     }
     board->castling = parse_castling(castling);
@@ -215,9 +211,12 @@ void load_pgn(const char *pgn, BoardState *board) {
       if (board->redo_count >= MAX_HISTORY)
         break;
 
-      int fr, fc, tr, tc;
+      int fr=-1, fc=-1, tr=-1, tc=-1;
       parse_pgn_move(move, board->turn, &fr, &fc, &tr, &tc);
-      
+
+      bool parsed_ok = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
+      if (!parsed_ok) return;
+
       board_save_history(board, fr, fc, tr, tc, board->redo_count);
       board->redo_count += 1;
     }
