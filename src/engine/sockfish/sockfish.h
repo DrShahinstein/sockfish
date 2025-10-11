@@ -94,6 +94,18 @@ static inline void sq_to_alg(Square sq, char buf[3]) {
   buf[2] = '\0';
 }
 
+/* Context Creator */
+static inline SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t castling_rights, Square ep_sq) {
+  SF_Context ctx;
+  ctx.bitboard_set    = *bitboard_set;
+  ctx.search_color    = search_color;
+  ctx.castling_rights = castling_rights;
+  ctx.enpassant_sq    = ep_sq;
+  ctx.best            = create_move(0,0);
+  ctx.stop_requested  = false;
+  return ctx;
+}
+
 /* ===== Sockish Functions & Algorithm =====
 
 Move     sf_search(const SF_Context *ctx);          // search.c
