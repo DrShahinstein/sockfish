@@ -16,10 +16,7 @@ void engine_init(EngineWrapper *engine) {
   engine->stop_requested      = false;
   engine->last_pos_hash       = 0ULL;
   engine->last_turn           = WHITE;
-  engine->ctx.search_color    = WHITE;
-  engine->ctx.best            = create_move(0,0);
-  engine->ctx.castling_rights = CASTLE_NONE;
-  engine->ctx.enpassant_sq    = NO_ENPASSANT;
+  engine->ctx                 = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_NONE, NO_ENPASSANT);
 
   init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
   init_magic_bitboards(); // init magic bitboards for sliding pieces in move generation logic
@@ -42,14 +39,15 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   }
 
   bool ep_valid = board->ep_row >= 0 && board->ep_col >= 0;
+  
+  BitboardSet bbset = make_bitboards_from_charboard(board->board);
+  Square en_passant = ep_valid ? rowcol_to_sq_for_engine(board->ep_row, board->ep_col) : NO_ENPASSANT;
+  SF_Context ctx    = create_sf_ctx(&bbset, board->turn, board->castling, en_passant);
 
-  make_bitboards_from_charboard(board->board, &engine->ctx);
-  engine->ctx.search_color    = board->turn;
-  engine->ctx.castling_rights = board->castling;
-  engine->ctx.enpassant_sq    = ep_valid ? rowcol_to_sq_for_engine(board->ep_row, board->ep_col) : NO_ENPASSANT;
-  engine->last_pos_hash       = new_hash;
-  engine->last_turn           = board->turn;
-  engine->thr_working         = true;
+  engine->ctx           = ctx;
+  engine->last_pos_hash = new_hash;
+  engine->last_turn     = board->turn;
+  engine->thr_working   = true;
   
   SDL_SignalCondition(engine->cond);
   SDL_UnlockMutex(engine->mtx);
