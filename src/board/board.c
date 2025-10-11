@@ -43,13 +43,11 @@ void board_update_valid_moves(BoardState *b) {
   if (!b->should_update_valid_moves)
     return;
 
-  SF_Context ctx;
   bool ep_valid = b->ep_row >= 0 && b->ep_col >= 0;
 
-  make_bitboards_from_charboard((const char (*)[8]) b->board, &ctx);
-  ctx.search_color    = b->turn;
-  ctx.castling_rights = b->castling;
-  ctx.enpassant_sq    = ep_valid ? rowcol_to_sq_for_engine(b->ep_row, b->ep_col) : NO_ENPASSANT;
+  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) b->board);
+  Square en_passant = ep_valid ? rowcol_to_sq_for_engine(b->ep_row, b->ep_col) : NO_ENPASSANT; 
+  SF_Context ctx    = create_sf_ctx(&bbset, b->turn, b->castling, en_passant);
 
   MoveList valids = sf_generate_moves(&ctx);
 
@@ -58,14 +56,13 @@ void board_update_valid_moves(BoardState *b) {
 }
 
 void board_update_king_in_check(BoardState *b) {
-  SF_Context tmpctx;
   bool in_check = false;
   int king_row  = -1;
   int king_col  = -1;
 
-  make_bitboards_from_charboard((const char (*)[8])b->board, &tmpctx);
+  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) b->board);
 
-  if (king_in_check(&tmpctx.bitboard_set, b->turn)) {
+  if (king_in_check(&bbset, b->turn)) {
     in_check = true;
 
     char king_to_find = (b->turn == WHITE) ? 'K' : 'k';
@@ -155,14 +152,14 @@ void load_pgn(const char *pgn, BoardState *board) {
   board->undo_count = 0;
   board->redo_count = 0;
 
-  char *ptr          = SDL_strstr(pgn, "1.");
-  Turn turn          = WHITE;
-  char (*squares)[8] = board->board;
+  char *ptr = SDL_strstr(pgn, "1.");
 
   if (!ptr)
     return;
 
   ptr += 2;
+
+  Turn turn = WHITE; // will be flipping like 1. white 2. black 3. white 4. black...
 
   while (*ptr != '\0') {
     while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
@@ -213,8 +210,13 @@ void load_pgn(const char *pgn, BoardState *board) {
       if (board->redo_count >= MAX_HISTORY)
         break;
 
+      char squares[8][8];
+      SDL_memcpy(squares, board->board, sizeof(squares));
+      BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) squares);
+      SF_Context ctx    = create_sf_ctx(&bbset, turn, CASTLE_NONE, NO_ENPASSANT);
+
       int fr=-1, fc=-1, tr=-1, tc=-1;
-      parse_pgn_move(move, squares, turn, &fr, &fc, &tr, &tc);
+      parse_pgn_move(move, &ctx, squares, &fr, &fc, &tr, &tc);
 
       bool parsed_ok = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
       if (!parsed_ok) return;
