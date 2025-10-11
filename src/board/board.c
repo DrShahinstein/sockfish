@@ -155,8 +155,9 @@ void load_pgn(const char *pgn, BoardState *board) {
   board->undo_count = 0;
   board->redo_count = 0;
 
-  char *ptr = SDL_strstr(pgn, "1.");
-  Turn turn = WHITE;
+  char *ptr          = SDL_strstr(pgn, "1.");
+  Turn turn          = WHITE;
+  char (*squares)[8] = board->board;
 
   if (!ptr)
     return;
@@ -213,7 +214,7 @@ void load_pgn(const char *pgn, BoardState *board) {
         break;
 
       int fr=-1, fc=-1, tr=-1, tc=-1;
-      parse_pgn_move(move, turn, &fr, &fc, &tr, &tc);
+      parse_pgn_move(move, squares, turn, &fr, &fc, &tr, &tc);
 
       bool parsed_ok = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
       if (!parsed_ok) return;
