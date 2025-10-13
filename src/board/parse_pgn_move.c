@@ -1,12 +1,17 @@
 #include "board.h"
 
-/* Unimplemented Yet */
-void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*squares)[8], int *fr, int *fc, int *tr, int *tc) {
-  (void)move; (void)sf_ctx; (void)squares;
+/* Testing */
+void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc) {
+  (void)move; (void)sf_ctx; (void)last_pos;
+
+  Turn t = sf_ctx->search_color;
 
   *fr = 6; *fc = 4;
   *tr = 4; *tc = 4;
 
-  squares[*fr][*fc] = 0;
-  squares[*tr][*tc] = 'P';
+  last_pos[*fr][*fc]      = 0;
+  last_pos[*tr][*tc]      = 'P';
+  sf_ctx->search_color    = !t;
+  sf_ctx->castling_rights = CASTLE_NONE;
+  sf_ctx->enpassant_sq    = NO_ENPASSANT;
 }
