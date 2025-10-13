@@ -6,8 +6,8 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
 
   Turn t = sf_ctx->search_color;
 
-  *fr = 6; *fc = 4;
-  *tr = 4; *tc = 4;
+  *fr = 6; *fc = 4; // from e2
+  *tr = 4; *tc = 4; // to   e4
 
   last_pos[*fr][*fc]      = 0;
   last_pos[*tr][*tc]      = 'P';
