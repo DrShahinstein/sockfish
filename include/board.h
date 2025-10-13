@@ -72,4 +72,4 @@ void board_redo(BoardState *board);
 
 void load_fen(const char *fen, BoardState *board);
 void load_pgn(const char *pgn, BoardState *board);
-void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*squares)[8], int *fr, int *fc, int *tr, int *tc); // board/parse_pgn_move.c
+void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc); // board/parse_pgn_move.c
