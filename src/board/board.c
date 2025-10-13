@@ -159,7 +159,10 @@ void load_pgn(const char *pgn, BoardState *board) {
 
   ptr += 2;
 
-  Turn turn = WHITE; // will be flipping like 1. white 2. black 3. white 4. black...
+  char last_pos[8][8];
+  SDL_memcpy(last_pos, board->board, sizeof(last_pos));
+  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) last_pos);
+  SF_Context ctx    = create_sf_ctx(&bbset, WHITE, CASTLE_NONE, NO_ENPASSANT);
 
   while (*ptr != '\0') {
     while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
@@ -197,33 +200,32 @@ void load_pgn(const char *pgn, BoardState *board) {
       }
     }
 
-    char move[8]   = {0};
-    int move_index =  0;
+    char pgn_move[8] = {0}; // e4 c5 Nf3 Nc6
+    int move_index   =  0;
 
     while (*ptr != ' ' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r' && move_index < 8) {
-      move[move_index++] = *ptr++;
+      pgn_move[move_index++] = *ptr++;
     }
 
-    move[move_index] = '\0';
+    pgn_move[move_index] = '\0';
 
-    if (move[0] != '\0') {
+    if (pgn_move[0] != '\0') {
       if (board->redo_count >= MAX_HISTORY)
         break;
 
-      char squares[8][8];
-      SDL_memcpy(squares, board->board, sizeof(squares));
-      BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) squares);
-      SF_Context ctx    = create_sf_ctx(&bbset, turn, CASTLE_NONE, NO_ENPASSANT);
-
       int fr=-1, fc=-1, tr=-1, tc=-1;
-      parse_pgn_move(move, &ctx, squares, &fr, &fc, &tr, &tc);
+      parse_pgn_move(pgn_move, &ctx, last_pos, &fr, &fc, &tr, &tc);
 
       bool parsed_ok = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
-      if (!parsed_ok) return;
+      if (!parsed_ok) {
+        SDL_memset(board->history, 0, sizeof(board->history));
+        board->undo_count = 0;
+        board->redo_count = 0;
+        return;
+      }
 
       board_save_history(board, fr, fc, tr, tc, board->redo_count);
       board->redo_count += 1;
-      turn = !turn;
     }
   }
 }
