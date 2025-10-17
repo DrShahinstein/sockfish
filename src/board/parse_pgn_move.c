@@ -12,43 +12,37 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   int to_row        = 4;
   int to_col        = 4;
   char piece;
-  //
-  
-  /* Experimentsssss */
-  
-  // Let's try to think of an algorithm
+
   /*
   
-  1. Spot the moving piece ('N'f4, 'e'6, 'N'c6, 'Q'h8)
-  2. Spot the available moves that the moving piece(s) can do
-  => 0-0-0-0-0-0-0-0
-     0-0-0-0-0-1-0-0
-     0-0-0-0-0-0-0-0
-     0-0-0-0-0-0-0-0
-     0-0-1-0-0-0-0-0
-     0-0-0-0-0-0-0-0
-     0-0-0-0-0-0-0-0
-     0-0-0-0-0-0-0-0
+    1. Find piece type         ('N'f3, 'Q'g6, 'B'a3, 'e'4, 'e'xb7)
+    2. Find destination square (N'f3', Q'g6', B'a3', 'e4', ex'b7')
+    3. Find source square
+      => 0-0-0-0-0-0-0-0
+      => 0-0-0-0-0-0-0-0
+      => 0-1-0-0-0-0-1-0   'Nh8' => The knight on g6 is the correct one.
+      => 0-0-0-0-0-0-0-0
+      => 0-0-0-0-0-0-0-0
+      => 0-0-0-0-0-0-0-0
+      => 0-0-0-0-0-0-0-0
+      => 0-0-0-0-0-0-0-0
+      
+      This can be done with help of sf_generate_moves()
+      => for m in valid_moves:
+      =>   if dest(m) == parsed_dest_from_phase2:
+      =>     src_square = from(m)
 
-    * Let's say '1's are knights. And we have 'Nh8' to parse. Only the knight on f7 can make this move.
-     So, it's the knight! We would convert F7 and H8 to row_col coordinates one by one.
+    4. Update *fr, *fc, *tr, *tc values with necessary conversions.
+    5. Conclude, I guess.
 
-    * If none can go to h8, pgn is considered invalid.
-
-    * If it's pawn we have, then handle the job with a separate different logic because it's a little different to parse.
-
-    __end
-
-  3. Oh, that's enough of a thinking process.
-
-  It's okay, but, how to exactly find out whether a piece can or cannot go to a certain square?
-  These things seems easier when I used to work around with movegen.c implementation. It was magic entries there...
-  HMmmmmmmm.. I have to figure this out.
+  Okay, the idea seems to emerge.
+  Would anybody read this sometime? It would be interesting. Anyways...
+  These days I'm focused on math stuff, as a matter of student.
+  I'd get back to this implementation later on. It's fun working on such things...
+  Let's put the period. Btw, Goodnight Moon is playing. Kill Bill ost is wonderful. So is the movie.
   
   */
 
-
-  //
   *fr = from_row; *fc = from_col; // from e2
   *tr = to_row;   *tc = to_col;   // to   e4
 
