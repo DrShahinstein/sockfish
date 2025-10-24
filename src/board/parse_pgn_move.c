@@ -1,54 +1,120 @@
 #include "board.h"
 
-/* Testing */
-void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc) {
-  (void)move; (void)sf_ctx; (void)last_pos;
+    /* Used For Debugging */
+// static const char *MAP[] = {
+//  "a1","b1","c1","d1","e1","f1","g1","h1",
+//  "a2","b2","c2","d2","e2","f2","g2","h2",
+//  "a3","b3","c3","d3","e3","f3","g3","h3",
+//  "a4","b4","c4","d4","e4","f4","g4","h4",
+//  "a5","b5","c5","d5","e5","f5","g5","h5",
+//  "a6","b6","c6","d6","e6","f6","g6","h6",
+//  "a7","b7","c7","d7","e7","f7","g7","h7",
+//  "a8","b8","c8","d8","e8","f8","g8","h8"
+//};
 
+/* Not Done Yet */
+void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc) {
   Turn turn         = sf_ctx->search_color;
   uint8_t castling  = CASTLE_WK & CASTLE_WQ & CASTLE_BK & CASTLE_BQ;
   Square en_passant = NO_ENPASSANT;
-  int from_row      = 6;
-  int from_col      = 4;
-  int to_row        = 4;
-  int to_col        = 4;
-  char piece;
+  int from_row      = -1;
+  int from_col      = -1;
+  int to_row        = -1;
+  int to_col        = -1;
+  char piece_type;
 
-  /*
+  const char *ptr = move;
+
+  /* 1 */
+  switch (*ptr) {
+  case 'N': case 'B': case 'R': case 'Q': case 'K':
+    if (turn == WHITE)
+      piece_type = *ptr;
+    else
+      piece_type = *ptr + 32;
+
+    ptr += 1;
+    break;
+
+  default:
+    if (*ptr >= 'a' && *ptr <= 'h') piece_type = (turn == WHITE) ? 'P' : 'p';
+    else return;
+    break;
+  }
+
+  /* 2 */
+  char file = *ptr++;
+  char rank = *ptr++;
+
+  if (file < 'a' || file > 'h') return;
+  if (rank < '1' || rank > '8') return;
   
-    1. Find piece type         ('N'f3, 'Q'g6, 'B'a3, 'e'4, 'e'xb7)
-    2. Find destination square (N'f3', Q'g6', B'a3', 'e4', ex'b7')
-    3. Find source square
-      => 0-0-0-0-0-0-0-0
-      => 0-0-0-0-0-0-0-0
-      => 0-1-0-0-0-0-1-0   'Nh8' => The knight on g6 is the correct one.
-      => 0-0-0-0-0-0-0-0
-      => 0-0-0-0-0-0-0-0
-      => 0-0-0-0-0-0-0-0
-      => 0-0-0-0-0-0-0-0
-      => 0-0-0-0-0-0-0-0
-      
-      This can be done with help of sf_generate_moves()
-      => for m in valid_moves:
-      =>   if dest(m) == parsed_dest_from_phase2:
-      =>     src_square = from(m)
+  to_row = 7 - (rank - '1');
+  to_col = file - 'a';
 
-    4. Update *fr, *fc, *tr, *tc values with necessary conversions.
-    5. Conclude, I guess.
+  /* 3 */
+  bool found_src_sq = false;
+  MoveList valids   = sf_generate_moves(sf_ctx);
 
-  Okay, the idea seems to emerge.
-  Would anybody read this sometime? It would be interesting. Anyways...
-  These days I'm focused on math stuff, as a matter of student.
-  I'd get back to this implementation later on. It's fun working on such things...
-  Let's put the period. Btw, Goodnight Moon is playing. Kill Bill ost is wonderful. So is the movie.
-  
-  */
+  for (int i = 0; i < valids.count; ++i) {
+    Move m        = valids.moves[i];
+    Square src_sq = move_from(m);
+    Square dst_sq = move_to(m);
+    int src_r     = 7 - square_to_row(src_sq);
+    int src_c     = square_to_col(src_sq);
+    int dst_r     = 7 - square_to_row(dst_sq);
+    int dst_c     = square_to_col(dst_sq);
+    
+    bool piece_types_match = last_pos[src_r][src_c] == piece_type;
+    bool destination_match = (dst_r == to_row && dst_c == to_col);
 
-  *fr = from_row; *fc = from_col; // from e2
-  *tr = to_row;   *tc = to_col;   // to   e4
+    if (piece_types_match && destination_match) {
+      from_row      = 7 - square_to_row(src_sq);
+      from_col      = square_to_col(src_sq);
+      found_src_sq  = true;
+      break;
+    }
+  }
 
-  last_pos[*fr][*fc]      = 0;
-  last_pos[*tr][*tc]      = piece;
-  sf_ctx->search_color    = !turn;
-  sf_ctx->castling_rights = castling;
-  sf_ctx->enpassant_sq    = en_passant;
+  if (!found_src_sq) return;
+
+  /* Conclude */
+  last_pos[from_row][from_col] = 0;
+  last_pos[to_row][to_col]     = piece_type;
+  sf_ctx->search_color         = !turn;
+  sf_ctx->castling_rights      = castling;
+  sf_ctx->enpassant_sq         = en_passant;
+
+  *fr = from_row; *fc = from_col;
+  *tr = to_row;   *tc = to_col;
 }
+
+
+
+/*
+  
+  ** Basic Ideas **
+  
+  @description: Brief outline to conceptualize the parsing algorithm
+
+  1. Find piece type         ('N'f3, 'Q'g6, 'B'a3, 'e'4, 'e'xb7)
+  2. Find destination square (N'f3', Q'g6', B'a3', 'e4', ex'b7')
+  3. Find source square
+    => 0-0-0-0-0-0-0-0
+    => 0-0-0-0-0-0-0-0
+    => 0-1-0-0-0-0-1-0   'Nh8' => The knight on g6 is the correct one.
+    => 0-0-0-0-0-0-0-0
+    => 0-0-0-0-0-0-0-0
+    => 0-0-0-0-0-0-0-0
+    => 0-0-0-0-0-0-0-0
+    => 0-0-0-0-0-0-0-0
+      
+    This can be done with help of sf_generate_moves()
+    => for m in valid_moves:
+    =>   if dest(m) == parsed_dest_from_phase2:
+    =>     src_square = from(m)
+
+  4. Update *fr, *fc, *tr, *tc values with necessary conversions.
+  5. Conclude, I guess.
+  
+*/
