@@ -216,8 +216,8 @@ void load_pgn(const char *pgn, BoardState *board) {
       int fr=-1, fc=-1, tr=-1, tc=-1;
       parse_pgn_move(pgn_move, &ctx, last_pos, &fr, &fc, &tr, &tc);
 
-      bool parsed_ok = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
-      if (!parsed_ok) {
+      bool parsing_failed = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
+      if (parsing_failed) {
         SDL_memset(board->history, 0, sizeof(board->history));
         board->undo_count = 0;
         board->redo_count = 0;
@@ -226,6 +226,7 @@ void load_pgn(const char *pgn, BoardState *board) {
 
       board_save_history(board, fr, fc, tr, tc, board->redo_count);
       board->redo_count += 1;
+      board->turn = ctx.search_color;
     }
   }
 }
