@@ -216,7 +216,11 @@ void load_pgn(const char *pgn, BoardState *board) {
       int fr=-1, fc=-1, tr=-1, tc=-1;
       parse_pgn_move(pgn_move, &ctx, last_pos, &fr, &fc, &tr, &tc);
 
-      bool parsing_failed = fr!=-1 || fc!=-1 || tr!=-1 || tc!=-1;
+      bool parsing_failed = (fr < 0 || fr > 7) ||
+                            (fc < 0 || fc > 7) ||
+                            (tr < 0 || tr > 7) ||
+                            (tc < 0 || tc > 7);
+                            
       if (parsing_failed) {
         SDL_memset(board->history, 0, sizeof(board->history));
         board->undo_count = 0;
