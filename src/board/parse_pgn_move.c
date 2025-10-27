@@ -44,7 +44,7 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
 
   /* 2 */
   char file = *ptr++;
-  char rank = *ptr++;
+  char rank = *ptr;
 
   if (file < 'a' || file > 'h') return;
   if (rank < '1' || rank > '8') return;
@@ -60,16 +60,16 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     Move m        = valids.moves[i];
     Square src_sq = move_from(m);
     Square dst_sq = move_to(m);
-    int src_r     = 7 - square_to_row(src_sq);
-    int src_c     = square_to_col(src_sq);
-    int dst_r     = 7 - square_to_row(dst_sq);
-    int dst_c     = square_to_col(dst_sq);
+    int fr        = square_to_row(src_sq);
+    int fc        = square_to_col(src_sq);
+    int tr        = square_to_row(dst_sq);
+    int tc        = square_to_col(dst_sq);
     
-    bool piece_types_match = last_pos[src_r][src_c] == piece_type;
-    bool destination_match = (dst_r == to_row && dst_c == to_col);
+    bool piece_types_match = last_pos[fr][fc] == piece_type;
+    bool destination_match = (tr == to_row && tc == to_col);
 
     if (piece_types_match && destination_match) {
-      from_row      = 7 - square_to_row(src_sq);
+      from_row      = square_to_row(src_sq);
       from_col      = square_to_col(src_sq);
       found_src_sq  = true;
       break;

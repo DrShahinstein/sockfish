@@ -41,7 +41,7 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   bool ep_valid = board->ep_row >= 0 && board->ep_col >= 0;
   
   BitboardSet bbset = make_bitboards_from_charboard(board->board);
-  Square en_passant = ep_valid ? rowcol_to_sq_for_engine(board->ep_row, board->ep_col) : NO_ENPASSANT;
+  Square en_passant = ep_valid ? rowcol_to_sq(board->ep_row, board->ep_col) : NO_ENPASSANT;
   SF_Context ctx    = create_sf_ctx(&bbset, board->turn, board->castling, en_passant);
 
   engine->ctx           = ctx;

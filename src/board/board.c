@@ -46,7 +46,7 @@ void board_update_valid_moves(BoardState *b) {
   bool ep_valid = b->ep_row >= 0 && b->ep_col >= 0;
 
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) b->board);
-  Square en_passant = ep_valid ? rowcol_to_sq_for_engine(b->ep_row, b->ep_col) : NO_ENPASSANT; 
+  Square en_passant = ep_valid ? rowcol_to_sq(b->ep_row, b->ep_col) : NO_ENPASSANT; 
   SF_Context ctx    = create_sf_ctx(&bbset, b->turn, b->castling, en_passant);
 
   MoveList valids = sf_generate_moves(&ctx);

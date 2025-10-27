@@ -127,7 +127,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   /* Highlight Hover Over The Valid Squares */
   bool hovering_valid_target = board->drag.active && mouse_row != -1 && mouse_col != -1 && board->selected_piece.active;
   if (hovering_valid_target) {
-    Square from_sq       = rowcol_to_sq_for_engine(board->selected_piece.row, board->selected_piece.col);
+    Square from_sq       = rowcol_to_sq(board->selected_piece.row, board->selected_piece.col);
     bool is_valid_target = false;
 
     for (int i = 0; i < board->valid_moves.count; ++i) {
@@ -135,8 +135,8 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
       if (move_from(move) == from_sq) {
         Square to_sq = move_to(move);
-        int to_row   = 7 - square_to_row(to_sq);
-        int to_col   =     square_to_col(to_sq);
+        int to_row   = square_to_row(to_sq);
+        int to_col   = square_to_col(to_sq);
 
         if (to_row == mouse_row && to_col == mouse_col) {
           is_valid_target = true;
@@ -202,7 +202,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
     if (pc && tex[(int)pc]) {
       SelectedPiece s    = board->selected_piece;
-      Square selected_sq = rowcol_to_sq_for_engine(s.row, s.col);
+      Square selected_sq = rowcol_to_sq(s.row, s.col);
 
       for (int i = 0; i < board->valid_moves.count; ++i) {
         Move mv = board->valid_moves.moves[i];
@@ -210,8 +210,8 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
         if (move_from(mv) != selected_sq) continue;
 
         Square to = move_to(mv);
-        int row   = 7 - square_to_row(to);
-        int col   =     square_to_col(to);
+        int row   = square_to_row(to);
+        int col   = square_to_col(to);
 
         bool is_drag_hovered_square = board->drag.active && mouse_row != -1 && mouse_col != -1 && row == mouse_row && col == mouse_col;
         if (is_drag_hovered_square) continue;

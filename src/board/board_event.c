@@ -106,10 +106,10 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         }
 
         /* -- Handle Moving -- */
-        int fr            = board->drag.from_row; // from row
-        int fc            = board->drag.from_col; // from col
-        int tr            = my / SQ;              // to row
-        int tc            = mx / SQ;              // to col
+        int fr            = board->drag.from_row;  // from row
+        int fc            = board->drag.from_col;  // from col
+        int tr            = my / SQ;               // to row
+        int tc            = mx / SQ;               // to col
         Square from_sq    = rowcol_to_sq(fr, fc);
         Square to_sq      = rowcol_to_sq(tr, tc);
         Move move         = create_move(from_sq, to_sq);
@@ -208,23 +208,18 @@ static bool check_valid(BoardState *b, Move move) {
 
   Square from = move_from(move);
   Square to   = move_to(move);
-  int from_r  = square_to_row(from);
-  int from_c  = square_to_col(from);
-  int to_r    = square_to_row(to);
-  int to_c    = square_to_col(to);
-  from        = rowcol_to_sq_for_engine(from_r, from_c);
-  to          = rowcol_to_sq_for_engine(to_r, to_c);
   
-  Move move_as_corrected = create_move(from, to);
+  Move m = create_move(from, to);
 
   for (int i = 0; i < b->valid_moves.count; ++i) {
-    Move validmove                   = b->valid_moves.moves[i];
-    bool same_origin_and_destination = move_from(move_as_corrected) == move_from(validmove) && move_to(move_as_corrected) == move_to(validmove);
-    
+    Move m_valid = b->valid_moves.moves[i];
+
     // this dodges move type differences (MOVE_NORMAl, MOVE_CASTLING...)
-    if (same_origin_and_destination) {
+    bool same_origin_and_destination = move_from(m) == move_from(m_valid) &&
+                                       move_to(m)   == move_to(m_valid);
+    
+    if (same_origin_and_destination) 
       return true;
-    }
   }
 
   return false;
