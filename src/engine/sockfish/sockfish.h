@@ -78,20 +78,16 @@ typedef struct SF_Context {
 #define move_promotion(move) (((move) >> 12) & 0x3)  // bits 12-13
 #define move_type(move)      ((move) & 0xC000)       // bits 14-15
 
-#define square_to_row(sq)     (sq / 8)
+#define square_to_row(sq)     (7 - sq / 8)
 #define square_to_col(sq)     (sq % 8)
-#define rowcol_to_sq(row,col) (row * 8 + col)
-
-// Engine: (A1 = 0) | Board/UI: (A8=0)
-#define rowcol_to_sq_for_engine(row,col) ((7-row) * 8 + col)
+#define rowcol_to_sq(row,col) ((7-row) * 8 + col)
 
 static inline void sq_to_alg(Square sq, char buf[3]) {
-  /* square (from-to) -> algebraic (e2-e4) */
-  int row = square_to_row(sq);
-  int col = square_to_col(sq);
-  buf[0] = 'a' + col;
-  buf[1] = '1' + row;
-  buf[2] = '\0';
+  int row = sq / 8;
+  int col = sq % 8;
+  buf[0]  = 'a' + col;
+  buf[1]  = '1' + row;
+  buf[2]  = '\0';
 }
 
 /* Context Creator */
