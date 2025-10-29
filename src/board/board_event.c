@@ -128,6 +128,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
           if (is_castling_move(board, move)) {
             perform_castling(board, move);
+
             board->turn                  = (board->turn == WHITE) ? BLACK : WHITE;
             board->selected_piece.active = false;
 
@@ -185,7 +186,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
             else {
               if (board->turn == WHITE) board->turn = BLACK;
-              else board->turn = WHITE;
+              else                      board->turn = WHITE;
             }
           }
 
@@ -206,17 +207,12 @@ static inline bool is_mouse_in_board(float mx, float my) {
 static bool check_valid(BoardState *b, Move move) {
   if (b->valid_moves.count == 0) return false;
 
-  Square from = move_from(move);
-  Square to   = move_to(move);
-  
-  Move m = create_move(from, to);
-
   for (int i = 0; i < b->valid_moves.count; ++i) {
     Move m_valid = b->valid_moves.moves[i];
 
     // this dodges move type differences (MOVE_NORMAl, MOVE_CASTLING...)
-    bool same_origin_and_destination = move_from(m) == move_from(m_valid) &&
-                                       move_to(m)   == move_to(m_valid);
+    bool same_origin_and_destination = move_from(move) == move_from(m_valid) &&
+                                       move_to(move)   == move_to(m_valid);
     
     if (same_origin_and_destination) 
       return true;
