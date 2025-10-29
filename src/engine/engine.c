@@ -9,14 +9,14 @@
 static int engine_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
-  engine->thr                 = SDL_CreateThread(engine_thread, "EngineThread", engine);
-  engine->mtx                 = SDL_CreateMutex();
-  engine->cond                = SDL_CreateCondition();
-  engine->thr_working         = false;
-  engine->stop_requested      = false;
-  engine->last_pos_hash       = 0ULL;
-  engine->last_turn           = WHITE;
-  engine->ctx                 = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_NONE, NO_ENPASSANT);
+  engine->thr            = SDL_CreateThread(engine_thread, "EngineThread", engine);
+  engine->mtx            = SDL_CreateMutex();
+  engine->cond           = SDL_CreateCondition();
+  engine->thr_working    = false;
+  engine->stop_requested = false;
+  engine->last_pos_hash  = 0ULL;
+  engine->last_turn      = WHITE;
+  engine->ctx            = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_NONE, NO_ENPASSANT);
 
   init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
   init_magic_bitboards(); // init magic bitboards for sliding pieces in move generation logic
