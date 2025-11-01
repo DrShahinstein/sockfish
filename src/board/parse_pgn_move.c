@@ -1,27 +1,16 @@
 #include "board.h"
-
-    /* Used For Debugging */
-// static const char *MAP[] = {
-//  "a1","b1","c1","d1","e1","f1","g1","h1",
-//  "a2","b2","c2","d2","e2","f2","g2","h2",
-//  "a3","b3","c3","d3","e3","f3","g3","h3",
-//  "a4","b4","c4","d4","e4","f4","g4","h4",
-//  "a5","b5","c5","d5","e5","f5","g5","h5",
-//  "a6","b6","c6","d6","e6","f6","g6","h6",
-//  "a7","b7","c7","d7","e7","f7","g7","h7",
-//  "a8","b8","c8","d8","e8","f8","g8","h8"
-//};
+#include "engine.h"  /* make_bitboards_from_charboard() */
 
 /* Not Done Yet */
 void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc) {
   Turn turn         = sf_ctx->search_color;
-  uint8_t castling  = CASTLE_WK & CASTLE_WQ & CASTLE_BK & CASTLE_BQ;
-  Square en_passant = NO_ENPASSANT;
+  uint8_t castling  = sf_ctx->castling_rights;
+  Square en_passant = sf_ctx->enpassant_sq;
   int from_row      = -1;
   int from_col      = -1;
   int to_row        = -1;
   int to_col        = -1;
-  char piece_type;
+  char piece_type   = -1;
 
   const char *ptr = move;
 
@@ -41,6 +30,9 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     else return;
     break;
   }
+
+  if (piece_type == -1)
+    return;
 
   /* 2 */
   char file = *ptr++;
@@ -64,14 +56,14 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     int fc        = square_to_col(src_sq);
     int tr        = square_to_row(dst_sq);
     int tc        = square_to_col(dst_sq);
-    
+
     bool piece_types_match = last_pos[fr][fc] == piece_type;
     bool destination_match = (tr == to_row && tc == to_col);
 
     if (piece_types_match && destination_match) {
-      from_row      = square_to_row(src_sq);
-      from_col      = square_to_col(src_sq);
-      found_src_sq  = true;
+      from_row     = square_to_row(src_sq);
+      from_col     = square_to_col(src_sq);
+      found_src_sq = true;
       break;
     }
   }
@@ -79,8 +71,11 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   if (!found_src_sq) return;
 
   /* Conclude */
+  BitboardSet new_bbset = make_bitboards_from_charboard((const char (*)[8]) last_pos);
+  
   last_pos[from_row][from_col] = 0;
   last_pos[to_row][to_col]     = piece_type;
+  sf_ctx->bitboard_set         = new_bbset;
   sf_ctx->search_color         = !turn;
   sf_ctx->castling_rights      = castling;
   sf_ctx->enpassant_sq         = en_passant;
