@@ -35,12 +35,20 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     return;
 
   /* 2 */
-  char file = *ptr++;
-  char rank = *ptr;
+  char file = -1, rank = -1;
 
-  if (file < 'a' || file > 'h') return;
-  if (rank < '1' || rank > '8') return;
-  
+  while (*ptr) {
+    if (*ptr >= 'a' && *ptr <= 'h' && *(ptr + 1) >= '1' && *(ptr + 1) <= '8') {
+      file = *ptr;
+      rank = *(ptr + 1);
+      break;
+    }
+    ptr++;
+  }
+
+  if (file == -1 || rank == -1)
+    return;
+
   to_row = 7 - (rank - '1');
   to_col = file - 'a';
 
@@ -71,14 +79,10 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   if (!found_src_sq) return;
 
   /* Conclude */
-  BitboardSet new_bbset = make_bitboards_from_charboard((const char (*)[8]) last_pos);
-  
-  last_pos[from_row][from_col] = 0;
-  last_pos[to_row][to_col]     = piece_type;
-  sf_ctx->bitboard_set         = new_bbset;
-  sf_ctx->search_color         = !turn;
-  sf_ctx->castling_rights      = castling;
-  sf_ctx->enpassant_sq         = en_passant;
+  sf_ctx->bitboard_set    = make_bitboards_from_charboard((const char (*)[8]) last_pos);
+  sf_ctx->search_color    = !turn;
+  sf_ctx->castling_rights = castling;
+  sf_ctx->enpassant_sq    = en_passant;
 
   *fr = from_row; *fc = from_col;
   *tr = to_row;   *tc = to_col;
