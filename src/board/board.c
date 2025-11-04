@@ -85,7 +85,8 @@ void board_update_king_in_check(BoardState *b) {
 }
 
 void load_fen(const char *fen, BoardState *board) {
-  SDL_memset(board->board, 0, sizeof(board->board));
+  SDL_memset(board->board,   0, sizeof(board->board));
+  SDL_memset(board->history, 0, sizeof(board->history));
   board->turn          = WHITE;
   board->castling      = 0;
   board->ep_row        = NO_ENPASSANT;
@@ -148,10 +149,6 @@ void load_fen(const char *fen, BoardState *board) {
 void load_pgn(const char *pgn, BoardState *board) {
   load_fen(START_FEN, board);
 
-  SDL_memset(board->history, 0, sizeof(board->history));
-  board->undo_count = 0;
-  board->redo_count = 0;
-
   char *ptr = SDL_strstr(pgn, "1.");
 
   if (!ptr)
@@ -159,9 +156,8 @@ void load_pgn(const char *pgn, BoardState *board) {
 
   ptr += 2;
 
-  char last_pos[8][8];
-  SDL_memcpy(last_pos, board->board, sizeof(last_pos));
-  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) last_pos);
+  BoardState tmp_b  = *board;
+  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
   SF_Context ctx    = create_sf_ctx(&bbset, WHITE, CASTLE_NONE, NO_ENPASSANT);
 
   while (*ptr != '\0') {
@@ -210,29 +206,42 @@ void load_pgn(const char *pgn, BoardState *board) {
     pgn_move[move_index] = '\0';
 
     if (pgn_move[0] != '\0') {
-      if (board->redo_count >= MAX_HISTORY)
+      if (tmp_b.redo_count >= MAX_HISTORY)
         break;
 
+      BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
+      Square ep         = rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
+      ctx               = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
+
       int fr=-1, fc=-1, tr=-1, tc=-1;
-      parse_pgn_move(pgn_move, &ctx, last_pos, &fr, &fc, &tr, &tc);
+      parse_pgn_move(pgn_move, &ctx, tmp_b.board, &fr, &fc, &tr, &tc);
 
       bool parsing_failed = (fr < 0 || fr > 7) ||
                             (fc < 0 || fc > 7) ||
                             (tr < 0 || tr > 7) ||
                             (tc < 0 || tc > 7);
                             
-      if (parsing_failed) {
-        SDL_memset(board->history, 0, sizeof(board->history));
-        board->undo_count = 0;
-        board->redo_count = 0;
+      if (parsing_failed)
         return;
-      }
 
-      board_save_history(board, fr, fc, tr, tc, board->redo_count);
-      board->redo_count += 1;
-      board->turn = ctx.search_color;
+      board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
+
+      tmp_b.redo_count   += 1;
+      tmp_b.turn          = ctx.search_color;
+      tmp_b.castling      = ctx.castling_rights;
+      tmp_b.ep_row        = -1;
+      tmp_b.ep_col        = -1;
+      tmp_b.board[tr][tc] = tmp_b.board[fr][fc];
+      tmp_b.board[fr][fc] = 0;
     }
   }
+
+  SDL_memcpy(board->history, &tmp_b.history, sizeof(board->history));
+  board->redo_count = tmp_b.redo_count;
+  board->turn       = tmp_b.turn;
+  board->castling   = tmp_b.castling;
+  board->ep_row     = tmp_b.ep_row;
+  board->ep_col     = tmp_b.ep_col;
 }
 
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col, int history_index) {
