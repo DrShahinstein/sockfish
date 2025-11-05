@@ -6,6 +6,7 @@
 
 static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
+static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr);
 
 void board_init(BoardState *board) {
   SDL_memset(board->board,           0, sizeof(board->board));
@@ -226,13 +227,17 @@ void load_pgn(const char *pgn, BoardState *board) {
 
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
 
+      char moving_piece = tmp_b.board[fr][fc];
+
       tmp_b.redo_count   += 1;
       tmp_b.turn          = ctx.search_color;
       tmp_b.castling      = ctx.castling_rights;
-      tmp_b.ep_row        = -1;
-      tmp_b.ep_col        = -1;
-      tmp_b.board[tr][tc] = tmp_b.board[fr][fc];
+      tmp_b.ep_row        = NO_ENPASSANT;
+      tmp_b.ep_col        = NO_ENPASSANT;
+      tmp_b.board[tr][tc] = moving_piece;
       tmp_b.board[fr][fc] = 0;
+
+      adjust_enpassant(&tmp_b.ep_row, &tmp_b.ep_col, moving_piece, fr, fc, tr);
     }
   }
 
@@ -388,4 +393,14 @@ static bool validate_castling(const char *str) {
   }
 
   return true;
+}
+
+static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr) {
+  bool is_pawn     = (p == 'P' || p == 'p');
+  bool double_push = is_pawn && SDL_abs(fr - tr) == 2;
+
+  if (double_push) {
+    *ep_row = (fr + tr) / 2;
+    *ep_col = fc;
+  }
 }
