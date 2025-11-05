@@ -14,6 +14,50 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
 
   const char *ptr = move;
 
+  /* 0 */
+  bool queenside = SDL_strstr(move, "O-O-O") != NULL ||
+                   SDL_strstr(move, "0-0-0") != NULL;
+
+  bool kingside  = SDL_strstr(move, "O-O") != NULL   ||
+                   SDL_strstr(move, "0-0") != NULL;
+
+  if (queenside) {
+    bool white = turn == WHITE;
+
+    if (white) {
+      if (!(castling & CASTLE_WQ)) return;
+
+      castling  &= ~(CASTLE_WK | CASTLE_WQ);
+      piece_type = 'K';
+      from_row   = 7; from_col = 4; to_row = 7; to_col = 2;
+    }
+
+    else {
+      if (!(castling & CASTLE_BQ)) return;
+
+      castling  &= ~(CASTLE_BK | CASTLE_BQ);
+      piece_type = 'k';
+      from_row   = 0; from_col = 4; to_row = 0; to_col = 2;
+    }
+
+    goto validation;
+  }
+
+  else if (kingside) {
+    piece_type = (turn == WHITE) ? 'K' : 'k';
+
+    if (turn == WHITE) {
+      from_row = 7; from_col = 4;
+      to_row   = 7; to_col   = 6;
+    }
+    else {
+      from_row = 0; from_col = 4;
+      to_row   = 0; to_col   = 6;
+    }
+
+    goto validation;
+  }
+
   /* 1 */
   switch (*ptr) {
   case 'N': case 'B': case 'R': case 'Q': case 'K':
@@ -31,8 +75,9 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     break;
   }
 
-  if (piece_type == -1)
-    return;
+  if (piece_type == 'K') castling &= ~(CASTLE_WK | CASTLE_WQ);
+  if (piece_type == 'k') castling &= ~(CASTLE_BK | CASTLE_BQ);
+  if (piece_type == -1)  return;
 
   /* 2 */
   char file = -1, rank = -1;
@@ -53,6 +98,8 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   to_col = file - 'a';
 
   /* 3 */
+  validation: {/* jump point */};
+
   bool found_src_sq = false;
   MoveList valids   = sf_generate_moves(sf_ctx);
 
@@ -78,7 +125,7 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
 
   if (!found_src_sq) return;
 
-  /* Conclude */
+  /* 4 */
   sf_ctx->bitboard_set    = make_bitboards_from_charboard((const char (*)[8]) last_pos);
   sf_ctx->search_color    = !turn;
   sf_ctx->castling_rights = castling;
@@ -95,7 +142,8 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   ** Basic Ideas **
   
   @description: Brief outline to conceptualize the parsing algorithm
-
+  
+  0. Handle castling moves exceptionally.
   1. Find piece type         ('N'f3, 'Q'g6, 'B'a3, 'e'4, 'e'xb7)
   2. Find destination square (N'f3', Q'g6', B'a3', 'e4', ex'b7')
   3. Find source square
@@ -113,7 +161,8 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     =>   if dest(m) == parsed_dest_from_phase2:
     =>     src_square = from(m)
 
-  4. Update *fr, *fc, *tr, *tc values with necessary conversions.
-  5. Conclude, I guess.
+  4. Update *fr, *fc, *tr, *tc values.
+  
+  Conclude, I guess.
   
 */
