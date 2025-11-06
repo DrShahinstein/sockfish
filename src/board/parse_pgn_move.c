@@ -1,13 +1,10 @@
 #include "board.h"
 #include "engine.h"  /* make_bitboards_from_charboard() */
 
-static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc);
-
 /* Not Done Yet */
 void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc) {
   Turn turn         = sf_ctx->search_color;
   uint8_t castling  = sf_ctx->castling_rights;
-  Square en_passant = sf_ctx->enpassant_sq;
   int from_row      = -1;
   int from_col      = -1;
   int to_row        = -1;
@@ -131,31 +128,12 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   if (!found_src_sq) return;
 
   /* 4 */
-  adjust_castling_flags(&castling, piece_type, from_row, from_col);
-
   sf_ctx->bitboard_set    = make_bitboards_from_charboard((const char (*)[8]) last_pos);
   sf_ctx->search_color    = !turn;
   sf_ctx->castling_rights = castling;
-  sf_ctx->enpassant_sq    = en_passant;
 
   *fr = from_row; *fc = from_col;
   *tr = to_row;   *tc = to_col;
-}
-
-static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc) {
-  /* on KING */
-  if (p == 'K') *c &= ~(CASTLE_WK | CASTLE_WQ);
-  if (p == 'k') *c &= ~(CASTLE_BK | CASTLE_BQ);
-  
-  /* on ROOK */
-  if (p == 'R') {
-    if (fr == 7 && fc == 0) *c &= ~CASTLE_WQ; // a1 rook
-    if (fr == 7 && fc == 7) *c &= ~CASTLE_WK; // h1 rook
-  }
-  if (p == 'r') {
-    if (fr == 0 && fc == 0) *c &= ~CASTLE_BQ; // a8 rook
-    if (fr == 0 && fc == 7) *c &= ~CASTLE_BK; // h8 rook
-  }
 }
 
 
