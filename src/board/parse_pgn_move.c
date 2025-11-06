@@ -20,45 +20,25 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   bool kingside  = SDL_strstr(move, "O-O") != NULL   ||
                    SDL_strstr(move, "0-0") != NULL;
 
-  if (queenside) {
+  if (queenside || kingside) {
     bool white = turn == WHITE;
 
     if (white) {
-      if (!(castling & CASTLE_WQ)) return;
+      if (queenside && !(castling & CASTLE_WQ)) return;
+      if (kingside  && !(castling & CASTLE_WK)) return;
 
       castling  &= ~(CASTLE_WK | CASTLE_WQ);
       piece_type = 'K';
-      from_row   = 7; from_col = 4; to_row = 7; to_col = 2;
+      from_row   = 7; from_col = 4; to_row = 7; to_col = queenside ? 2 : 6;
     }
-
+    
     else {
-      if (!(castling & CASTLE_BQ)) return;
+      if (queenside && !(castling & CASTLE_BQ)) return;
+      if (kingside  && !(castling & CASTLE_BK)) return;
 
       castling  &= ~(CASTLE_BK | CASTLE_BQ);
       piece_type = 'k';
-      from_row   = 0; from_col = 4; to_row = 0; to_col = 2;
-    }
-
-    goto validation;
-  }
-
-  else if (kingside) {
-    bool white = turn == WHITE;
-
-    if (white) {
-      if (!(castling & CASTLE_WK)) return;
-
-      castling  &= ~(CASTLE_WK | CASTLE_WQ);
-      piece_type = 'K';
-      from_row   = 7; from_col = 4; to_row   = 7; to_col   = 6;
-    }
-
-    else {
-      if (!(castling & CASTLE_BK)) return;
-
-      castling  &= ~(CASTLE_BK | CASTLE_BQ);
-      piece_type = 'k';
-      from_row   = 0; from_col = 4; to_row   = 0; to_col   = 6;
+      from_row   = 0; from_col = 4; to_row = 0; to_col = queenside ? 2 : 6;
     }
 
     goto validation;
