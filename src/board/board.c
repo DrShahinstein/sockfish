@@ -6,6 +6,7 @@
 
 static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
+static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc);
 static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr);
 
 void board_init(BoardState *board) {
@@ -210,9 +211,9 @@ void load_pgn(const char *pgn, BoardState *board) {
       if (tmp_b.redo_count >= MAX_HISTORY)
         break;
 
-      BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
-      Square ep         = rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
-      ctx               = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
+      bbset     = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
+      Square ep = rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
+      ctx       = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
 
       int fr=-1, fc=-1, tr=-1, tc=-1;
       parse_pgn_move(pgn_move, &ctx, tmp_b.board, &fr, &fc, &tr, &tc);
@@ -227,17 +228,15 @@ void load_pgn(const char *pgn, BoardState *board) {
 
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
 
-      char moving_piece = tmp_b.board[fr][fc];
+      char moved_piece = tmp_b.board[fr][fc];
 
       tmp_b.redo_count   += 1;
       tmp_b.turn          = ctx.search_color;
-      tmp_b.castling      = ctx.castling_rights;
-      tmp_b.ep_row        = NO_ENPASSANT;
-      tmp_b.ep_col        = NO_ENPASSANT;
-      tmp_b.board[tr][tc] = moving_piece;
+      tmp_b.board[tr][tc] = moved_piece;
       tmp_b.board[fr][fc] = 0;
 
-      adjust_enpassant(&tmp_b.ep_row, &tmp_b.ep_col, moving_piece, fr, fc, tr);
+      adjust_enpassant(&tmp_b.ep_row, &tmp_b.ep_col, moved_piece, fr, fc, tr);
+      adjust_castling_flags(&tmp_b.castling, moved_piece, fr, fc);
     }
   }
 
@@ -395,6 +394,22 @@ static bool validate_castling(const char *str) {
   return true;
 }
 
+static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc) {
+  /* on KING */
+  if (p == 'K') *c &= ~(CASTLE_WK | CASTLE_WQ);
+  if (p == 'k') *c &= ~(CASTLE_BK | CASTLE_BQ);
+  
+  /* on ROOK */
+  if (p == 'R') {
+    if (fr == 7 && fc == 0) *c &= ~CASTLE_WQ; // a1 rook
+    if (fr == 7 && fc == 7) *c &= ~CASTLE_WK; // h1 rook
+  }
+  if (p == 'r') {
+    if (fr == 0 && fc == 0) *c &= ~CASTLE_BQ; // a8 rook
+    if (fr == 0 && fc == 7) *c &= ~CASTLE_BK; // h8 rook
+  }
+}
+
 static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr) {
   bool is_pawn     = (p == 'P' || p == 'p');
   bool double_push = is_pawn && SDL_abs(fr - tr) == 2;
@@ -402,5 +417,10 @@ static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, i
   if (double_push) {
     *ep_row = (fr + tr) / 2;
     *ep_col = fc;
+  }
+
+  else {
+    *ep_row = NO_ENPASSANT;
+    *ep_col = NO_ENPASSANT;
   }
 }
