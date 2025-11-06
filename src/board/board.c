@@ -242,7 +242,7 @@ void load_pgn(const char *pgn, BoardState *board) {
 
   SDL_memcpy(board->history, &tmp_b.history, sizeof(board->history));
   board->redo_count = tmp_b.redo_count;
-  board->turn       = tmp_b.turn;
+  board->turn       = WHITE;
   board->castling   = tmp_b.castling;
   board->ep_row     = tmp_b.ep_row;
   board->ep_col     = tmp_b.ep_col;
