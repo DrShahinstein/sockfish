@@ -211,9 +211,12 @@ void load_pgn(const char *pgn, BoardState *board) {
       if (tmp_b.redo_count >= MAX_HISTORY)
         break;
 
-      bbset     = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
-      Square ep = rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
-      ctx       = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
+      Square ep;
+      bool ep_invalid = tmp_b.ep_row == NO_ENPASSANT || tmp_b.ep_col == NO_ENPASSANT;
+
+      bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
+      ep    = ep_invalid ? NO_ENPASSANT : rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
+      ctx   = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
 
       int fr=-1, fc=-1, tr=-1, tc=-1;
       parse_pgn_move(pgn_move, &ctx, tmp_b.board, &fr, &fc, &tr, &tc);
