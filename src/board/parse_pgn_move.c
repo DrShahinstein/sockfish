@@ -45,6 +45,8 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   }
 
   /* 1 */
+  char which_pawn = -1;
+
   switch (*ptr) {
   case 'N': case 'B': case 'R': case 'Q': case 'K':
     if (turn == WHITE)
@@ -56,8 +58,10 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     break;
 
   default:
-    if (*ptr >= 'a' && *ptr <= 'h') piece_type = (turn == WHITE) ? 'P' : 'p';
-    else return;
+    if (*ptr >= 'a' && *ptr <= 'h') {
+      piece_type = (turn == WHITE) ? 'P' : 'p';
+      which_pawn = *ptr;
+    } else return;
     break;
   }
 
@@ -94,8 +98,13 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     int tr        = square_to_row(dst_sq);
     int tc        = square_to_col(dst_sq);
 
+    bool pawn_move         = which_pawn != -1;
     bool piece_types_match = last_pos[fr][fc] == piece_type;
     bool destination_match = (tr == to_row && tc == to_col);
+
+    if (pawn_move && (fc + 'a' != which_pawn)) {
+      piece_types_match = false;
+    }
 
     if (piece_types_match && destination_match) {
       from_row     = square_to_row(src_sq);
