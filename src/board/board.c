@@ -6,6 +6,7 @@
 
 static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
+static void adjust_castling_rook(BoardState *tmp_b, int king_to_col, int row);
 static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc);
 static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr);
 
@@ -232,11 +233,16 @@ void load_pgn(const char *pgn, BoardState *board) {
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
 
       char moved_piece = tmp_b.board[fr][fc];
+      bool is_castling = (moved_piece == 'K' || moved_piece == 'k') && SDL_abs(fc - tc) == 2;
 
       tmp_b.redo_count   += 1;
       tmp_b.turn          = ctx.search_color;
       tmp_b.board[tr][tc] = moved_piece;
       tmp_b.board[fr][fc] = 0;
+
+      if (is_castling) {
+        adjust_castling_rook(&tmp_b, tc, tr);
+      }
 
       adjust_enpassant(&tmp_b.ep_row, &tmp_b.ep_col, moved_piece, fr, fc, tr);
       adjust_castling_flags(&tmp_b.castling, moved_piece, fr, fc);
@@ -421,5 +427,19 @@ static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, i
   else {
     *ep_row = NO_ENPASSANT;
     *ep_col = NO_ENPASSANT;
+  }
+}
+
+static void adjust_castling_rook(BoardState *tmp_b, int king_to_col, int row) {
+  bool kingside = (king_to_col == 6);
+
+  if (kingside) {
+    char rook = tmp_b->board[row][7];
+    tmp_b->board[row][5] = rook;
+    tmp_b->board[row][7] = 0;
+  } else {
+    char rook = tmp_b->board[row][0];
+    tmp_b->board[row][3] = rook;
+    tmp_b->board[row][0] = 0;
   }
 }
