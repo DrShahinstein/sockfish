@@ -65,6 +65,8 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     break;
   }
 
+  const char *disambig_scan_checkpoint_ptr = ptr;
+
   /* 2 */
   char file = -1, rank = -1;
 
@@ -82,6 +84,21 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
 
   to_row = 7 - (rank - '1');
   to_col = file - 'a';
+
+  /* 2.5 */
+  int disambig_file = -1, disambig_rank = -1;
+
+  if (which_pawn != -1)
+    goto validation;
+
+  {
+    const char *s = disambig_scan_checkpoint_ptr;
+    while (s < ptr) {
+      if (*s >= 'a' && *s <= 'h') disambig_file = *s - 'a';
+      if (*s >= '1' && *s <= '8') disambig_rank = 7 - (*s - '1');
+      s++;
+    }
+  }
 
   /* 3 */
   validation: {/* jump point */};
@@ -102,9 +119,9 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
     bool piece_types_match = last_pos[fr][fc] == piece_type;
     bool destination_match = (tr == to_row && tc == to_col);
 
-    if (pawn_move && (fc + 'a' != which_pawn)) {
-      piece_types_match = false;
-    }
+    if (pawn_move && (fc + 'a' != which_pawn))     piece_types_match = false;
+    if (disambig_file >= 0 && fc != disambig_file) piece_types_match = false;
+    if (disambig_rank >= 0 && fr != disambig_rank) piece_types_match = false;
 
     if (piece_types_match && destination_match) {
       from_row     = square_to_row(src_sq);
