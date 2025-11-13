@@ -4,7 +4,7 @@
 #define BOARD_SIZE (SQ * 8)
 #define PIECE_PATH "assets/pieces/%c.png"
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define MAX_HISTORY 128
+#define MAX_HISTORY 512
 
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
 #include "sockfish/movegen.h"  /* MoveList, sf_generate_moves() */
