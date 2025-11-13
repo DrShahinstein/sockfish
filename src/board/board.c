@@ -6,6 +6,7 @@
 
 static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
+static void adjust_promoting_pawn(BoardState *tmp_b, char promote, Turn T, int tr, int tc);
 static void adjust_castling_rook(BoardState *tmp_b, int king_to_col, int row);
 static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc);
 static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr);
@@ -218,9 +219,11 @@ void load_pgn(const char *pgn, BoardState *board) {
       bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
       ep    = ep_invalid ? NO_ENPASSANT : rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
       ctx   = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
-
-      int fr=-1, fc=-1, tr=-1, tc=-1;
-      parse_pgn_move(pgn_move, &ctx, tmp_b.board, &fr, &fc, &tr, &tc);
+      
+      char promote = -1;
+      int  fr=-1, tr=-1, 
+           fc=-1, tc=-1;
+      parse_pgn_move(pgn_move, &ctx, tmp_b.board, &promote, &fr, &fc, &tr, &tc);
 
       bool parsing_failed = (fr < 0 || fr > 7) ||
                             (fc < 0 || fc > 7) ||
@@ -233,6 +236,7 @@ void load_pgn(const char *pgn, BoardState *board) {
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
 
       char moved_piece = tmp_b.board[fr][fc];
+      Turn t           = tmp_b.turn;
       bool is_castling = (moved_piece == 'K' || moved_piece == 'k') && SDL_abs(fc - tc) == 2;
 
       tmp_b.redo_count   += 1;
@@ -240,9 +244,11 @@ void load_pgn(const char *pgn, BoardState *board) {
       tmp_b.board[tr][tc] = moved_piece;
       tmp_b.board[fr][fc] = 0;
 
-      if (is_castling) {
+      if (promote != -1)
+        adjust_promoting_pawn(&tmp_b, promote, t, tr, tc);
+
+      if (is_castling)
         adjust_castling_rook(&tmp_b, tc, tr);
-      }
 
       adjust_enpassant(&tmp_b.ep_row, &tmp_b.ep_col, moved_piece, fr, fc, tr);
       adjust_castling_flags(&tmp_b.castling, moved_piece, fr, fc);
@@ -442,4 +448,16 @@ static void adjust_castling_rook(BoardState *tmp_b, int king_to_col, int row) {
     tmp_b->board[row][3] = rook;
     tmp_b->board[row][0] = 0;
   }
+}
+
+static void adjust_promoting_pawn(BoardState *tmp_b, char promote, Turn T, int tr, int tc) {
+  char p;
+
+  if (T == WHITE)
+    p = promote;
+  else 
+    p = SDL_tolower(promote);
+
+  tmp_b->board[tr][tc] = p;
+  tmp_b->history[tmp_b->redo_count - 1].promoted_piece = p;
 }
