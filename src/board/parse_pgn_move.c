@@ -1,8 +1,9 @@
 #include "board.h"
 #include "engine.h"  /* make_bitboards_from_charboard() */
 
-/* Not Done Yet */
-void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], int *fr, int *fc, int *tr, int *tc) {
+static void take_care_of_pawn_promotes(const char *pgnmove, bool *pawn_promotes, char *promoted_to);
+
+void parse_pgn_move(const char *pgnmove, SF_Context *sf_ctx, char (*last_pos)[8], char *promote, int *fr, int *fc, int *tr, int *tc) {
   Turn turn         = sf_ctx->search_color;
   uint8_t castling  = sf_ctx->castling_rights;
   int from_row      = -1;
@@ -11,14 +12,14 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   int to_col        = -1;
   char piece_type   = -1;
 
-  const char *ptr = move;
+  const char *ptr = pgnmove;
 
   /* 0 */
-  bool queenside = SDL_strstr(move, "O-O-O") != NULL ||
-                   SDL_strstr(move, "0-0-0") != NULL;
+  bool queenside = SDL_strstr(pgnmove, "O-O-O") != NULL ||
+                   SDL_strstr(pgnmove, "0-0-0") != NULL;
 
-  bool kingside  = SDL_strstr(move, "O-O") != NULL   ||
-                   SDL_strstr(move, "0-0") != NULL;
+  bool kingside  = SDL_strstr(pgnmove, "O-O") != NULL   ||
+                   SDL_strstr(pgnmove, "0-0") != NULL;
 
   if (queenside || kingside) {
     bool white = turn == WHITE;
@@ -86,10 +87,13 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   to_col = file - 'a';
 
   /* 2.5 */
-  int disambig_file = -1, disambig_rank = -1;
+  int disambig_file = -1;  bool pawn_promotes = false;
+  int disambig_rank = -1;  char promoted_to   = -1;
 
-  if (which_pawn != -1)
+  if (which_pawn != -1) {
+    take_care_of_pawn_promotes(pgnmove, &pawn_promotes, &promoted_to);
     goto validation;
+  }
 
   {
     const char *s = disambig_scan_checkpoint_ptr;
@@ -138,11 +142,33 @@ void parse_pgn_move(const char *move, SF_Context *sf_ctx, char (*last_pos)[8], i
   sf_ctx->search_color    = !turn;
   sf_ctx->castling_rights = castling;
 
+  if (pawn_promotes)
+    *promote = promoted_to;
+
   *fr = from_row; *fc = from_col;
   *tr = to_row;   *tc = to_col;
 }
 
+static void take_care_of_pawn_promotes(const char *pgnmove, bool *pawn_promotes, char *promoted_to) {
+  const char *s = SDL_strchr(pgnmove, '=');
 
+  if (s == NULL)
+    return;
+
+  s += 1;
+
+  while (*s == ' ' || *s == '\n') s += 1;
+  
+  char P = SDL_toupper(*s);
+
+  switch (P) {
+  case 'Q': case 'N': case 'B': case 'R': break;
+  default: return;
+  }
+
+  *promoted_to   = P;
+  *pawn_promotes = true;
+}
 
 /*
   
