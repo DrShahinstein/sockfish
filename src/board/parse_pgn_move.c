@@ -4,13 +4,18 @@
 static void take_care_of_pawn_promotes(const char *pgnmove, bool *pawn_promotes, char *promoted_to);
 
 void parse_pgn_move(const char *pgnmove, SF_Context *sf_ctx, char (*last_pos)[8], char *promote, int *fr, int *fc, int *tr, int *tc) {
-  Turn turn         = sf_ctx->search_color;
-  uint8_t castling  = sf_ctx->castling_rights;
-  int from_row      = -1;
-  int from_col      = -1;
-  int to_row        = -1;
-  int to_col        = -1;
-  char piece_type   = -1;
+  Turn turn          = sf_ctx->search_color;
+  uint8_t castling   = sf_ctx->castling_rights;
+  int from_row       = -1;
+  int from_col       = -1;
+  int to_row         = -1;
+  int to_col         = -1;
+  char piece_type    = -1;
+  int disambig_file  = -1;
+  int disambig_rank  = -1;
+  char which_pawn    = -1;
+  char promoted_to   = -1;
+  bool pawn_promotes = false;
 
   const char *ptr = pgnmove;
 
@@ -46,8 +51,6 @@ void parse_pgn_move(const char *pgnmove, SF_Context *sf_ctx, char (*last_pos)[8]
   }
 
   /* 1 */
-  char which_pawn = -1;
-
   switch (*ptr) {
   case 'N': case 'B': case 'R': case 'Q': case 'K':
     if (turn == WHITE)
@@ -87,9 +90,6 @@ void parse_pgn_move(const char *pgnmove, SF_Context *sf_ctx, char (*last_pos)[8]
   to_col = file - 'a';
 
   /* 2.5 */
-  int disambig_file = -1;  bool pawn_promotes = false;
-  int disambig_rank = -1;  char promoted_to   = -1;
-
   if (which_pawn != -1) {
     take_care_of_pawn_promotes(pgnmove, &pawn_promotes, &promoted_to);
     goto validation;
