@@ -153,13 +153,28 @@ void load_fen(const char *fen, BoardState *board) {
 void load_pgn(const char *pgn, BoardState *board) {
   load_fen(START_FEN, board);
 
-  char *ptr = SDL_strstr(pgn, "1.");
+  const char *ptr = pgn;
+
+  /* Skip PGN Headers [...] */
+  while (*ptr != '\0') {
+    while (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r') ptr++;
+
+    if (*ptr == '[') {
+      while (*ptr != '\0' && *ptr != '\n' && *ptr != '\r') ptr++;
+      continue;
+    }
+
+    break;
+  }
+
+  ptr = SDL_strstr(ptr, "1.");
 
   if (!ptr)
     return;
 
   ptr += 2;
 
+  /* Build Move History in a Fake Board */
   BoardState tmp_b  = *board;
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
   SF_Context ctx    = create_sf_ctx(&bbset, WHITE, CASTLE_ALL, NO_ENPASSANT);
@@ -170,6 +185,7 @@ void load_pgn(const char *pgn, BoardState *board) {
     if (*ptr == '\0')
       break;
 
+    /* Skip PGN Comments {...} */
     if (*ptr == '{') {
       while (*ptr != '}' && *ptr != '\0') ptr++;
       if    (*ptr == '}'                ) ptr++;
@@ -184,7 +200,7 @@ void load_pgn(const char *pgn, BoardState *board) {
       break;
 
     if (SDL_isdigit(*ptr)) {
-      char *ptr_move_number = ptr;
+      const char *ptr_move_number = ptr;
 
       while (SDL_isdigit(*ptr_move_number))
         ptr_move_number++;
@@ -216,6 +232,7 @@ void load_pgn(const char *pgn, BoardState *board) {
       Square ep;
       bool ep_invalid = tmp_b.ep_row == NO_ENPASSANT || tmp_b.ep_col == NO_ENPASSANT;
 
+      /* Refresh Context */
       bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
       ep    = ep_invalid ? NO_ENPASSANT : rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
       ctx   = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
@@ -233,12 +250,14 @@ void load_pgn(const char *pgn, BoardState *board) {
       if (parsing_failed)
         return;
 
+      /* Save Before Applying */
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
 
       char moved_piece = tmp_b.board[fr][fc];
       Turn t           = tmp_b.turn;
       bool is_castling = (moved_piece == 'K' || moved_piece == 'k') && SDL_abs(fc - tc) == 2;
 
+      /* Apply Incoming Move */
       tmp_b.redo_count   += 1;
       tmp_b.turn          = ctx.search_color;
       tmp_b.board[tr][tc] = moved_piece;
@@ -255,6 +274,7 @@ void load_pgn(const char *pgn, BoardState *board) {
     }
   }
 
+  /* Copy History to Main Board */
   SDL_memcpy(board->history, &tmp_b.history, sizeof(board->history));
   board->redo_count = tmp_b.redo_count;
 }
