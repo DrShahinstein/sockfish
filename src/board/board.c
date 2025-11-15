@@ -162,7 +162,7 @@ void load_pgn(const char *pgn, BoardState *board) {
 
   BoardState tmp_b  = *board;
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
-  SF_Context ctx    = create_sf_ctx(&bbset, WHITE, CASTLE_NONE, NO_ENPASSANT);
+  SF_Context ctx    = create_sf_ctx(&bbset, WHITE, CASTLE_ALL, NO_ENPASSANT);
 
   while (*ptr != '\0') {
     while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
