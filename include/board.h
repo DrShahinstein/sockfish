@@ -108,3 +108,10 @@ void load_pgn(const char *pgn, BoardState *board);
 
 // parse_pgn_move.c
 void parse_pgn_move(const char *pgnmove, SF_Context *sf_ctx, char (*last_pos)[8], char *promote, int *fr, int *fc, int *tr, int *tc);
+
+// special_moves.c
+void update_castling_rights(BoardState *board, char moving_piece, Move move);
+bool is_castling_move(BoardState *board, Move move);
+void perform_castling(BoardState *board, Move move);
+bool is_en_passant_capture(BoardState *board, Move move);
+void update_enpassant_rights(BoardState *board, char moving_piece);
