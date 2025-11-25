@@ -1,4 +1,4 @@
-#include "special_moves.h"
+#include "board.h"
 
 void update_castling_rights(BoardState *board, char moving_piece, Move move) {
   Square from_sq = move_from(move);
