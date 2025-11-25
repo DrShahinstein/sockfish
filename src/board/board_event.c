@@ -1,6 +1,5 @@
 #include "board.h"
 #include "window.h"
-#include "special_moves.h"
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
 #include <SDL3/SDL.h>
 

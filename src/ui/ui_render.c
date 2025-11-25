@@ -1,6 +1,5 @@
 #include "ui.h"
 #include "ui_render.h"
-#include "ui_helpers.h"
 #include <SDL3/SDL.h>
 
 TextCache text_cache;
