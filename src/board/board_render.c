@@ -11,6 +11,8 @@ SDL_Texture *coord_tex_light['z' + 1];
 SDL_Texture *coord_tex_dark ['z' + 1];
 
 static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col);
+static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FColor color);
+static void draw_arrow(SDL_Renderer *renderer, Square from_sq, Square to_sq, SDL_FColor color);
 
 void render_board_init(SDL_Renderer *renderer) {
   const char *pieces = "rnbqkpRNBQKP";
@@ -90,6 +92,14 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
+  /* Render Manual Square Highlight (when pressed on right-click) */
+  {
+    for (int i = 0; i < board->annotations.highlight_count; ++i) {
+      Highlight *h = &board->annotations.highlights[i];
+      draw_square_highlight(renderer, h->square, h->color);
+    }
+  }
+
   /* Render Coordination (a1,a2...) */
   for (int i = 0; i < 8; ++i) {
     char rank              = '8' - i;
@@ -124,7 +134,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
   }
 
-  /* Highlight Hover Over The Valid Squares */
+  /* Highlight Hover Over Valid Squares */
   bool hovering_valid_target = board->drag.active && mouse_row != -1 && mouse_col != -1 && board->selected_piece.active;
   if (hovering_valid_target) {
     Square from_sq       = rowcol_to_sq(board->selected_piece.row, board->selected_piece.col);
@@ -154,7 +164,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
-  /* Render All Pieces Except The One Being Dragged */
+  /* Render Pieces Excluding Drag */
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
       bool is_dragged_piece = board->drag.active && row == board->drag.from_row && col == board->drag.from_col;
@@ -170,7 +180,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
-  /* Render The Dragged Piece Following The Mouse */
+  /* Render Dragging Piece */
   if (board->drag.active) {
     char pc = board->board[board->drag.from_row][board->drag.from_col];
     if (pc && tex[(int)pc]) {
@@ -179,7 +189,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
-  /* Render Promotion Menu */
+  /* Render Pawn Promote Menu */
   if (board->promo.active) {
     for (int i = 0; i < 4; ++i) {
       float menu_x = board->promo.col * SQ;
@@ -196,7 +206,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
-  /* Render All Possible Valid Moves For The Selected Piece */
+  /* Render Valid Moves For The Selected Piece */
   if (board->selected_piece.active) {
     char pc = board->board[board->selected_piece.row][board->selected_piece.col];
 
@@ -249,7 +259,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
   /* Attention Over Checks */
   if (board->king.in_check) {
-    SDL_SetRenderDrawColor(renderer, 255, 20, 20, 200); // red
+    SDL_SetRenderDrawColor(renderer, 255, 20, 20, 200);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     int border_thickness = 2;
@@ -261,6 +271,14 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+  }
+
+  /* Render Arrows (while moving right-click) */
+  {
+    for (int i = 0; i < board->annotations.arrow_count; ++i) {
+      Arrow *a = &board->annotations.arrows[i];
+      draw_arrow(renderer, a->from, a->to, a->color);
+    }
   }
 }
 
@@ -323,4 +341,76 @@ static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col) {
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderGeometry(renderer, NULL, vertices, 12, NULL, 0);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
+
+static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FColor color) {
+  int row = square_to_row(square);
+  int col = square_to_col(square);
+
+  SDL_FRect rect = {col * SQ, row * SQ, SQ, SQ};
+
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+  SDL_SetRenderDrawColor(renderer, (Uint8)(color.r * 255), (Uint8)(color.g * 255), (Uint8)(color.b * 255), (Uint8)(color.a * 255));
+  SDL_RenderFillRect(renderer, &rect);
+
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
+
+static void draw_arrow(SDL_Renderer *renderer, Square from_sq, Square to_sq, SDL_FColor color) {
+  int from_row = square_to_row(from_sq);
+  int from_col = square_to_col(from_sq);
+  int to_row   = square_to_row(to_sq);
+  int to_col   = square_to_col(to_sq);
+
+  float from_x = from_col * SQ + SQ / 2.0f;
+  float from_y = from_row * SQ + SQ / 2.0f;
+  float to_x   = to_col   * SQ + SQ / 2.0f;
+  float to_y   = to_row   * SQ + SQ / 2.0f;
+
+  float dx  = to_x - from_x;
+  float dy  = to_y - from_y;
+  float len = SDL_sqrtf(dx * dx + dy * dy);
+  
+  if (len < 0.1f) return;
+  
+  dx /= len;
+  dy /= len;
+
+  float arrow_width       = 10.0f;
+  float arrow_head_length = 30.0f;
+  float arrow_head_width  = 40.0f;
+
+  float shaft_end_x = to_x - dx * arrow_head_length;
+  float shaft_end_y = to_y - dy * arrow_head_length;
+
+  float perp_x = -dy;
+  float perp_y = dx;
+
+  SDL_Vertex shaft[6];
+  for (int i = 0; i < 6; ++i) {
+    shaft[i].color = color;
+  }
+
+  shaft[0].position = (SDL_FPoint){from_x + perp_x * arrow_width / 2, from_y + perp_y * arrow_width / 2};
+  shaft[1].position = (SDL_FPoint){from_x - perp_x * arrow_width / 2, from_y - perp_y * arrow_width / 2};
+  shaft[2].position = (SDL_FPoint){shaft_end_x + perp_x * arrow_width / 2, shaft_end_y + perp_y * arrow_width / 2};
+  shaft[3].position = (SDL_FPoint){shaft_end_x + perp_x * arrow_width / 2, shaft_end_y + perp_y * arrow_width / 2};
+  shaft[4].position = (SDL_FPoint){from_x - perp_x * arrow_width / 2, from_y - perp_y * arrow_width / 2};
+  shaft[5].position = (SDL_FPoint){shaft_end_x - perp_x * arrow_width / 2, shaft_end_y - perp_y * arrow_width / 2};
+
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+  SDL_RenderGeometry(renderer, NULL, shaft, 6, NULL, 0);
+
+  SDL_Vertex head[3];
+  for (int i = 0; i < 3; i++) {
+    head[i].color = color;
+  }
+
+  head[0].position = (SDL_FPoint){to_x, to_y};
+  head[1].position = (SDL_FPoint){shaft_end_x + perp_x * arrow_head_width / 2, shaft_end_y + perp_y * arrow_head_width / 2};
+  head[2].position = (SDL_FPoint){shaft_end_x - perp_x * arrow_head_width / 2, shaft_end_y - perp_y * arrow_head_width / 2};
+
+  SDL_RenderGeometry(renderer, NULL, head, 3, NULL, 0);
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
