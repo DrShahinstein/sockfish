@@ -93,6 +93,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   }
 
   /* Render Manual Square Highlight (when pressed on right-click) */
+  if (board->annotations.highlight_count > 0)
   {
     for (int i = 0; i < board->annotations.highlight_count; ++i) {
       Highlight *h = &board->annotations.highlights[i];
@@ -274,6 +275,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   }
 
   /* Render Arrows (while moving right-click) */
+  if (board->annotations.arrow_count > 0)
   {
     for (int i = 0; i < board->annotations.arrow_count; ++i) {
       Arrow *a = &board->annotations.arrows[i];
