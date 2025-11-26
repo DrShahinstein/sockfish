@@ -9,8 +9,8 @@ typedef struct EngineWrapper {
   SDL_Mutex *mtx;
   SDL_Thread *thr;
   SDL_Condition *cond;
-  bool thr_working;
-  bool stop_requested;
+  SDL_AtomicInt thr_working;
+  SDL_AtomicInt stop_requested;
   SF_Context ctx;
   uint64_t last_pos_hash;
   Turn last_turn;
