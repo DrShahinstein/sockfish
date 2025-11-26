@@ -13,6 +13,7 @@ sources = files(
   'src/board/board_event.c',
   'src/board/board_render.c',
   'src/board/special_moves.c',
+  'src/board/annotations.c',
   'src/board/parse_pgn_move.c',
   'src/ui/ui.c',
   'src/ui/ui_render.c',
