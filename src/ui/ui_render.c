@@ -158,14 +158,12 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     SDL_RenderFillRect(r, &turn_changer);
     draw_text(r, ui->fonts.roboto16, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
 
-    engine_req_search(engine, board);
-    
     Move sf_best;
     bool search_thr_active;
 
     SDL_LockMutex(engine->mtx);
-    sf_best           = engine->ctx.best;
-    search_thr_active = engine->thr_working;
+    sf_best = engine->ctx.best;
+    search_thr_active = SDL_GetAtomicInt(&engine->thr_working);
     SDL_UnlockMutex(engine->mtx);
 
     float x = ui->turn_changer.rect.x;
@@ -184,6 +182,8 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
       draw_text(r, ui->fonts.roboto16, move_str, FWHITE, x, y);
     }
+
+    engine_req_search(engine, board);
   }
 
   // Undo Button
