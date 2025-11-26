@@ -115,3 +115,18 @@ bool is_castling_move(BoardState *board, Move move);
 void perform_castling(BoardState *board, Move move);
 bool is_en_passant_capture(BoardState *board, Move move);
 void update_enpassant_rights(BoardState *board, char moving_piece);
+
+// annotations.c
+void clear_annotations(Annotations *anns);
+void start_drawing_arrow(Annotations *anns, Square start);
+void cancel_drawing_arrow(Annotations *anns);
+bool is_drawing_arrow(const Annotations *anns);
+Square get_arrow_start(const Annotations *anns);
+int get_arrow_count(const Annotations *anns);
+int get_highlight_count(const Annotations *anns);
+bool has_arrow(Annotations *anns, Square from, Square to);
+bool add_arrow(Annotations *anns, Square from, Square to, SDL_FColor color);
+bool remove_arrow(Annotations *anns, Square from, Square to);
+bool add_highlight(Annotations *anns, Square square, SDL_FColor color);
+bool remove_highlight(Annotations *anns, Square square);
+bool has_highlight(Annotations *anns, Square square);
