@@ -21,9 +21,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         return;
       }
 
-      board->annotations.highlight_count = 0;
-      board->annotations.arrow_count     = 0;
-      board->annotations.drawing_arrow   = false;
+      clear_annotations(&board->annotations);
 
       sq_col = mx / SQ;
       sq_row = my / SQ;
@@ -59,8 +57,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       sq_col       = mx / SQ;
       Square start = rowcol_to_sq(sq_row, sq_col);
 
-      board->annotations.drawing_arrow = true;
-      board->annotations.arrow_start   = start;
+      start_drawing_arrow(&board->annotations, start);
     }
 
     break;
@@ -70,7 +67,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       SDL_GetMouseState(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) {
-        board->annotations.drawing_arrow = false;
+        cancel_drawing_arrow(&board->annotations);
         return;
       }
 
@@ -78,51 +75,32 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       sq_col     = mx / SQ;
       Square end = rowcol_to_sq(sq_row, sq_col);
 
-      if (board->annotations.drawing_arrow) {
-        Square start = board->annotations.arrow_start;
+      if (is_drawing_arrow(&board->annotations)) {
+        Square start = get_arrow_start(&board->annotations);
 
         if (start == end) {
-          bool found = false;
-
-          for (int i = 0; i < board->annotations.highlight_count; ++i) {
-            if (board->annotations.highlights[i].square == start) {
-              for (int j = i; j < board->annotations.highlight_count - 1; ++j)
-                board->annotations.highlights[j] = board->annotations.highlights[j + 1];
-
-              board->annotations.highlight_count--;
-              found = true;
-              break;
-            }
+          if (has_highlight(&board->annotations, start)) {
+            remove_highlight(&board->annotations, start);
           }
-
-          if (!found && board->annotations.highlight_count < MAX_HIGHLIGHTS) {
+          
+          else {
             SDL_FColor orange = {255.0f/255.0f, 170.0f/255.0f, 0.0f/255.0f, 0.5f};
-            board->annotations
-              .highlights[board->annotations.highlight_count++] = (Highlight){start, orange};
+            add_highlight(&board->annotations, start, orange);
           }
         }
         
         else {
-          bool found = false;
-          for (int i = 0; i < board->annotations.arrow_count; ++i) {
-            if (board->annotations.arrows[i].from == start && board->annotations.arrows[i].to == end) {
-              for (int j = i; j < board->annotations.arrow_count - 1; ++j)
-                board->annotations.arrows[j] = board->annotations.arrows[j + 1];
-
-              board->annotations.arrow_count--;
-              found = true;
-              break;
-            }
+          if (has_arrow(&board->annotations, start, end)) {
+            remove_arrow(&board->annotations, start, end);
           }
-
-          if (!found && board->annotations.arrow_count < MAX_ARROWS) {
-            SDL_FColor red = {214.0f / 255.0f, 58.0f / 255.0f, 40.0f / 255.0f, 0.8f};
-            board->annotations
-              .arrows[board->annotations.arrow_count++] = (Arrow){start, end, red};
+          
+          else {
+            SDL_FColor red = {214.0f/255.0f, 58.0f/255.0f, 40.0f/255.0f, 0.8f};
+            add_arrow(&board->annotations, start, end, red);
           }
         }
 
-        board->annotations.drawing_arrow = false;
+        cancel_drawing_arrow(&board->annotations);
       }
 
       return;
