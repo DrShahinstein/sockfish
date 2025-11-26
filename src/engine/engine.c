@@ -12,11 +12,12 @@ void engine_init(EngineWrapper *engine) {
   engine->thr            = SDL_CreateThread(engine_thread, "EngineThread", engine);
   engine->mtx            = SDL_CreateMutex();
   engine->cond           = SDL_CreateCondition();
-  engine->thr_working    = false;
-  engine->stop_requested = false;
   engine->last_pos_hash  = 0ULL;
   engine->last_turn      = WHITE;
   engine->ctx            = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
+
+  SDL_SetAtomicInt(&engine->thr_working, 0);
+  SDL_SetAtomicInt(&engine->stop_requested, 0);
 
   init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
   init_magic_bitboards(); // init magic bitboards for sliding pieces in move generation logic
@@ -26,14 +27,16 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   if (!engine) return;
   if (board->promo.active) return;
 
-  SDL_LockMutex(engine->mtx);
-  if (engine->thr_working) {
-    SDL_UnlockMutex(engine->mtx);
+  if (SDL_GetAtomicInt(&engine->thr_working))
     return;
-  }
 
   uint64_t new_hash = position_hash(board->board, board->turn);
-  if (engine->last_pos_hash == new_hash && engine->last_turn == board->turn) {
+  if (engine->last_pos_hash == new_hash && engine->last_turn == board->turn)
+    return;
+
+  SDL_LockMutex(engine->mtx);
+
+  if (SDL_GetAtomicInt(&engine->thr_working)) {
     SDL_UnlockMutex(engine->mtx);
     return;
   }
@@ -47,8 +50,8 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   engine->ctx           = ctx;
   engine->last_pos_hash = new_hash;
   engine->last_turn     = board->turn;
-  engine->thr_working   = true;
-  
+
+  SDL_SetAtomicInt(&engine->thr_working, 1);
   SDL_SignalCondition(engine->cond);
   SDL_UnlockMutex(engine->mtx);
 }
@@ -60,25 +63,25 @@ static int engine_thread(void *data) {
   while (1) {
     SDL_LockMutex(engine->mtx);
 
-    while (!engine->thr_working && !engine->stop_requested) {
+    while (!SDL_GetAtomicInt(&engine->thr_working) && !SDL_GetAtomicInt(&engine->stop_requested)) {
       SDL_WaitCondition(engine->cond, engine->mtx);
     }
 
-    if (engine->stop_requested) {
+    if (SDL_GetAtomicInt(&engine->stop_requested)) {
       SDL_UnlockMutex(engine->mtx);
       break;
     }
 
     SF_Context ctx;
     SDL_memcpy(&ctx, &engine->ctx, sizeof(SF_Context));
-    ctx.stop_requested = &engine->stop_requested;
+    ctx.stop_requested = (bool*)&engine->stop_requested;
     SDL_UnlockMutex(engine->mtx);
 
     Move best = sf_search(&ctx);
 
     SDL_LockMutex(engine->mtx);
-    engine->ctx.best    = best;
-    engine->thr_working = false;
+    engine->ctx.best = best;
+    SDL_SetAtomicInt(&engine->thr_working, 0);
     SDL_UnlockMutex(engine->mtx);
   }
 
@@ -86,19 +89,20 @@ static int engine_thread(void *data) {
 }
 
 void engine_destroy(EngineWrapper *engine) {
+  SDL_SetAtomicInt(&engine->stop_requested, 1);
   SDL_LockMutex(engine->mtx);
-  engine->stop_requested = true;
   SDL_SignalCondition(engine->cond);
   SDL_UnlockMutex(engine->mtx);
-
   SDL_WaitThread(engine->thr, NULL);
   SDL_DestroyCondition(engine->cond);
   SDL_DestroyMutex(engine->mtx);
 
-  engine->thr         = NULL;
-  engine->mtx         = NULL;
-  engine->cond        = NULL;
-  engine->thr_working = false;
+  engine->thr = NULL;
+  engine->mtx = NULL;
+  engine->cond = NULL;
+  
+  SDL_SetAtomicInt(&engine->thr_working, 0);
+  SDL_SetAtomicInt(&engine->stop_requested, 0);
 
   cleanup_magic_bitboards();
 }
