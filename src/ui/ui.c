@@ -13,6 +13,8 @@ void ui_init(UI_State *ui) {
     .jbmono14 = TTF_OpenFont(JBMONO, 14),
   };
 
+  info_system_init();
+
   ui->fonts                   = fonts;
   ui->engine_on               = false;
   ui->engine_toggler.rect     = (SDL_FRect){UI_START_X, UI_START_Y, 30, 30};
@@ -31,7 +33,9 @@ void ui_init(UI_State *ui) {
   ui->pgn_loader.length       = 0;
   ui->pgn_loader.btn.rect     = (SDL_FRect){UI_MIDDLE-50, ui->pgn_loader.area.rect.y + 75, 100, 30};
   ui->pgn_loader.btn.hovered  = false;
-  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 50, UI_FILLER_W, 4};
+  ui->info_box.rect           = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 50, UI_FILLER_W, 25};
+  ui->info_box.hovered        = false;
+  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 40, UI_FILLER_W, 4};
   ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->separator.rect.y + 25, 30, 30};
   ui->turn_changer.hovered    = false;
   ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
