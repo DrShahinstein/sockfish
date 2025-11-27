@@ -20,6 +20,7 @@ sources = files(
   'src/ui/ui_event.c',
   'src/ui/ui_helpers.c',
   'src/ui/cursor.c',
+  'src/ui/info.c',
   'src/engine/engine.c',
   'src/engine/bitboard_maker.c',
   'src/engine/position_hasher.c',
