@@ -144,6 +144,10 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderRect(r, &pgnbtn);
   draw_text_centered(r, ui->fonts.roboto15, "Load Pgn", FBLACK, pgnbtn);
 
+  // Information Box
+  const char *msg = get_info_message();
+  draw_text(r, ui->fonts.roboto16, msg, FWHITE, ui->info_box.rect.x, ui->info_box.rect.y);
+
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
     SDL_FRect separator = ui->separator.rect;
