@@ -10,6 +10,7 @@ void ui_init(UI_State *ui) {
   FontMenu fonts = {
     .roboto16 = TTF_OpenFont(ROBOTO, 16),
     .roboto15 = TTF_OpenFont(ROBOTO, 15),
+    .noto15   = TTF_OpenFont(NOTO,   15),
     .jbmono14 = TTF_OpenFont(JBMONO, 14),
   };
 
@@ -33,11 +34,11 @@ void ui_init(UI_State *ui) {
   ui->pgn_loader.length       = 0;
   ui->pgn_loader.btn.rect     = (SDL_FRect){UI_MIDDLE-50, ui->pgn_loader.area.rect.y + 75, 100, 30};
   ui->pgn_loader.btn.hovered  = false;
-  ui->info_box.rect           = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 50, UI_FILLER_W, 25};
+  ui->info_box.rect           = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 70, UI_FILLER_W, 25};
   ui->info_box.hovered        = false;
-  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 40, UI_FILLER_W, 4};
-  ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->separator.rect.y + 25, 30, 30};
+  ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 30, 20, 20};
   ui->turn_changer.hovered    = false;
+  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->turn_changer.rect.y + 40, UI_FILLER_W, 2};
   ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
   ui->undo_btn.hovered        = false;
   ui->redo_btn.rect           = (SDL_FRect){UI_MIDDLE+4,   BOARD_SIZE-80, 100, 30};
@@ -54,6 +55,7 @@ void ui_init(UI_State *ui) {
   if (!ui->fonts.roboto16) SDL_Log("Could not load font: %s", SDL_GetError());
   if (!ui->fonts.roboto15) SDL_Log("Could not load font: %s", SDL_GetError());
   if (!ui->fonts.jbmono14) SDL_Log("Could not load font: %s", SDL_GetError());
+  if (!ui->fonts.noto15)   SDL_Log("Could not load font: %s", SDL_GetError());
 }
 
 void ui_destroy(UI_State *ui) {
@@ -68,6 +70,9 @@ void ui_destroy(UI_State *ui) {
 
   TTF_CloseFont(ui->fonts.jbmono14);
   ui->fonts.jbmono14 = NULL;
+
+  TTF_CloseFont(ui->fonts.noto15);
+  ui->fonts.noto15 = NULL;
 
   SDL_StopTextInput(SDL_GetKeyboardFocus());
 }
