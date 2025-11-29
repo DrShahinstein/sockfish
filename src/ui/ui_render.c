@@ -147,7 +147,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   // Information Box
   const char *msg = get_info_message();
   draw_text(r, ui->fonts.noto15, "Info:", FWHITE, ui->info_box.rect.x, ui->info_box.rect.y - 20);
-  draw_text(r, ui->fonts.noto15, msg, FWHITE, ui->info_box.rect.x, ui->info_box.rect.y);
+  draw_text(r, ui->fonts.noto15, msg, FYELLOW, ui->info_box.rect.x, ui->info_box.rect.y);
 
   // Turn Changer
   SDL_FRect turn_changer = ui->turn_changer.rect;
