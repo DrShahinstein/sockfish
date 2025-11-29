@@ -7,7 +7,7 @@ static struct {
 
 void info_system_init(void) {
   info_state.mutex = SDL_CreateMutex();
-  SDL_strlcpy(info_state.message, "INFO: none", MAX_INFO_LENGTH);
+  SDL_strlcpy(info_state.message, "f5 to d4 is the best response!!", MAX_INFO_LENGTH);
 }
 
 void info_system_cleanup(void) {
@@ -28,7 +28,7 @@ void ui_set_info(const char *msg, ...) {
   SDL_vsnprintf(buf, MAX_INFO_LENGTH, msg, args);
   va_end(args);
 
-  SDL_snprintf(info_state.message, MAX_INFO_LENGTH, "INFO: %s", buf);
+  SDL_snprintf(info_state.message, MAX_INFO_LENGTH, "%s", buf);
 
   SDL_UnlockMutex(info_state.mutex);
 }
