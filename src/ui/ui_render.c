@@ -146,7 +146,18 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
   // Information Box
   const char *msg = get_info_message();
-  draw_text(r, ui->fonts.roboto16, msg, FWHITE, ui->info_box.rect.x, ui->info_box.rect.y);
+  draw_text(r, ui->fonts.noto15, "Info:", FWHITE, ui->info_box.rect.x, ui->info_box.rect.y - 20);
+  draw_text(r, ui->fonts.noto15, msg, FWHITE, ui->info_box.rect.x, ui->info_box.rect.y);
+
+  // Turn Changer
+  SDL_FRect turn_changer = ui->turn_changer.rect;
+    bool w = board->turn == WHITE;
+    if (w) SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
+    else   SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
+    SDL_RenderFillRect(r, &turn_changer);
+    SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+    SDL_RenderRect(r, &turn_changer);
+    draw_text(r, ui->fonts.roboto15, w ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 6, turn_changer.y + 1);
 
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
@@ -154,13 +165,6 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
     SDL_RenderFillRect(r, &separator);
     SDL_RenderRect(r, &separator);
-
-    SDL_FRect turn_changer = ui->turn_changer.rect;
-    bool white = board->turn == WHITE;
-    if (white) SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
-    else SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
-    SDL_RenderFillRect(r, &turn_changer);
-    draw_text(r, ui->fonts.roboto16, white ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 10, turn_changer.y + 5);
 
     Move sf_best;
     bool search_thr_active;
@@ -170,10 +174,10 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     search_thr_active = SDL_GetAtomicInt(&engine->thr_working);
     SDL_UnlockMutex(engine->mtx);
 
-    float x = ui->turn_changer.rect.x;
-    float y = ui->turn_changer.rect.y + 50;
+    float x = UI_START_X;
+    float y = ui->separator.rect.y + 20;
 
-    if (search_thr_active) draw_text(r, ui->fonts.roboto16, "Thinking...", FWHITE, x, y);
+    if (search_thr_active) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
     else {
       char from_alg[3], to_alg[3];
       Square sf_from = move_from(sf_best);
@@ -181,10 +185,10 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
       sq_to_alg(sf_from, from_alg);
       sq_to_alg(sf_to,   to_alg);
 
-      char move_str[16];
-      SDL_snprintf(move_str, sizeof(move_str), "BEST: %s%s", from_alg, to_alg);
+      char move_str[32];
+      SDL_snprintf(move_str, sizeof(move_str), "Best Move => %s%s", from_alg, to_alg);
 
-      draw_text(r, ui->fonts.roboto16, move_str, FWHITE, x, y);
+      draw_text(r, ui->fonts.roboto15, move_str, FWHITE, x, y);
     }
 
     engine_req_search(engine, board);
