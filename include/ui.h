@@ -13,7 +13,8 @@
 #define UI_START_Y  (UI_PADDING)
 #define UI_FILLER_W (UI_WIDTH - UI_PADDING * 2)
 #define ROBOTO "assets/Roboto-Regular.ttf"
-#define JBMONO "assets/JetBrainsMonoNL-Regular.ttf" 
+#define JBMONO "assets/JetBrainsMonoNL-Regular.ttf"
+#define NOTO   "assets/NotoSans-Regular.ttf"
 #define MAX_FEN 128
 #define MAX_PGN 8192
 #define FEN_PLACEHOLDER "Paste FEN here..."
@@ -24,6 +25,7 @@
 #define FGRAY  (SDL_Color){150,150,150,255}
 
 typedef struct {
+  TTF_Font *noto15;
   TTF_Font *roboto16;
   TTF_Font *roboto15;
   TTF_Font *jbmono14;
