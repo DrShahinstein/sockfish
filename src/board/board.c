@@ -1,6 +1,7 @@
 #include "board.h"
 #include "sockfish/move_helper.h" /* king_in_check() */
 #include "engine.h"               /* make_bitboards_from_charboard() */
+#include "ui.h"                   /* ui_set_info() */
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
@@ -112,6 +113,7 @@ void load_fen(const char *fen, BoardState *board) {
 
   if (count < 2) {
     load_fen(START_FEN, board);
+    ui_set_info("Can't load invalid FEN.");
     return;
   }
 
@@ -123,12 +125,11 @@ void load_fen(const char *fen, BoardState *board) {
     board->ep_col = NO_ENPASSANT;
   }
 
-  if (active[0] == 'w' || active[0] == 'W') {
+  if (active[0] == 'w' || active[0] == 'W')
     board->turn = WHITE;
-  } else if (active[0] == 'b' || active[0] == 'B') {
+  else if (active[0] == 'b' || active[0] == 'B')
     board->turn = BLACK;
-  }
-
+  
   if (count >= 3) {
     if (!validate_castling(castling)) {
       SDL_strlcpy(castling, "KQkq", sizeof(castling));
@@ -151,6 +152,8 @@ void load_fen(const char *fen, BoardState *board) {
   }
 
   board->should_update_valid_moves = true;
+
+  ui_set_info("Fen loaded successfully.");
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
@@ -172,8 +175,10 @@ void load_pgn(const char *pgn, BoardState *board) {
 
   ptr = SDL_strstr(ptr, "1.");
 
-  if (!ptr)
+  if (!ptr) {
+    ui_set_info("Invalid pgn cannot load.");
     return;
+  }
 
   ptr += 2;
 
@@ -250,8 +255,10 @@ void load_pgn(const char *pgn, BoardState *board) {
                             (tr < 0 || tr > 7) ||
                             (tc < 0 || tc > 7);
                             
-      if (parsing_failed)
+      if (parsing_failed) {
+        ui_set_info("Failed to parse pgn move.");
         return;
+      }
 
       /* Save Before Applying */
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
@@ -422,7 +429,10 @@ static bool validate_castling(const char *str) {
   if (SDL_strcmp(str, "-") == 0) return true;
     
   for (; *str; str++) {
-    if (*str != 'K' && *str != 'Q' && *str != 'k' && *str != 'q') return false;
+    switch (*str) {
+      case 'K': case 'Q': case 'k': case 'q':
+      return false;
+    }
   }
 
   return true;
