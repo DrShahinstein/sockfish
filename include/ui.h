@@ -20,9 +20,10 @@
 #define FEN_PLACEHOLDER "Paste FEN here..."
 #define PGN_PLACEHOLDER "Paste PGN here..."
 #define MAX_INFO_LENGTH 64
-#define FWHITE (SDL_Color){255,255,255,255}
-#define FBLACK (SDL_Color){0,0,0,255}
-#define FGRAY  (SDL_Color){150,150,150,255}
+#define FWHITE  (SDL_Color){255,255,255,255}
+#define FBLACK  (SDL_Color){0,0,0,255}
+#define FGRAY   (SDL_Color){150,150,150,255}
+#define FYELLOW (SDL_Color){224,224,76,255}
 
 typedef struct {
   TTF_Font *noto15;
