@@ -7,7 +7,7 @@ static struct {
 
 void info_system_init(void) {
   info_state.mutex = SDL_CreateMutex();
-  SDL_strlcpy(info_state.message, "f5 to d4 is the best response!!", MAX_INFO_LENGTH);
+  SDL_strlcpy(info_state.message, "The best response to d4 is f5!!", MAX_INFO_LENGTH);
 }
 
 void info_system_cleanup(void) {
