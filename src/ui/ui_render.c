@@ -151,13 +151,13 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
   // Turn Changer
   SDL_FRect turn_changer = ui->turn_changer.rect;
-    bool w = board->turn == WHITE;
-    if (w) SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
-    else   SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
-    SDL_RenderFillRect(r, &turn_changer);
-    SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
-    SDL_RenderRect(r, &turn_changer);
-    draw_text(r, ui->fonts.roboto15, w ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 6, turn_changer.y + 1);
+  bool w = board->turn == WHITE;
+  if (w) SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
+  else   SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
+  SDL_RenderFillRect(r, &turn_changer);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &turn_changer);
+  draw_text(r, ui->fonts.roboto15, w ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 6, turn_changer.y + 1);
 
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
