@@ -36,7 +36,7 @@ void ui_init(UI_State *ui) {
   ui->pgn_loader.btn.hovered  = false;
   ui->info_box.rect           = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 70, UI_FILLER_W, 25};
   ui->info_box.hovered        = false;
-  ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 30, 20, 20};
+  ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 36, 20, 20};
   ui->turn_changer.hovered    = false;
   ui->separator.rect          = (SDL_FRect){UI_START_X, ui->turn_changer.rect.y + 40, UI_FILLER_W, 2};
   ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
