@@ -17,7 +17,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
     bool over_board     = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
     bool over_toggler   = cursor_in_rect(mx, my, &ui->engine_toggler.rect);
-    bool over_tchanger  = cursor_in_rect(mx, my, &ui->turn_changer.rect) && ui->engine_on;
+    bool over_tchanger  = cursor_in_rect(mx, my, &ui->turn_changer.rect);
     bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
     bool over_pgn_btn   = cursor_in_rect(mx, my, &ui->pgn_loader.btn.rect);
     bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
@@ -94,8 +94,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       }
 
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
-        if  (board->turn == WHITE) board->turn = BLACK;
-        else board->turn = WHITE;
+        board->turn = !board->turn;
       } 
     }
     break;
