@@ -53,7 +53,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
     if (e->button.button == SDL_BUTTON_LEFT) {
-      SDL_GetMouseState(&mx, &my);
+      get_mouse_pos(&mx, &my);
 
       handle_text_input_activation(&ui->fen_loader, mx, my);
       handle_text_input_activation(&ui->pgn_loader, mx, my);
@@ -62,7 +62,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
   case SDL_EVENT_MOUSE_BUTTON_UP:
     if (e->button.button == SDL_BUTTON_LEFT) {
-      SDL_GetMouseState(&mx, &my);
+      get_mouse_pos(&mx, &my);
 
       if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) {
         ui->engine_on = !ui->engine_on;
