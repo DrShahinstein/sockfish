@@ -1,4 +1,5 @@
 #include "board_render.h"
+#include "cursor.h"                /* get_mouse_pos() */
 #include "sockfish/move_helper.h"  /* king_in_check() */
 #include "engine.h"                /* make_bitboards_from_charboard() */
 #include <SDL3/SDL.h>
@@ -72,7 +73,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   float mx = 0, my = 0;
   int mouse_row = -1, mouse_col = -1;
   if (board->drag.active) {
-    SDL_GetMouseState(&mx, &my);
+    get_mouse_pos(&mx, &my);
     mouse_col = (int)(mx / SQ);
     mouse_row = (int)(my / SQ);
     if (mouse_row < 0 || mouse_row >= 8 || mouse_col < 0 || mouse_col >= 8) {
