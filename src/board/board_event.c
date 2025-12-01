@@ -1,5 +1,6 @@
 #include "board.h"
 #include "window.h"
+#include "cursor.h"            /* get_mouse_pos */
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
 #include <SDL3/SDL.h>
 
@@ -14,7 +15,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
     board->selected_piece.active = false;
 
     if (e->button.button == SDL_BUTTON_LEFT) {
-      SDL_GetMouseState(&mx, &my);
+      get_mouse_pos(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) {
         board->drag.active = false;
@@ -49,7 +50,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
     }
 
     else if (e->button.button == SDL_BUTTON_RIGHT) {
-      SDL_GetMouseState(&mx, &my);
+      get_mouse_pos(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) return;
 
@@ -64,7 +65,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
   case SDL_EVENT_MOUSE_BUTTON_UP:
     if (e->button.button == SDL_BUTTON_RIGHT) {
-      SDL_GetMouseState(&mx, &my);
+      get_mouse_pos(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) {
         cancel_drawing_arrow(&board->annotations);
@@ -107,7 +108,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
     }
 
     if (e->button.button == SDL_BUTTON_LEFT) {
-      SDL_GetMouseState(&mx, &my);
+      get_mouse_pos(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) {
         board->drag.active = false;
