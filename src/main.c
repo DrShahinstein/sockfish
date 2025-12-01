@@ -8,6 +8,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
+#define SCALE_FACTOR 1.0f
+
 int main(int argc, char *argv[]) {
   (void)argc; (void)argv;
 
@@ -19,7 +21,26 @@ int main(int argc, char *argv[]) {
   TTF_Init();
   init_cursors();
 
-  SDL_Window *window = SDL_CreateWindow(W_TITLE, W_WIDTH, W_HEIGHT, 0);
+  SDL_DisplayID display_id    = SDL_GetPrimaryDisplay();
+  const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(display_id);
+
+  float scale = SCALE_FACTOR;
+  if (mode) {
+    int display_width = mode->w;
+
+    if      (display_width >= 3840) scale = 2.0f;
+    else if (display_width >= 2560) scale = 1.5f;
+    else if (display_width >= 1920) scale = 1.0f;
+    else                            scale = 0.9f;
+  }
+  else {
+    SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Could not get display mode: %s\n", SDL_GetError());
+  }
+
+  int w_width  = (int)(W_WIDTH  * scale);
+  int w_height = (int)(W_HEIGHT * scale);
+
+  SDL_Window *window = SDL_CreateWindow(W_TITLE, w_width, w_height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
   if (window == NULL) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create window: %s\n", SDL_GetError());
     SDL_Quit();
@@ -31,7 +52,10 @@ int main(int argc, char *argv[]) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create renderer: %s\n", SDL_GetError());
     return 1;
   }
+  g_renderer = renderer;
   
+  SDL_SetRenderLogicalPresentation(renderer, W_WIDTH, W_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
   UI_State      ui={0};
   EngineWrapper engine={0}; 
   BoardState    board={0};
@@ -45,6 +69,9 @@ int main(int argc, char *argv[]) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       if (e.type == SDL_EVENT_QUIT) running = false;
+
+      SDL_ConvertEventToRenderCoordinates(renderer, &e);
+
       board_handle_event(&e, &board);
       ui_handle_event(&e, &ui, &board);
     }
