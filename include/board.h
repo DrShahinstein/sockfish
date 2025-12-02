@@ -79,6 +79,7 @@ typedef struct {
   Square arrow_start;                   bool drawing_arrow;
   Arrow arrows[MAX_ARROWS];             int arrow_count;
   Highlight highlights[MAX_HIGHLIGHTS]; int highlight_count;
+  SDL_FColor arrow_color;
 } Annotations;
 
 typedef struct BoardState {
