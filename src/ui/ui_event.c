@@ -17,14 +17,15 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
     bool over_board     = (mx >= 0.0f && mx < BOARD_SIZE && my >= 0.0f && my < BOARD_SIZE);
     bool over_toggler   = cursor_in_rect(mx, my, &ui->engine_toggler.rect);
-    bool over_tchanger  = cursor_in_rect(mx, my, &ui->turn_changer.rect);
     bool over_fen_btn   = cursor_in_rect(mx, my, &ui->fen_loader.btn.rect);
     bool over_pgn_btn   = cursor_in_rect(mx, my, &ui->pgn_loader.btn.rect);
+    bool over_tchanger  = cursor_in_rect(mx, my, &ui->turn_changer.rect);
+    bool over_achanger  = cursor_in_rect(mx, my, &ui->arrow_changer.rect);
     bool over_reset_btn = cursor_in_rect(mx, my, &ui->reset_btn.rect);
     bool over_undo_btn  = cursor_in_rect(mx, my, &ui->undo_btn.rect);
     bool over_redo_btn  = cursor_in_rect(mx, my, &ui->redo_btn.rect);
     bool over_any       = over_board     || over_toggler  || over_fen_btn  || over_pgn_btn   ||
-                          over_reset_btn || over_tchanger || over_undo_btn || over_redo_btn;
+                          over_reset_btn || over_tchanger || over_undo_btn || over_redo_btn  || over_achanger;
 
     bool over_fen_area      = cursor_in_rect(mx, my, &ui->fen_loader.area.rect);
     bool over_pgn_area      = cursor_in_rect(mx, my, &ui->pgn_loader.area.rect);
@@ -42,6 +43,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
     ui->engine_toggler.hovered  = over_toggler;
     ui->turn_changer.hovered    = over_tchanger;
+    ui->arrow_changer.hovered   = over_achanger;
     ui->fen_loader.area.hovered = over_fen_area;
     ui->fen_loader.btn.hovered  = over_fen_btn;
     ui->pgn_loader.area.hovered = over_pgn_area;
@@ -66,6 +68,11 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
       if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) {
         ui->engine_on = !ui->engine_on;
+      }
+
+      if (cursor_in_rect(mx, my, &ui->arrow_changer.rect)) {
+        ui->arrow_changer.color_idx = (ui->arrow_changer.color_idx + 1) % ARROW_COLORS_COUNT;
+        board->annotations.arrow_color = ui->arrow_changer.colors[ui->arrow_changer.color_idx];
       }
 
       if (cursor_in_rect(mx, my, &ui->fen_loader.btn.rect)) {
