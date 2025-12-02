@@ -159,6 +159,15 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_RenderRect(r, &turn_changer);
   draw_text(r, ui->fonts.roboto15, w ? "White to play" : "Black to play", FWHITE, turn_changer.x + turn_changer.w + 6, turn_changer.y + 1);
 
+  // Arrow Changer (color)
+  SDL_FRect arrow_changer = ui->arrow_changer.rect;
+  SDL_FColor c = ui->arrow_changer.colors[ui->arrow_changer.color_idx];
+  SDL_SetRenderDrawColor(r, c.r*255, c.g*255, c.b*255, 255);
+  SDL_RenderFillRect(r, &arrow_changer);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &arrow_changer);
+  draw_text(r, ui->fonts.roboto15, "Arrow Color", FWHITE, arrow_changer.x + arrow_changer.w + 6, arrow_changer.y + 1);
+
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
     SDL_FRect separator = ui->separator.rect;
