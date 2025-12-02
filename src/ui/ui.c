@@ -6,6 +6,13 @@
 static void init_text_input_buffers(UI_TextInput *text_inp, size_t max_len);
 static void cleanup_text_input_buffers(UI_TextInput *text_inp);
 
+static SDL_FColor ARROW_COLORS[] = {
+  DEFAULT_ARROW_COLOR,                                      // red
+  {32.0f/255.0f,     129.0f/255.0f,  28.0f/255.0f,  0.8f},  // green
+  {13.0f/255.0f,     110.0f/255.0f,  253.0f/255.0f, 0.8f},  // blue
+  {230.0f/255.0f,    42.0f/255.0f,  163.0f/255.0f,  0.8f}   // cerise :O
+};
+
 void ui_init(UI_State *ui) {
   FontMenu fonts = {
     .roboto16 = TTF_OpenFont(ROBOTO, 16),
@@ -38,7 +45,11 @@ void ui_init(UI_State *ui) {
   ui->info_box.hovered        = false;
   ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 36, 20, 20};
   ui->turn_changer.hovered    = false;
-  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->turn_changer.rect.y + 40, UI_FILLER_W, 2};
+  ui->arrow_changer.rect      = (SDL_FRect){UI_START_X, ui->turn_changer.rect.y + 25, 20, 20};
+  ui->arrow_changer.hovered   = false;
+  ui->arrow_changer.colors    = ARROW_COLORS;
+  ui->arrow_changer.color_idx = 0;
+  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->arrow_changer.rect.y + 40, UI_FILLER_W, 2};
   ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
   ui->undo_btn.hovered        = false;
   ui->redo_btn.rect           = (SDL_FRect){UI_MIDDLE+4,   BOARD_SIZE-80, 100, 30};
