@@ -18,7 +18,20 @@ Dependencies below...
 
 ### Linux
 
-In Linux, there is no official `sdl3`, `sdl3_image` and `sdl3_tff` packages released yet. Despite `pacman` had `sdl3` on 02-09-2025, `sdl3_image` and `sdl3_ttf` still don't exist. For that reason, manual installation is described here.
+#### pacman
+```
+sudo pacman -S sdl3 sdl3_ttf
+sudo yay -S sdl3_image
+```
+
+#### dnf
+```
+sudo dnf install SDL3 SDL3_image SDL3_ttf
+```
+
+#### apt
+
+In apt packages, there is no official `sdl3`, `sdl3_image` and `sdl3_tff` packages released yet.
 
 First, see [https://wiki.libsdl.org/SDL3/README-linux](https://wiki.libsdl.org/SDL3/README-linux).
 
@@ -58,9 +71,9 @@ sudo ldconfig
 
 To verify:
 ```
-pkg-config --modversion sdl3        # 3.3.0
-pkg-config --modversion sdl3-image  # 3.3.0
-pkg-config --modversion sdl3-ttf    # 3.3.0
+pkg-config --modversion sdl3        # 3.3.0 (my version)
+pkg-config --modversion sdl3-image  # 3.3.0 (my version)
+pkg-config --modversion sdl3-ttf    # 3.3.0 (my version)
 ```
 
 ### Macos
