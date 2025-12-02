@@ -189,6 +189,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
             board->turn                  = (board->turn == WHITE) ? BLACK : WHITE;
             board->selected_piece.active = false;
+            board->drag.active           = false;
 
             board_update_king_in_check(board);
             
