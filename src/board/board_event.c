@@ -96,8 +96,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           }
           
           else {
-            SDL_FColor red = {214.0f/255.0f, 58.0f/255.0f, 40.0f/255.0f, 0.8f};
-            add_arrow(&board->annotations, start, end, red);
+            add_arrow(&board->annotations, start, end, board->annotations.arrow_color);
           }
         }
 
