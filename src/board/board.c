@@ -44,6 +44,7 @@ void board_init(BoardState *board) {
   board->annotations.arrow_count     = 0;
   board->annotations.highlight_count = 0;
   board->annotations.arrow_color     = DEFAULT_ARROW_COLOR;
+  board->annotations.highlight_color = DEFAULT_HIGHLIGHT_COLOR;
 
   load_fen(START_FEN, board);
 }
