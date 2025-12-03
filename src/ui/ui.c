@@ -8,15 +8,14 @@ static void cleanup_text_input_buffers(UI_TextInput *text_inp);
 
 static SDL_FColor ARROW_COLORS[] = {
   DEFAULT_ARROW_COLOR,
-  {32.0f/255.0f,     129.0f/255.0f,  28.0f/255.0f,  0.8f},
-  {13.0f/255.0f,     110.0f/255.0f,  253.0f/255.0f, 0.8f},
-  {230.0f/255.0f,    42.0f/255.0f,  163.0f/255.0f,  0.8f},
+  {214.0f/255.0f,  58.0f/255.0f,  40.0f/255.0f,  0.8f},
+  {13.0f/255.0f,   110.0f/255.0f, 253.0f/255.0f, 0.8f},
 };
 
 static SDL_FColor SQUARE_HIGHLIGHT_COLORS[] = {
   DEFAULT_HIGHLIGHT_COLOR,
-  {32.0f/255.0f,     129.0f/255.0f,  28.0f/255.0f,  0.5f},
-  {13.0f/255.0f,     110.0f/255.0f,  253.0f/255.0f, 0.5f},
+  {32.0f/255.0f,  129.0f/255.0f,  28.0f/255.0f,  0.5f},
+  {13.0f/255.0f,  110.0f/255.0f,  253.0f/255.0f, 0.5f},
 };
 
 void ui_init(UI_State *ui) {
