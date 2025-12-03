@@ -80,24 +80,12 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         Square start = get_arrow_start(&board->annotations);
 
         if (start == end) {
-          if (has_highlight(&board->annotations, start)) {
-            remove_highlight(&board->annotations, start);
-          }
-          
-          else {
-            SDL_FColor orange = {255.0f/255.0f, 170.0f/255.0f, 0.0f/255.0f, 0.5f};
-            add_highlight(&board->annotations, start, orange);
-          }
+          if (has_highlight(&board->annotations, start)) remove_highlight(&board->annotations, start);
+          else add_highlight(&board->annotations, start, board->annotations.highlight_color);
         }
-        
         else {
-          if (has_arrow(&board->annotations, start, end)) {
-            remove_arrow(&board->annotations, start, end);
-          }
-          
-          else {
-            add_arrow(&board->annotations, start, end, board->annotations.arrow_color);
-          }
+          if (has_arrow(&board->annotations, start, end)) remove_arrow(&board->annotations, start, end);
+          else add_arrow(&board->annotations, start, end, board->annotations.arrow_color);
         }
 
         cancel_drawing_arrow(&board->annotations);
