@@ -20,14 +20,14 @@
 #define FEN_PLACEHOLDER "Paste FEN here..."
 #define PGN_PLACEHOLDER "Paste PGN here..."
 #define MAX_INFO_LENGTH 64
-#define ARROW_COLORS_COUNT 4
+#define ARROW_COLORS_COUNT 3
 #define HIGHLIGHT_COLORS_COUNT 3
 #define FWHITE  (SDL_Color){255,255,255,255}
 #define FBLACK  (SDL_Color){0,0,0,255}
 #define FGRAY   (SDL_Color){150,150,150,255}
 #define FYELLOW (SDL_Color){224,224,76,255}
 
-static const SDL_FColor DEFAULT_ARROW_COLOR     = {214.0f/255.0f, 58.0f/255.0f,  40.0f/255.0f, 0.8f};
+static const SDL_FColor DEFAULT_ARROW_COLOR     = {32.0f/255.0f,  129.0f/255.0f, 28.0f/255.0f, 0.8f};
 static const SDL_FColor DEFAULT_HIGHLIGHT_COLOR = {255.0f/255.0f, 170.0f/255.0f, 0.0f/255.0f,  0.5f};
 
 typedef struct {
