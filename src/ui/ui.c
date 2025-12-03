@@ -7,10 +7,16 @@ static void init_text_input_buffers(UI_TextInput *text_inp, size_t max_len);
 static void cleanup_text_input_buffers(UI_TextInput *text_inp);
 
 static SDL_FColor ARROW_COLORS[] = {
-  DEFAULT_ARROW_COLOR,                                      // red
-  {32.0f/255.0f,     129.0f/255.0f,  28.0f/255.0f,  0.8f},  // green
-  {13.0f/255.0f,     110.0f/255.0f,  253.0f/255.0f, 0.8f},  // blue
-  {230.0f/255.0f,    42.0f/255.0f,  163.0f/255.0f,  0.8f}   // cerise :O
+  DEFAULT_ARROW_COLOR,
+  {32.0f/255.0f,     129.0f/255.0f,  28.0f/255.0f,  0.8f},
+  {13.0f/255.0f,     110.0f/255.0f,  253.0f/255.0f, 0.8f},
+  {230.0f/255.0f,    42.0f/255.0f,  163.0f/255.0f,  0.8f},
+};
+
+static SDL_FColor SQUARE_HIGHLIGHT_COLORS[] = {
+  DEFAULT_HIGHLIGHT_COLOR,
+  {32.0f/255.0f,     129.0f/255.0f,  28.0f/255.0f,  0.5f},
+  {13.0f/255.0f,     110.0f/255.0f,  253.0f/255.0f, 0.5f},
 };
 
 void ui_init(UI_State *ui) {
@@ -23,39 +29,43 @@ void ui_init(UI_State *ui) {
 
   info_system_init();
 
-  ui->fonts                   = fonts;
-  ui->engine_on               = false;
-  ui->engine_toggler.rect     = (SDL_FRect){UI_START_X, UI_START_Y, 30, 30};
-  ui->engine_toggler.hovered  = false;
-  ui->fen_loader.type         = FEN;
-  ui->fen_loader.active       = false;
-  ui->fen_loader.area.rect    = (SDL_FRect){UI_MIDDLE-115, UI_START_Y+50, UI_FILLER_W, 70};
-  ui->fen_loader.area.hovered = false; 
-  ui->fen_loader.length       = 0;
-  ui->fen_loader.btn.rect     = (SDL_FRect){UI_MIDDLE-50, ui->fen_loader.area.rect.y + 75, 100, 30};
-  ui->fen_loader.btn.hovered  = false;
-  ui->pgn_loader.type         = PGN;
-  ui->pgn_loader.active       = false;
-  ui->pgn_loader.area.rect    = (SDL_FRect){UI_MIDDLE-115, ui->fen_loader.btn.rect.y + 40, UI_FILLER_W, 70};
-  ui->pgn_loader.area.hovered = false; 
-  ui->pgn_loader.length       = 0;
-  ui->pgn_loader.btn.rect     = (SDL_FRect){UI_MIDDLE-50, ui->pgn_loader.area.rect.y + 75, 100, 30};
-  ui->pgn_loader.btn.hovered  = false;
-  ui->info_box.rect           = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 70, UI_FILLER_W, 25};
-  ui->info_box.hovered        = false;
-  ui->turn_changer.rect       = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 36, 20, 20};
-  ui->turn_changer.hovered    = false;
-  ui->arrow_changer.rect      = (SDL_FRect){UI_START_X, ui->turn_changer.rect.y + 25, 20, 20};
-  ui->arrow_changer.hovered   = false;
-  ui->arrow_changer.colors    = ARROW_COLORS;
-  ui->arrow_changer.color_idx = 0;
-  ui->separator.rect          = (SDL_FRect){UI_START_X, ui->arrow_changer.rect.y + 40, UI_FILLER_W, 2};
-  ui->undo_btn.rect           = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
-  ui->undo_btn.hovered        = false;
-  ui->redo_btn.rect           = (SDL_FRect){UI_MIDDLE+4,   BOARD_SIZE-80, 100, 30};
-  ui->redo_btn.hovered        = false;
-  ui->reset_btn.rect          = (SDL_FRect){UI_MIDDLE-50,  BOARD_SIZE-40, 100, 30};
-  ui->reset_btn.hovered       = false;
+  ui->fonts                    = fonts;
+  ui->engine_on                = false;
+  ui->engine_toggler.rect      = (SDL_FRect){UI_START_X, UI_START_Y, 30, 30};
+  ui->engine_toggler.hovered   = false;
+  ui->fen_loader.type          = FEN;
+  ui->fen_loader.active        = false;
+  ui->fen_loader.area.rect     = (SDL_FRect){UI_MIDDLE-115, UI_START_Y+50, UI_FILLER_W, 70};
+  ui->fen_loader.area.hovered  = false; 
+  ui->fen_loader.length        = 0;
+  ui->fen_loader.btn.rect      = (SDL_FRect){UI_MIDDLE-50, ui->fen_loader.area.rect.y + 75, 100, 30};
+  ui->fen_loader.btn.hovered   = false;
+  ui->pgn_loader.type          = PGN;
+  ui->pgn_loader.active        = false;
+  ui->pgn_loader.area.rect     = (SDL_FRect){UI_MIDDLE-115, ui->fen_loader.btn.rect.y + 40, UI_FILLER_W, 70};
+  ui->pgn_loader.area.hovered  = false; 
+  ui->pgn_loader.length        = 0;
+  ui->pgn_loader.btn.rect      = (SDL_FRect){UI_MIDDLE-50, ui->pgn_loader.area.rect.y + 75, 100, 30};
+  ui->pgn_loader.btn.hovered   = false;
+  ui->info_box.rect            = (SDL_FRect){UI_START_X, ui->pgn_loader.btn.rect.y + 70, UI_FILLER_W, 25};
+  ui->info_box.hovered         = false;
+  ui->turn_changer.rect        = (SDL_FRect){UI_START_X, ui->info_box.rect.y + 36, 20, 20};
+  ui->turn_changer.hovered     = false;
+  ui->arrow_changer.rect       = (SDL_FRect){UI_START_X, ui->turn_changer.rect.y + 25, 20, 20};
+  ui->arrow_changer.hovered    = false;
+  ui->arrow_changer.colors     = ARROW_COLORS;
+  ui->arrow_changer.color_idx  = 0;
+  ui->hlight_changer.rect      = (SDL_FRect){UI_START_X, ui->arrow_changer.rect.y + 25, 20, 20};
+  ui->hlight_changer.hovered   = false;
+  ui->hlight_changer.colors    = SQUARE_HIGHLIGHT_COLORS;
+  ui->hlight_changer.color_idx = 0;
+  ui->separator.rect           = (SDL_FRect){UI_START_X, ui->hlight_changer.rect.y + 40, UI_FILLER_W, 2};
+  ui->undo_btn.rect            = (SDL_FRect){UI_MIDDLE-104, BOARD_SIZE-80, 100, 30};
+  ui->undo_btn.hovered         = false;
+  ui->redo_btn.rect            = (SDL_FRect){UI_MIDDLE+4,   BOARD_SIZE-80, 100, 30};
+  ui->redo_btn.hovered         = false;
+  ui->reset_btn.rect           = (SDL_FRect){UI_MIDDLE-50,  BOARD_SIZE-40, 100, 30};
+  ui->reset_btn.hovered        = false;
 
   SDL_strlcpy(ui->fen_loader.placeholder, FEN_PLACEHOLDER, sizeof(ui->fen_loader.placeholder));
   init_text_input_buffers(&ui->fen_loader, MAX_FEN);
