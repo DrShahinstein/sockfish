@@ -14,8 +14,8 @@ static SDL_FColor ARROW_COLORS[] = {
 
 static SDL_FColor SQUARE_HIGHLIGHT_COLORS[] = {
   DEFAULT_HIGHLIGHT_COLOR,
-  {32.0f/255.0f,  129.0f/255.0f,  28.0f/255.0f,  0.5f},
-  {13.0f/255.0f,  110.0f/255.0f,  253.0f/255.0f, 0.5f},
+  {214.0f/255.0f,  58.0f/255.0f,   40.0f/255.0f,  0.4f},
+  {108.0f/255.0f,  187.0f/255.0f,  252.0f/255.0f, 0.5f},
 };
 
 void ui_init(UI_State *ui) {
