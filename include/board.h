@@ -80,6 +80,7 @@ typedef struct {
   Arrow arrows[MAX_ARROWS];             int arrow_count;
   Highlight highlights[MAX_HIGHLIGHTS]; int highlight_count;
   SDL_FColor arrow_color;
+  SDL_FColor highlight_color;
 } Annotations;
 
 typedef struct BoardState {
