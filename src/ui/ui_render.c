@@ -161,12 +161,21 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
   // Arrow Changer (color)
   SDL_FRect arrow_changer = ui->arrow_changer.rect;
-  SDL_FColor c = ui->arrow_changer.colors[ui->arrow_changer.color_idx];
-  SDL_SetRenderDrawColor(r, c.r*255, c.g*255, c.b*255, 255);
+  SDL_FColor ac = ui->arrow_changer.colors[ui->arrow_changer.color_idx];
+  SDL_SetRenderDrawColor(r, ac.r*255, ac.g*255, ac.b*255, 255);
   SDL_RenderFillRect(r, &arrow_changer);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &arrow_changer);
   draw_text(r, ui->fonts.roboto15, "Arrow Color", FWHITE, arrow_changer.x + arrow_changer.w + 6, arrow_changer.y + 1);
+
+  // Highlight Changer (color)
+  SDL_FRect highlight_changer = ui->hlight_changer.rect;
+  SDL_FColor hc = ui->hlight_changer.colors[ui->hlight_changer.color_idx];
+  SDL_SetRenderDrawColor(r, hc.r*255, hc.g*255, hc.b*255, 255);
+  SDL_RenderFillRect(r, &highlight_changer);
+  SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+  SDL_RenderRect(r, &highlight_changer);
+  draw_text(r, ui->fonts.roboto15, "Highlight Color", FWHITE, highlight_changer.x + highlight_changer.w + 6, highlight_changer.y + 1);
 
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
