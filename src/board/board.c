@@ -154,8 +154,6 @@ void load_fen(const char *fen, BoardState *board) {
   }
 
   board->should_update_valid_moves = true;
-
-  ui_set_info("Fen loaded successfully.");
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
@@ -289,6 +287,8 @@ void load_pgn(const char *pgn, BoardState *board) {
   /* Copy History to Main Board */
   SDL_memcpy(board->history, &tmp_b.history, sizeof(board->history));
   board->redo_count = tmp_b.redo_count;
+
+  ui_set_info("Pgn loaded successfully.");
 }
 
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col, int history_index) {
