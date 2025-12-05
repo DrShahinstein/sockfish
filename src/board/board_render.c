@@ -127,12 +127,17 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
   }
 
-  /* Highlight Selected Piece */
-  if (board->selected_piece.active) {
-    SDL_FRect selected_rect = {board->selected_piece.col * SQ, board->selected_piece.row * SQ, SQ, SQ};
-    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 130);
+  /* Highlight Last Move */
+  if (board->undo_count > 0) {
+    BoardMoveHistory *last_move = &board->history[board->undo_count - 1];
+    SDL_FRect from_sq = {last_move->from_col * SQ, last_move->from_row * SQ, SQ, SQ};
+    SDL_FRect to_sq   = {last_move->to_col   * SQ, last_move->to_row   * SQ, SQ, SQ};
+
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_RenderFillRect(renderer, &selected_rect);
+    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 130);
+    SDL_RenderFillRect(renderer, &from_sq);
+    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 130);
+    SDL_RenderFillRect(renderer, &to_sq);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
   }
 
