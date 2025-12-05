@@ -134,9 +134,9 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     SDL_FRect to_sq   = {last_move->to_col   * SQ, last_move->to_row   * SQ, SQ, SQ};
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 130);
+    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 150);
     SDL_RenderFillRect(renderer, &from_sq);
-    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 130);
+    SDL_SetRenderDrawColor(renderer, 180, 200, 70, 150);
     SDL_RenderFillRect(renderer, &to_sq);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
   }
