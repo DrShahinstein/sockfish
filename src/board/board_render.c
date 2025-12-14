@@ -110,7 +110,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
   /* Render Coordination (a1,a2...) */
   for (int i = 0; i < 8; ++i) {
-    char rank              = '8' - i;
+    char rank              = board->flipped ? ('1' + i) : ('8' - i);
     bool is_light          = ((i + 7) & 1) == 0;
     SDL_Texture *coord_tex = is_light ? coord_tex_light[(int)rank] : coord_tex_dark[(int)rank];
 
@@ -121,7 +121,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
       SDL_RenderTexture(renderer, coord_tex, NULL, &dst);
     }
 
-    char file = 'a' + i;
+    char file = board->flipped ? ('h' - i) : ('a' + i);
     is_light  = ((7 + i) & 1) == 0;
     coord_tex = is_light ? coord_tex_light[(int)file] : coord_tex_dark[(int)file];
 
