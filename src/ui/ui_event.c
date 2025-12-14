@@ -145,12 +145,14 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
     if (ui->fen_loader.active || ui->pgn_loader.active) return;
 
-    if (e->key.key == SDLK_LEFT) {
+    if (e->key.key == SDLK_LEFT)
       board_undo(board);
-    }
 
-    else if (e->key.key == SDLK_RIGHT) {
+    else if (e->key.key == SDLK_RIGHT)
       board_redo(board);
+
+    else if (e->key.key == SDLK_F) {
+      board->flipped = !board->flipped;
     }
 
     break;
