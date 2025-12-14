@@ -41,6 +41,8 @@ void render_board_init(SDL_Renderer *renderer) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_OpenFont failed: %s\n", SDL_GetError());
     return;
   }
+  
+  TTF_SetFontStyle(coord_font, TTF_STYLE_BOLD);
 
   SDL_Color dark_square_text_color  = {240, 217, 181, 255};
   SDL_Color light_square_text_color = {181, 136, 99,  255};
