@@ -26,6 +26,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
       sq_col = mx / SQ;
       sq_row = my / SQ;
+      flip_coords_if_necessary(board->flipped, sq_row, sq_col, &sq_row, &sq_col);
+
       char piece = board->board[sq_row][sq_col];
 
       bool turn_okay = (board->turn == WHITE && SDL_isupper(piece)) || (board->turn == BLACK && SDL_islower(piece));
@@ -54,8 +56,10 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
 
       if (!is_mouse_in_board(mx, my)) return;
 
-      sq_row       = my / SQ;
-      sq_col       = mx / SQ;
+      sq_row = my / SQ;
+      sq_col = mx / SQ;
+      flip_coords_if_necessary(board->flipped, sq_row, sq_col, &sq_row, &sq_col);
+
       Square start = rowcol_to_sq(sq_row, sq_col);
 
       start_drawing_arrow(&board->annotations, start);
@@ -72,8 +76,10 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         return;
       }
 
-      sq_row     = my / SQ;
-      sq_col     = mx / SQ;
+      sq_row = my / SQ;
+      sq_col = mx / SQ;
+      flip_coords_if_necessary(board->flipped, sq_row, sq_col, &sq_row, &sq_col);
+      
       Square end = rowcol_to_sq(sq_row, sq_col);
 
       if (is_drawing_arrow(&board->annotations)) {
@@ -109,6 +115,11 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         for (int i = 0; i < 4; ++i) {
           float choice_x = board->promo.col * SQ;
           float choice_y = board->turn == WHITE ? (i * SQ) : ((7-i) * SQ);
+
+          if (board->flipped) {
+            choice_x = (7 - board->promo.col) * SQ;
+            choice_y = board->turn == WHITE ? ((7-i) * SQ) : (i * SQ);
+          }
 
           bool mouse_on_promo = mx >= choice_x && mx < choice_x + SQ && my >= choice_y && my < choice_y + SQ;
           if (mouse_on_promo) {
@@ -155,6 +166,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         int fc            = board->drag.from_col;  // from col
         int tr            = my / SQ;               // to row
         int tc            = mx / SQ;               // to col
+        flip_coords_if_necessary(board->flipped, tr, tc, &tr, &tc);
         Square from_sq    = rowcol_to_sq(fr, fc);
         Square to_sq      = rowcol_to_sq(tr, tc);
         Move move         = create_move(from_sq, to_sq);
