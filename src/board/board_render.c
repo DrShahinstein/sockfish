@@ -12,8 +12,8 @@ SDL_Texture *coord_tex_light['z' + 1];
 SDL_Texture *coord_tex_dark ['z' + 1];
 
 static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col);
-static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FColor color);
-static void draw_arrow(SDL_Renderer *renderer, Square from_sq, Square to_sq, SDL_FColor color);
+static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FColor color, bool flipped);
+static void draw_arrow(SDL_Renderer *renderer, Square from_sq, Square to_sq, SDL_FColor color, bool flipped);
 
 void render_board_init(SDL_Renderer *renderer) {
   const char *pieces = "rnbqkpRNBQKP";
@@ -74,8 +74,11 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   int mouse_row = -1, mouse_col = -1;
   if (board->drag.active) {
     get_mouse_pos(&mx, &my);
-    mouse_col = (int)(mx / SQ);
-    mouse_row = (int)(my / SQ);
+
+    int screen_row = (int)(my / SQ);
+    int screen_col = (int)(mx / SQ);
+    flip_coords_if_necessary(board->flipped, screen_row, screen_col, &mouse_row, &mouse_col);
+
     if (mouse_row < 0 || mouse_row >= 8 || mouse_col < 0 || mouse_col >= 8) {
       mouse_row = -1;
       mouse_col = -1;
@@ -85,7 +88,10 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   /* Render Squares (light/dark) */
   for (int row = 0; row < 8; ++row) {
     for (int col = 0; col < 8; ++col) {
-      SDL_FRect sq = {col * SQ, row * SQ, SQ, SQ};
+      int r, c;
+      flip_coords_if_necessary(board->flipped, row, col, &r, &c);
+      
+      SDL_FRect sq = {c * SQ, r * SQ, SQ, SQ};
       bool light = ((row + col) & 1) == 0;
       if (light) SDL_SetRenderDrawColor(renderer, 240, 217, 181, 255);
       else       SDL_SetRenderDrawColor(renderer, 181, 136, 99, 255);
@@ -98,7 +104,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   {
     for (int i = 0; i < board->annotations.highlight_count; ++i) {
       Highlight *h = &board->annotations.highlights[i];
-      draw_square_highlight(renderer, h->square, h->color);
+      draw_square_highlight(renderer, h->square, h->color, board->flipped);
     }
   }
 
@@ -130,8 +136,14 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   /* Highlight Last Move */
   if (board->undo_count > 0) {
     BoardMoveHistory *last_move = &board->history[board->undo_count - 1];
-    SDL_FRect from_sq = {last_move->from_col * SQ, last_move->from_row * SQ, SQ, SQ};
-    SDL_FRect to_sq   = {last_move->to_col   * SQ, last_move->to_row   * SQ, SQ, SQ};
+    
+    int fr, fc;
+    int tr, tc;
+    flip_coords_if_necessary(board->flipped, last_move->from_row, last_move->from_col, &fr, &fc);
+    flip_coords_if_necessary(board->flipped, last_move->to_row, last_move->to_col, &tr, &tc);
+    
+    SDL_FRect from_sq = {fc * SQ, fr * SQ, SQ, SQ};
+    SDL_FRect to_sq   = {tc * SQ, tr * SQ, SQ, SQ};
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 180, 200, 70, 150);
@@ -163,7 +175,10 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     }
 
     if (is_valid_target) {
-      SDL_FRect target_rect = {mouse_col * SQ, mouse_row * SQ, SQ, SQ};
+      int r, c;
+      flip_coords_if_necessary(board->flipped, mouse_row, mouse_col, &r, &c);
+      
+      SDL_FRect target_rect = {c * SQ, r * SQ, SQ, SQ};
       SDL_SetRenderDrawColor(renderer, 20, 20, 20, 70);
       SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
       SDL_RenderFillRect(renderer, &target_rect);
@@ -181,7 +196,10 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
       char pc = board->board[row][col];
       if (pc && tex[(int)pc]) {
-        SDL_FRect dst = {col * SQ, row * SQ, SQ, SQ};
+        int r, c;
+        flip_coords_if_necessary(board->flipped, row, col, &r, &c);
+        
+        SDL_FRect dst = {c * SQ, r * SQ, SQ, SQ};
         SDL_RenderTexture(renderer, tex[(int)pc], NULL, &dst);
       }
     }
@@ -201,6 +219,11 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
     for (int i = 0; i < 4; ++i) {
       float menu_x = board->promo.col * SQ;
       float menu_y = board->turn == WHITE ? (i*SQ) : ((7-i) * SQ);
+
+      if (board->flipped) {
+        menu_x = (7 - board->promo.col) * SQ;
+        menu_y = board->turn == WHITE ? ((7-i) * SQ) : (i * SQ);
+      }
 
       SDL_FRect dst = {menu_x, menu_y, SQ, SQ};
       SDL_SetRenderDrawColor(renderer, 169, 169, 169, 255);
@@ -234,8 +257,11 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
         if (is_drag_hovered_square) continue;
 
         bool is_capture = board->board[row][col] != 0;
-        float centerX   = col * SQ + (SQ / 2.0f);
-        float centerY   = row * SQ + (SQ / 2.0f);
+        
+        flip_coords_if_necessary(board->flipped, row, col, &row, &col);
+        
+        float centerX = col * SQ + (SQ / 2.0f);
+        float centerY = row * SQ + (SQ / 2.0f);
 
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, 80);
 
@@ -266,13 +292,16 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
 
   /* Attention Over Checks */
   if (board->king.in_check) {
+    int row, col;
+    flip_coords_if_necessary(board->flipped, board->king.row, board->king.col, &row, &col);
+    
     SDL_SetRenderDrawColor(renderer, 255, 20, 20, 200);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
     int border_thickness = 2;
     for (int i = 0; i < border_thickness; ++i) {
-      SDL_FRect border_rect = {(float)(board->king.col * SQ + i),
-                               (float)(board->king.row * SQ + i), (float)(SQ - i * 2),
+      SDL_FRect border_rect = {(float)(col * SQ + i),
+                               (float)(row * SQ + i), (float)(SQ - i * 2),
                                (float)(SQ - i * 2)};
       SDL_RenderRect(renderer, &border_rect);
     }
@@ -285,7 +314,7 @@ void render_board(SDL_Renderer *renderer, BoardState *board) {
   {
     for (int i = 0; i < board->annotations.arrow_count; ++i) {
       Arrow *a = &board->annotations.arrows[i];
-      draw_arrow(renderer, a->from, a->to, a->color);
+      draw_arrow(renderer, a->from, a->to, a->color, board->flipped);
     }
   }
 }
@@ -351,9 +380,11 @@ static void draw_capture_indicator(SDL_Renderer *renderer, int row, int col) {
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
-static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FColor color) {
+static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FColor color, bool flipped) {
   int row = square_to_row(square);
   int col = square_to_col(square);
+
+  flip_coords_if_necessary(flipped, row, col, &row, &col);
 
   SDL_FRect rect = {col * SQ, row * SQ, SQ, SQ};
 
@@ -365,11 +396,14 @@ static void draw_square_highlight(SDL_Renderer *renderer, Square square, SDL_FCo
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
-static void draw_arrow(SDL_Renderer *renderer, Square from_sq, Square to_sq, SDL_FColor color) {
+static void draw_arrow(SDL_Renderer *renderer, Square from_sq, Square to_sq, SDL_FColor color, bool flipped) {
   int from_row = square_to_row(from_sq);
   int from_col = square_to_col(from_sq);
   int to_row   = square_to_row(to_sq);
   int to_col   = square_to_col(to_sq);
+
+  flip_coords_if_necessary(flipped, from_row, from_col, &from_row, &from_col);
+  flip_coords_if_necessary(flipped, to_row, to_col, &to_row, &to_col);
 
   float from_x = from_col * SQ + SQ / 2.0f;
   float from_y = from_row * SQ + SQ / 2.0f;
