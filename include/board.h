@@ -87,6 +87,7 @@ typedef struct BoardState {
   char board[8][8];
   int ep_row;
   int ep_col;
+  bool flipped;
   uint8_t castling;
   Turn turn;
   MoveList valid_moves; bool should_update_valid_moves;
@@ -132,3 +133,14 @@ bool remove_arrow(Annotations *anns, Square from, Square to);
 bool add_highlight(Annotations *anns, Square square, SDL_FColor color);
 bool remove_highlight(Annotations *anns, Square square);
 bool has_highlight(Annotations *anns, Square square);
+
+// useful stuff
+static inline void flip_coords_if_necessary(bool flipped, int in_row, int in_col, int *out_row, int *out_col) {
+  if (flipped) {
+    *out_row = 7 - in_row;
+    *out_col = 7 - in_col;
+  } else {
+    *out_row = in_row;
+    *out_col = in_col;
+  }
+}
