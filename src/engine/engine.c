@@ -9,18 +9,21 @@
 static int engine_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
-  engine->thr            = SDL_CreateThread(engine_thread, "EngineThread", engine);
-  engine->mtx            = SDL_CreateMutex();
-  engine->cond           = SDL_CreateCondition();
-  engine->last_pos_hash  = 0ULL;
-  engine->last_turn      = WHITE;
-  engine->ctx            = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
+  /* init precomputed attack tables for sockfish's move generation logic */
+  init_attack_tables(); 
 
-  SDL_SetAtomicInt(&engine->thr_working, 0);
+  /* init magic bitboards for sliding pieces in move generation logic */
+  init_magic_bitboards();
+
+  SDL_SetAtomicInt(&engine->thr_working,    0);
   SDL_SetAtomicInt(&engine->stop_requested, 0);
 
-  init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
-  init_magic_bitboards(); // init magic bitboards for sliding pieces in move generation logic
+  engine->mtx           = SDL_CreateMutex();
+  engine->cond          = SDL_CreateCondition();
+  engine->last_pos_hash = 0ULL;
+  engine->last_turn     = WHITE;
+  engine->ctx           = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
+  engine->thr           = SDL_CreateThread(engine_thread, "EngineThread", engine);
 }
 
 void engine_req_search(EngineWrapper *engine, const BoardState *board) {
