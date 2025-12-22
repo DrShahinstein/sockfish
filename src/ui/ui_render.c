@@ -184,32 +184,34 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     SDL_RenderFillRect(r, &separator);
     SDL_RenderRect(r, &separator);
 
-    Move sf_best;
-    bool search_thr_active;
+    Move best;
+    bool thr_working;
 
     SDL_LockMutex(engine->mtx);
-    sf_best = engine->ctx.best;
-    search_thr_active = SDL_GetAtomicInt(&engine->thr_working);
+    best        = engine->ctx.best;
+    thr_working = engine->thr_working;
     SDL_UnlockMutex(engine->mtx);
 
     float x = UI_START_X;
     float y = ui->separator.rect.y + 20;
 
-    if (search_thr_active) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
+    if (thr_working) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
     else {
       char from_alg[3], to_alg[3];
-      Square sf_from = move_from(sf_best);
-      Square sf_to   = move_to(sf_best);
-      sq_to_alg(sf_from, from_alg);
-      sq_to_alg(sf_to,   to_alg);
 
-      char move_str[32];
-      SDL_snprintf(move_str, sizeof(move_str), "Best Move => %s%s", from_alg, to_alg);
+      Square from = move_from(best);
+      Square to   = move_to(best);
 
-      draw_text(r, ui->fonts.roboto15, move_str, FWHITE, x, y);
+      sq_to_alg(from, from_alg);
+      sq_to_alg(to,   to_alg);
+
+      char move_as_str[32];
+      SDL_snprintf(move_as_str, sizeof(move_as_str), "Best Move => %s%s", from_alg, to_alg);
+
+      draw_text(r, ui->fonts.roboto15, move_as_str, FWHITE, x, y);
+
+      engine_req_search(engine, board);
     }
-
-    engine_req_search(engine, board);
   }
 
   // Undo Button
