@@ -64,7 +64,6 @@ typedef struct SF_Context {
   Move best;
   uint8_t castling_rights;
   Square enpassant_sq; // -1 for none
-  bool *stop_requested;
 } SF_Context;
 
 /* ===== Move Utilities ===== */
@@ -98,7 +97,6 @@ static inline SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_co
   ctx.castling_rights = castling_rights;
   ctx.enpassant_sq    = ep_sq;
   ctx.best            = create_move(0,0);
-  ctx.stop_requested  = false;
   return ctx;
 }
 
