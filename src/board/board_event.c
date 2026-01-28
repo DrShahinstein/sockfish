@@ -4,11 +4,17 @@
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
 #include <SDL3/SDL.h>
 
+/* Helpers */
 static inline bool is_mouse_in_board(float mx, float my);
 static bool check_valid(BoardState *b, Move move);
 
+/* Procedural Functions */
+static void pawn_promotes(BoardState *board, float mx, float my);
+static void piece_movements(BoardState *board, float mx, float my);
+
 void board_handle_event(SDL_Event *e, BoardState *board) {
-  float mx; float my; int sq_row; int sq_col;
+  float mx, my;
+  int sq_row, sq_col;
 
   switch (e->type) {
   case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -61,7 +67,6 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       flip_coords_if_necessary(board->flipped, sq_row, sq_col, &sq_row, &sq_col);
 
       Square start = rowcol_to_sq(sq_row, sq_col);
-
       start_drawing_arrow(&board->annotations, start);
     }
 
@@ -108,51 +113,8 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
         return;
       }
 
-      /* -- Handle Promotion -- */
       if (board->promo.active) {
-        int p = -1;
-
-        for (int i = 0; i < 4; ++i) {
-          float choice_x = board->promo.col * SQ;
-          float choice_y = board->turn == WHITE ? (i * SQ) : ((7-i) * SQ);
-
-          if (board->flipped) {
-            choice_x = (7 - board->promo.col) * SQ;
-            choice_y = board->turn == WHITE ? ((7-i) * SQ) : (i * SQ);
-          }
-
-          bool mouse_on_promo = mx >= choice_x && mx < choice_x + SQ && my >= choice_y && my < choice_y + SQ;
-          if (mouse_on_promo) {
-            p = i;
-            break;
-          }
-        }
-
-        if (p == -1) {
-          char p_abort = board->turn == WHITE ? 'P':'p';
-
-          board->drag.active  = false;
-          board->promo.active = false;
-          board->board[board->drag.from_row][board->drag.from_col] = p_abort;
-          board->board[board->promo.row][board->promo.col]         = board->promo.captured;
-          return;
-        }
-
-        board->should_update_valid_moves = true;
-
-        char piece = board->promo.choices[p];
-
-        board->board[board->promo.row][board->promo.col] = piece;
-        board->turn = (board->turn == WHITE) ? BLACK : WHITE;
-        board->promo.active = false;
-        board->drag.active  = false;
-
-        // help history to follow up promoted piece
-        if (board->undo_count > 0) {
-          board->history[board->undo_count - 1].promoted_piece = piece;
-        }
-
-        return;
+        pawn_promotes(board, mx, my);
       }
 
       if (board->drag.active) {
@@ -160,102 +122,155 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
           board->drag.active = false;
           return;
         }
-
-        /* -- Handle Moving -- */
-        int fr            = board->drag.from_row;  // from row
-        int fc            = board->drag.from_col;  // from col
-        int tr            = my / SQ;               // to row
-        int tc            = mx / SQ;               // to col
-        flip_coords_if_necessary(board->flipped, tr, tc, &tr, &tc);
-        Square from_sq    = rowcol_to_sq(fr, fc);
-        Square to_sq      = rowcol_to_sq(tr, tc);
-        Move move         = create_move(from_sq, to_sq);
-        char moving_piece = board->board[fr][fc];
-
-        bool valid = check_valid(board, move);
-
-        if (valid) {
-          board->should_update_valid_moves = true;
-          
-          if (board->undo_count < MAX_HISTORY) {
-            board->redo_count = 0;
-            board_save_history(board, fr, fc, tr, tc, board->undo_count);
-            board->undo_count += 1;
-          }
-
-          if (is_castling_move(board, move)) {
-            perform_castling(board, move);
-
-            board->turn                  = (board->turn == WHITE) ? BLACK : WHITE;
-            board->selected_piece.active = false;
-            board->drag.active           = false;
-
-            board_update_king_in_check(board);
-            
-            return;
-          }
-
-          else if (is_en_passant_capture(board, move)) {
-            int captured_row = board->turn == WHITE ? (tr + 1) : (tr - 1);
-            board->board[captured_row][tc] = 0;
-            board->board[tr][tc]           = moving_piece;
-            board->board[fr][fc]           = 0;
-            board->ep_row                  = NO_ENPASSANT;
-            board->ep_col                  = NO_ENPASSANT;
-            board->turn                    = (board->turn == WHITE) ? BLACK : WHITE;
-            board->drag.active             = false;
-
-            board_update_king_in_check(board);
-
-            return;
-          }
-
-          // normal move
-          else {
-            bool double_pawn_push = (moving_piece == 'p' || moving_piece == 'P') && SDL_abs(fr - tr) == 2;
-
-            if (double_pawn_push) {
-              board->ep_row = (fr + tr) / 2;
-              board->ep_col = fc;
-            } else {
-              board->ep_row = NO_ENPASSANT;
-              board->ep_col = NO_ENPASSANT;
-            }
-
-            board->promo.captured = board->board[tr][tc];
-            board->board[tr][tc]  = moving_piece;
-            board->board[fr][fc]  = 0;
-
-            update_castling_rights (board, moving_piece, move);
-            update_enpassant_rights(board, moving_piece);
-
-            bool promotion = (tr == 0 || tr == 7) && (moving_piece == 'p' || moving_piece == 'P');
-            if (promotion) {
-              board->promo.active = true;
-              board->promo.row    = tr;
-              board->promo.col    = tc;
-
-              bool w = board->turn == WHITE;
-              board->promo.choices[0] = w ? 'Q' : 'q';
-              board->promo.choices[1] = w ? 'R' : 'r';
-              board->promo.choices[2] = w ? 'N' : 'n';
-              board->promo.choices[3] = w ? 'B' : 'b';
-            }
-
-            else {
-              if (board->turn == WHITE) board->turn = BLACK;
-              else                      board->turn = WHITE;
-            }
-          }
-
-          board_update_king_in_check(board);
-        }
-
-        board->drag.active = false;
+        piece_movements(board, mx, my);
       }
     }
+
     break;
   }
+}
+
+/* - - - */
+
+static void pawn_promotes(BoardState *board, float mx, float my) {
+  int p = -1;
+  float choice_x;
+  float choice_y;
+
+  for (int i = 0; i < 4; ++i) {
+    choice_x = board->promo.col * SQ;
+    choice_y = board->turn == WHITE ? (i * SQ) : ((7-i) * SQ);
+
+    if (board->flipped) {
+      choice_x = (7 - board->promo.col) * SQ;
+      choice_y = board->turn == WHITE ? ((7-i) * SQ) : (i * SQ);
+    }
+
+    bool mouse_on_promo = mx >= choice_x && mx < choice_x + SQ && my >= choice_y && my < choice_y + SQ;
+    if (mouse_on_promo) {
+      p = i;
+      break;
+    }
+  }
+
+  if (p == -1) {
+    char p_abort = board->turn == WHITE ? 'P':'p';
+
+    board->drag.active  = false;
+    board->promo.active = false;
+    board->board[board->drag.from_row][board->drag.from_col] = p_abort;
+    board->board[board->promo.row][board->promo.col]         = board->promo.captured;
+    return;
+  }
+
+  board->should_update_valid_moves = true;
+
+  char piece = board->promo.choices[p];
+
+  board->board[board->promo.row][board->promo.col] = piece;
+  board->turn = (board->turn == WHITE) ? BLACK : WHITE;
+  board->promo.active = false;
+  board->drag.active  = false;
+
+  // help history to follow up promoted piece
+  if (board->undo_count > 0) {
+    board->history[board->undo_count - 1].promoted_piece = piece;
+  }
+
+  return;
+}
+
+static void piece_movements(BoardState *board, float mx, float my) {
+  int fr            = board->drag.from_row;  // from row
+  int fc            = board->drag.from_col;  // from col
+  int tr            = my / SQ;               // to row
+  int tc            = mx / SQ;               // to col
+  flip_coords_if_necessary(board->flipped, tr, tc, &tr, &tc);
+  Square from_sq    = rowcol_to_sq(fr, fc);
+  Square to_sq      = rowcol_to_sq(tr, tc);
+  Move move         = create_move(from_sq, to_sq);
+  char moving_piece = board->board[fr][fc];
+
+  bool valid = check_valid(board, move);
+
+  if (valid) {
+    board->should_update_valid_moves = true;
+
+    if (board->undo_count < MAX_HISTORY) {
+      board->redo_count = 0;
+      board_save_history(board, fr, fc, tr, tc, board->undo_count);
+      board->undo_count += 1;
+    }
+
+    if (is_castling_move(board, move)) {
+      perform_castling(board, move);
+
+      board->turn                  = (board->turn == WHITE) ? BLACK : WHITE;
+      board->selected_piece.active = false;
+      board->drag.active           = false;
+
+      board_update_king_in_check(board);
+      
+      return;
+    }
+
+    else if (is_en_passant_capture(board, move)) {
+      int captured_row = board->turn == WHITE ? (tr + 1) : (tr - 1);
+      board->board[captured_row][tc] = 0;
+      board->board[tr][tc]           = moving_piece;
+      board->board[fr][fc]           = 0;
+      board->ep_row                  = NO_ENPASSANT;
+      board->ep_col                  = NO_ENPASSANT;
+      board->turn                    = (board->turn == WHITE) ? BLACK : WHITE;
+      board->drag.active             = false;
+
+      board_update_king_in_check(board);
+
+      return;
+    }
+
+    /* Normal Moving */
+    else {
+      bool double_pawn_push = (moving_piece == 'p' || moving_piece == 'P') && SDL_abs(fr - tr) == 2;
+
+      if (double_pawn_push) {
+        board->ep_row = (fr + tr) / 2;
+        board->ep_col = fc;
+      } else {
+        board->ep_row = NO_ENPASSANT;
+        board->ep_col = NO_ENPASSANT;
+      }
+
+      board->promo.captured = board->board[tr][tc];
+      board->board[tr][tc]  = moving_piece;
+      board->board[fr][fc]  = 0;
+
+      update_castling_rights (board, moving_piece, move);
+      update_enpassant_rights(board, moving_piece);
+
+      bool promotion = (tr == 0 || tr == 7) && (moving_piece == 'p' || moving_piece == 'P');
+      if (promotion) {
+        board->promo.active = true;
+        board->promo.row    = tr;
+        board->promo.col    = tc;
+
+        bool w = board->turn == WHITE;
+        board->promo.choices[0] = w ? 'Q' : 'q';
+        board->promo.choices[1] = w ? 'R' : 'r';
+        board->promo.choices[2] = w ? 'N' : 'n';
+        board->promo.choices[3] = w ? 'B' : 'b';
+      }
+
+      else {
+        if (board->turn == WHITE) board->turn = BLACK;
+        else                      board->turn = WHITE;
+      }
+    }
+
+    board_update_king_in_check(board);
+  }
+
+  board->drag.active = false;
 }
 
 static inline bool is_mouse_in_board(float mx, float my) {
