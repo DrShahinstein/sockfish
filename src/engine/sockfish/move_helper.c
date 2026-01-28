@@ -46,19 +46,14 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   }
 
   if (type == MOVE_CASTLING) {
-    Square rook_from, rook_to;
-    if (to == G1) {        // white-kingside
-      rook_from = H1;
-      rook_to   = F1;
-    } else if (to == C1) { // white-queenside
-      rook_from = A1;
-      rook_to   = D1;
-    } else if (to == G8) { // black-kingside
-      rook_from = H8;
-      rook_to   = F8;
-    } else if (to == C8) { // black-queenside
-      rook_from = A8;
-      rook_to   = D8;
+    Square rook_from=-1, rook_to=-1;
+
+    switch (to) {
+      case G1: rook_from=H1; rook_to=F1; /* white-kingside  */ break;
+      case C1: rook_from=A1; rook_to=D1; /* white-queenside */ break;
+      case G8: rook_from=H8; rook_to=F8; /* black-kingside  */ break;
+      case C8: rook_from=A8; rook_to=D8; /* black-queenside */ break;
+      default:                                                 break;
     }
 
     PieceType rook = (ctx->search_color == WHITE) ? W_ROOK : B_ROOK;
@@ -66,7 +61,7 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     place_piece (&ctx->bitboard_set, rook_to,   rook);
   }
 
-  if (moving_piece == W_KING) ctx->castling_rights &= ~(CASTLE_WK | CASTLE_WQ);
+  if      (moving_piece == W_KING) ctx->castling_rights &= ~(CASTLE_WK | CASTLE_WQ);
   else if (moving_piece == B_KING) ctx->castling_rights &= ~(CASTLE_BK | CASTLE_BQ);
   else if (moving_piece == W_ROOK) {
     if (from == H1) ctx->castling_rights &= ~CASTLE_WK;
@@ -114,20 +109,14 @@ void unmake_move(SF_Context *ctx, const MoveHistory *history) {
   }
 
   if (type == MOVE_CASTLING) {
-    Square rook_from, rook_to;
+    Square rook_from=-1, rook_to=-1;
 
-    if (to == G1) {        // white-kingside
-      rook_from = H1;
-      rook_to   = F1;
-    } else if (to == C1) { // white-queenside
-      rook_from = A1;
-      rook_to   = D1;
-    } else if (to == G8) { // black-kingside
-      rook_from = H8;
-      rook_to   = F8;
-    } else if (to == C8) { // black-queenside
-      rook_from = A8;
-      rook_to   = D8;
+    switch (to) {
+      case G1: rook_from=H1; rook_to=F1; /* white-kingside  */ break;
+      case C1: rook_from=A1; rook_to=D1; /* white-queenside */ break;
+      case G8: rook_from=H8; rook_to=F8; /* black-kingside  */ break;
+      case C8: rook_from=A8; rook_to=D8; /* black-queenside */ break;
+      default:                                                 break;
     }
 
     PieceType rook = (ctx->search_color == WHITE) ? W_ROOK : B_ROOK;
@@ -208,6 +197,7 @@ static void place_piece(BitboardSet *bbs, Square sq, PieceType piece) {
 
 static PieceType get_promotion_piece(Move move, Turn color) {
   PromotionType promo = move_promotion(move);
+
   if (color == WHITE) {
     switch (promo) {
     case PROMOTE_QUEEN:  return W_QUEEN;
