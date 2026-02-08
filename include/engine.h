@@ -21,7 +21,15 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board);
 void engine_destroy(EngineWrapper *engine);
 
 BitboardSet make_bitboards_from_charboard(const char board[8][8]); // bitboard_maker.c
-uint64_t position_hash(const char b[8][8], Turn t);                // position_hasher.c
+
+/* zobrist.c */
+extern uint64_t zobrist_pieces[12][64];
+extern uint64_t zobrist_black_to_move;
+
+void init_zobrist_keys(void);
+uint64_t zobrist_hash(const char b[8][8], Turn t);
+/* end */
+
 
 /*
 
