@@ -1,22 +1,78 @@
 #include "engine.h"
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_timer.h>
 
-uint64_t position_hash(const char b[8][8], Turn t) {
-  const uint64_t FNV_OFFSET = 14695981039346656037ULL;
-  const uint64_t FNV_PRIME = 1099511628211ULL;
-  uint64_t h = FNV_OFFSET;
+uint64_t zobrist_pieces[12][64];
+uint64_t zobrist_black_to_move;
 
-  for (int r = 0; r < 8; ++r) {
-    for (int c = 0; c < 8; ++c) {
-      unsigned char v = (unsigned char)b[r][c];
-      h ^= v;
-      h *= FNV_PRIME;
-      h ^= (r << 4 | c);
-      h *= FNV_PRIME;
+static uint64_t rand64(void);
+static inline int piece_to_index(char piece);
+
+void init_zobrist_keys(void) {
+  for (int piece = 0; piece < 12; piece++) {
+    for (int square = 0; square < 64; square++) {
+      zobrist_pieces[piece][square] = rand64();
     }
   }
-
-  h ^= (uint64_t)t;
-  h *= FNV_PRIME;
   
-  return h;
+  zobrist_black_to_move = rand64();
+}
+
+uint64_t zobrist_hash(const char board[8][8], Turn turn) {
+  uint64_t hash = 0;
+  
+  for (int row = 0; row < 8; row++) {
+    for (int col = 0; col < 8; col++) {
+      char piece = board[row][col];
+      if (piece != 0) {
+        int piece_idx = piece_to_index(piece);
+        if (piece_idx >= 0) {
+          Square s = rowcol_to_sq(row, col);
+          hash ^= zobrist_pieces[piece_idx][s];
+        }
+      }
+    }
+  }
+  
+  if (turn == BLACK) {
+    hash ^= zobrist_black_to_move;
+  }
+  
+  return hash;
+}
+
+static uint64_t rand64(void) {
+  static bool seeded = false;
+  
+  if (!seeded) {
+    uint64_t seed_val = SDL_GetPerformanceCounter();
+    SDL_srand((unsigned int)(seed_val & 0xFFFFFFFF));
+    seeded = true;
+  }
+  
+  uint64_t result = 0;
+  for (int i = 0; i < 8; i++) {
+    result <<= 8;
+    result |= (uint8_t)SDL_rand(256);
+  }
+  
+  return result;
+}
+
+static inline int piece_to_index(char piece) {
+  switch (piece) {
+    case 'P': return 0;
+    case 'N': return 1;
+    case 'B': return 2;
+    case 'R': return 3;
+    case 'Q': return 4;
+    case 'K': return 5;
+    case 'p': return 6;
+    case 'n': return 7;
+    case 'b': return 8;
+    case 'r': return 9;
+    case 'q': return 10;
+    case 'k': return 11;
+    default:  return -1;
+  }
 }
