@@ -28,7 +28,7 @@ sources = files(
   'src/ui/info.c',
   'src/engine/engine.c',
   'src/engine/bitboard_maker.c',
-  'src/engine/position_hasher.c',
+  'src/engine/zobrist.c',
   'src/engine/sockfish/bitboard.c',
   'src/engine/sockfish/search.c',
   'src/engine/sockfish/movegen.c',
