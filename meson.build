@@ -1,4 +1,9 @@
-project('sockfish', 'c', version : '0.1.0', default_options : ['warning_level=3', 'c_std=c11'])
+project('sockfish', 'c', version : '0.1.0',
+  default_options : [
+    'c_std=c11',
+    'warning_level=3',
+  ]
+)
 
 sdl3_dep       = dependency('sdl3')
 sdl3_image_dep = dependency('sdl3-image')
@@ -28,6 +33,7 @@ sources = files(
   'src/engine/sockfish/search.c',
   'src/engine/sockfish/movegen.c',
   'src/engine/sockfish/move_helper.c',
+  'src/engine/sockfish/evaluation.c',
 )
 
 executable('sockfish',
