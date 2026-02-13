@@ -1,9 +1,12 @@
 #include "board.h"
 
-void update_castling_rights(BoardState *board, char moving_piece, Move move) {
+void update_castling_rights(BoardState *board, char moving_piece, char captured_piece, Move move) {
   Square from_sq = move_from(move);
-  int fr = square_to_row(from_sq);
-  int fc = square_to_col(from_sq);
+  int fr         = square_to_row(from_sq);
+  int fc         = square_to_col(from_sq);
+  Square to_sq   = move_to(move);
+  int tr         = square_to_row(to_sq);
+  int tc         = square_to_col(to_sq);
 
   if (moving_piece == 'K')      board->castling &= ~(CASTLE_WK | CASTLE_WQ);
   else if (moving_piece == 'k') board->castling &= ~(CASTLE_BK | CASTLE_BQ);
@@ -12,10 +15,20 @@ void update_castling_rights(BoardState *board, char moving_piece, Move move) {
     if     (fr == 7 && fc == 0)  board->castling &= ~CASTLE_WQ;
     else if (fr == 7 && fc == 7) board->castling &= ~CASTLE_WK;
   }
-  
+
   else if (moving_piece == 'r') {
     if      (fr == 0 && fc == 0) board->castling &= ~CASTLE_BQ;
     else if (fr == 0 && fc == 7) board->castling &= ~CASTLE_BK;
+  }
+
+  if (captured_piece == 'R') {
+    if      (tr == 7 && tc == 0) board->castling &= ~CASTLE_WQ;
+    else if (tr == 7 && tc == 7) board->castling &= ~CASTLE_WK;
+  }
+
+  else if (captured_piece == 'r') {
+    if      (tr == 0 && tc == 0) board->castling &= ~CASTLE_BQ;
+    else if (tr == 0 && tc == 7) board->castling &= ~CASTLE_BK;
   }
 }
 
@@ -88,7 +101,7 @@ bool is_en_passant_capture(BoardState *board, Move move) {
 
   if (invalid)
     return false;
-  
+
   return (tr == board->ep_row && tc == board->ep_col);
 }
 
