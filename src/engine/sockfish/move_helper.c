@@ -41,10 +41,6 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     place_piece(&ctx->bitboard_set, to, promoted_piece);
   } else place_piece(&ctx->bitboard_set, to, moving_piece);
 
-  if (history->captured_piece != NO_PIECE) {
-    place_piece(&ctx->bitboard_set, to, moving_piece);
-  }
-
   if (type == MOVE_CASTLING) {
     Square rook_from=-1, rook_to=-1;
 
@@ -69,6 +65,15 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   } else if (moving_piece == B_ROOK) {
     if (from == H8) ctx->castling_rights &= ~CASTLE_BK;
     if (from == A8) ctx->castling_rights &= ~CASTLE_BQ;
+  }
+
+  if (history->captured_piece == W_ROOK) {
+    if      (history->captured_square == H1) ctx->castling_rights &= ~CASTLE_WK;
+    else if (history->captured_square == A1) ctx->castling_rights &= ~CASTLE_WQ;
+  }
+  else if (history->captured_piece == B_ROOK) {
+    if      (history->captured_square == H8) ctx->castling_rights &= ~CASTLE_BK;
+    else if (history->captured_square == A8) ctx->castling_rights &= ~CASTLE_BQ;
   }
 
   if (type == MOVE_NORMAL && (moving_piece == W_PAWN || moving_piece == B_PAWN)) {
