@@ -84,7 +84,7 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
       sq_row = my / SQ;
       sq_col = mx / SQ;
       flip_coords_if_necessary(board->flipped, sq_row, sq_col, &sq_row, &sq_col);
-      
+
       Square end = rowcol_to_sq(sq_row, sq_col);
 
       if (is_drawing_arrow(&board->annotations)) {
@@ -177,6 +177,8 @@ static void pawn_promotes(BoardState *board, float mx, float my) {
     board->history[board->undo_count - 1].promoted_piece = piece;
   }
 
+  board_update_king_in_check(board);
+
   return;
 }
 
@@ -210,7 +212,7 @@ static void piece_movements(BoardState *board, float mx, float my) {
       board->drag.active           = false;
 
       board_update_king_in_check(board);
-      
+
       return;
     }
 
@@ -241,11 +243,12 @@ static void piece_movements(BoardState *board, float mx, float my) {
         board->ep_col = NO_ENPASSANT;
       }
 
-      board->promo.captured = board->board[tr][tc];
+      char captured_piece   = board->board[tr][tc];
+      board->promo.captured = captured_piece;
       board->board[tr][tc]  = moving_piece;
       board->board[fr][fc]  = 0;
 
-      update_castling_rights (board, moving_piece, move);
+      update_castling_rights (board, moving_piece, captured_piece, move);
       update_enpassant_rights(board, moving_piece);
 
       bool promotion = (tr == 0 || tr == 7) && (moving_piece == 'p' || moving_piece == 'P');
@@ -286,8 +289,8 @@ static bool check_valid(BoardState *b, Move move) {
     // this dodges move type differences (MOVE_NORMAl, MOVE_CASTLING...)
     bool same_origin_and_destination = move_from(move) == move_from(m_valid) &&
                                        move_to(move)   == move_to(m_valid);
-    
-    if (same_origin_and_destination) 
+
+    if (same_origin_and_destination)
       return true;
   }
 
