@@ -111,7 +111,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
         board->turn = !board->turn;
-      } 
+      }
     }
     break;
 
@@ -121,7 +121,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       size_t avail = MAX_FEN - ui->fen_loader.length - 1;
 
       if (avail > 0) {
-        SDL_strlcat(ui->fen_loader.buf, txt, avail);
+        SDL_strlcat(ui->fen_loader.buf, txt, MAX_FEN);
         ui->fen_loader.length      = SDL_strlen(ui->fen_loader.buf);
         ui->fen_loader.cache_valid = false;
       }
@@ -132,7 +132,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
       size_t avail = MAX_PGN - ui->pgn_loader.length - 1;
 
       if (avail > 0) {
-        SDL_strlcat(ui->pgn_loader.buf, txt, avail);
+        SDL_strlcat(ui->pgn_loader.buf, txt, MAX_PGN);
         ui->pgn_loader.length      = SDL_strlen(ui->pgn_loader.buf);
         ui->pgn_loader.cache_valid = false;
       }
