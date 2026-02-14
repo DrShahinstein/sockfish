@@ -13,10 +13,9 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   history->prev_castling = ctx->castling_rights;
   history->prev_ep_sq    = ctx->enpassant_sq;
 
-  Square from   = move_from(move);
-  Square to     = move_to(move);
-  MoveType type = move_type(move);
-
+  Square from            = move_from(move);
+  Square to              = move_to(move);
+  MoveType type          = move_type(move);
   PieceType moving_piece = get_piece_type(&ctx->bitboard_set, from);
 
   history->captured_piece  = NO_PIECE;
