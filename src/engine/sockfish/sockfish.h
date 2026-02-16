@@ -12,6 +12,7 @@
 
 #include "bitboard.h"
 #include <stdbool.h>
+#include <stdlib.h>
 
 typedef enum {
   W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
@@ -63,7 +64,8 @@ typedef struct SF_Context {
   Turn search_color;
   Move best;
   uint8_t castling_rights;
-  Square enpassant_sq; // -1 for none
+  Square enpassant_sq;
+  bool *should_stop;
 } SF_Context;
 
 /* ===== Move Utilities ===== */
@@ -96,13 +98,19 @@ static inline SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_co
   ctx.search_color    = search_color;
   ctx.castling_rights = castling_rights;
   ctx.enpassant_sq    = ep_sq;
+  ctx.should_stop     = NULL;
   ctx.best            = create_move(0,0);
   return ctx;
 }
 
+static inline bool should_stop(const SF_Context *ctx) {
+  return ctx->should_stop && *ctx->should_stop;
+}
+
 /* ===== Sockish Functions & Algorithm =====
-
-Move     sf_search(const SF_Context *ctx);          // search.c
-MoveList sf_generate_moves(const SF_Context *ctx);  // movegen.c
-
+*
+* Move     sf_search(const SF_Context *ctx);            // search.c
+* MoveList sf_generate_moves(const SF_Context *ctx);    // movegen.c
+* int      sf_evaluate_position(const SF_Context *ctx); // evaluation.c
+*
 */
