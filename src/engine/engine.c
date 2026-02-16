@@ -9,7 +9,7 @@ static int engine_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
   /* init precomputed attack tables for sockfish's move generation logic */
-  init_attack_tables(); 
+  init_attack_tables();
 
   /* init magic bitboards for sliding pieces in move generation logic */
   init_magic_bitboards();
@@ -42,16 +42,16 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
     return;
   }
 
-  bool ep_valid = board->ep_row >= 0 && board->ep_col >= 0;
-
+  bool ep_valid     = board->ep_row >= 0 && board->ep_col >= 0;
   BitboardSet bbset = make_bitboards_from_charboard(board->board);
   Square en_passant = ep_valid ? rowcol_to_sq(board->ep_row, board->ep_col) : NO_ENPASSANT;
   SF_Context ctx    = create_sf_ctx(&bbset, board->turn, board->castling, en_passant);
 
-  engine->ctx           = ctx;
-  engine->last_pos_hash = hash;
-  engine->last_turn     = board->turn;
-  engine->thr_working   = true;
+  engine->ctx             = ctx;
+  engine->ctx.should_stop = &engine->should_stop;
+  engine->last_pos_hash   = hash;
+  engine->last_turn       = board->turn;
+  engine->thr_working     = true;
 
   SDL_SignalCondition(engine->cond);
   SDL_UnlockMutex(engine->mtx);
@@ -73,7 +73,7 @@ static int engine_thread(void *data) {
       break;
     }
 
-    SF_Context ctx = engine->ctx; 
+    SF_Context ctx = engine->ctx;
     SDL_UnlockMutex(engine->mtx);
 
     Move best = sf_search(&ctx);
