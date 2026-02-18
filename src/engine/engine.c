@@ -20,7 +20,6 @@ void engine_init(EngineWrapper *engine) {
   engine->mtx           = SDL_CreateMutex();
   engine->cond          = SDL_CreateCondition();
   engine->last_pos_hash = 0ULL;
-  engine->last_turn     = WHITE;
   engine->ctx           = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
   engine->should_stop   = false;
   engine->thr_working   = false;
@@ -37,7 +36,7 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   }
 
   uint64_t hash = zobrist_hash(board->board, board->turn);
-  if (engine->last_pos_hash == hash && engine->last_turn == board->turn) {
+  if (engine->last_pos_hash == hash) {
     SDL_UnlockMutex(engine->mtx);
     return;
   }
@@ -50,7 +49,6 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   engine->ctx             = ctx;
   engine->ctx.should_stop = &engine->should_stop;
   engine->last_pos_hash   = hash;
-  engine->last_turn       = board->turn;
   engine->thr_working     = true;
 
   SDL_SignalCondition(engine->cond);
