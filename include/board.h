@@ -84,12 +84,12 @@ typedef struct {
 } Annotations;
 
 typedef struct BoardState {
+  uint64_t position_hash;
   char board[8][8];
-  int ep_row;
-  int ep_col;
-  bool flipped;
-  uint8_t castling;
   Turn turn;
+  uint8_t castling;
+  int ep_row, ep_col;
+  bool flipped;
   MoveList valid_moves; bool should_update_valid_moves;
   SelectedPiece selected_piece;
   Drag drag;
@@ -101,6 +101,7 @@ typedef struct BoardState {
 
 void board_init(BoardState *board);
 void board_handle_event(SDL_Event *e, BoardState *board);
+void board_update_position_hash(BoardState *board);
 void board_update_king_in_check(BoardState *b);
 void board_update_valid_moves(BoardState *b);
 void board_save_history(BoardState *board, int from_row, int from_col, int to_row, int to_col, int history_index);
