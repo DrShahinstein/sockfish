@@ -111,6 +111,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
       if (cursor_in_rect(mx, my, &ui->turn_changer.rect)) {
         board->turn = !board->turn;
+        board_update_position_hash(board);
       }
     }
     break;
