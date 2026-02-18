@@ -14,9 +14,6 @@ void engine_init(EngineWrapper *engine) {
   /* init magic bitboards for sliding pieces in move generation logic */
   init_magic_bitboards();
 
-  /* init zobrist keys for position hashing */
-  init_zobrist_keys();
-
   engine->mtx           = SDL_CreateMutex();
   engine->cond          = SDL_CreateCondition();
   engine->last_pos_hash = 0ULL;
