@@ -17,6 +17,7 @@ void board_init(BoardState *board) {
   SDL_memset(&board->promo,            0, sizeof(board->promo));
   SDL_memset(board->promo.choices,     0, sizeof(board->promo.choices));
   SDL_memset(&board->valid_moves,      0, sizeof(board->valid_moves));
+  board->position_hash               = 0;
   board->castling                    = 0;
   board->turn                        = WHITE;
   board->ep_row                      = NO_ENPASSANT;
@@ -50,6 +51,10 @@ void board_init(BoardState *board) {
   load_fen(START_FEN, board);
 }
 
+void board_update_position_hash(BoardState *board) {
+  board->position_hash = zobrist_hash((const char (*)[8])board->board, board->turn);
+}
+
 void board_update_valid_moves(BoardState *b) {
   if (!b->should_update_valid_moves)
     return;
@@ -57,7 +62,7 @@ void board_update_valid_moves(BoardState *b) {
   bool ep_valid = b->ep_row >= 0 && b->ep_col >= 0;
 
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8]) b->board);
-  Square en_passant = ep_valid ? rowcol_to_sq(b->ep_row, b->ep_col) : NO_ENPASSANT; 
+  Square en_passant = ep_valid ? rowcol_to_sq(b->ep_row, b->ep_col) : NO_ENPASSANT;
   SF_Context ctx    = create_sf_ctx(&bbset, b->turn, b->castling, en_passant);
 
   MoveList valids = sf_generate_moves(&ctx);
@@ -132,7 +137,7 @@ void load_fen(const char *fen, BoardState *board) {
     board->turn = WHITE;
   else if (active[0] == 'b' || active[0] == 'B')
     board->turn = BLACK;
-  
+
   if (count >= 3) {
     if (!validate_castling(castling)) {
       SDL_strlcpy(castling, "KQkq", sizeof(castling));
@@ -155,6 +160,8 @@ void load_fen(const char *fen, BoardState *board) {
   }
 
   board->should_update_valid_moves = true;
+
+  board_update_position_hash(board);
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
@@ -190,7 +197,7 @@ void load_pgn(const char *pgn, BoardState *board) {
 
   while (*ptr != '\0') {
     while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
-    
+
     if (*ptr == '\0')
       break;
 
@@ -245,9 +252,9 @@ void load_pgn(const char *pgn, BoardState *board) {
       bbset = make_bitboards_from_charboard((const char (*)[8]) tmp_b.board);
       ep    = ep_invalid ? NO_ENPASSANT : rowcol_to_sq(tmp_b.ep_row, tmp_b.ep_col);
       ctx   = create_sf_ctx(&bbset, tmp_b.turn, tmp_b.castling, ep);
-      
+
       char promote = -1;
-      int  fr=-1, tr=-1, 
+      int  fr=-1, tr=-1,
            fc=-1, tc=-1;
       parse_pgn_move(pgn_move, &ctx, tmp_b.board, &promote, &fr, &fc, &tr, &tc);
 
@@ -255,7 +262,7 @@ void load_pgn(const char *pgn, BoardState *board) {
                             (fc < 0 || fc > 7) ||
                             (tr < 0 || tr > 7) ||
                             (tc < 0 || tc > 7);
-                            
+
       if (parsing_failed) {
         ui_set_info("Failed to parse pgn move.");
         return;
@@ -288,6 +295,8 @@ void load_pgn(const char *pgn, BoardState *board) {
   /* Copy History to Main Board */
   SDL_memcpy(board->history, &tmp_b.history, sizeof(board->history));
   board->redo_count = tmp_b.redo_count;
+
+  board_update_position_hash(board);
 
   ui_set_info("Pgn loaded successfully.");
 }
@@ -348,7 +357,7 @@ void board_undo(BoardState *board) {
       rook_from_col = h->to_col + 1;
       rook_to_col   = 0;
     }
-    
+
     char rook                                = (moving_piece == 'K') ? 'R' : 'r';
     board->board[h->from_row][rook_to_col]   = rook;
     board->board[h->from_row][rook_from_col] = 0;
@@ -361,6 +370,7 @@ void board_undo(BoardState *board) {
 
   board_update_king_in_check(board);
   board->should_update_valid_moves = true;
+  board_update_position_hash(board);
 }
 
 void board_redo(BoardState *board) {
@@ -410,12 +420,13 @@ void board_redo(BoardState *board) {
 
   board_update_king_in_check(board);
   board->should_update_valid_moves = true;
+  board_update_position_hash(board);
 }
 
 static uint8_t parse_castling(const char *str) {
   uint8_t rights = 0;
   if (SDL_strcmp(str, "-") == 0) return rights;
-    
+
   for (; *str; str++) {
     switch (*str) {
       case 'K': rights |= CASTLE_WK; break;
@@ -430,7 +441,7 @@ static uint8_t parse_castling(const char *str) {
 
 static bool validate_castling(const char *str) {
   if (SDL_strcmp(str, "-") == 0) return true;
-    
+
   for (; *str; str++) {
     switch (*str) {
       case 'K': case 'Q': case 'k': case 'q':
@@ -445,7 +456,7 @@ static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc) {
   /* on KING */
   if (p == 'K') *c &= ~(CASTLE_WK | CASTLE_WQ);
   if (p == 'k') *c &= ~(CASTLE_BK | CASTLE_BQ);
-  
+
   /* on ROOK */
   if (p == 'R') {
     if (fr == 7 && fc == 0) *c &= ~CASTLE_WQ; // a1 rook
@@ -491,7 +502,7 @@ static void adjust_promoting_pawn(BoardState *tmp_b, char promote, Turn T, int t
 
   if (T == WHITE)
     p = promote;
-  else 
+  else
     p = SDL_tolower(promote);
 
   tmp_b->board[tr][tc] = p;
