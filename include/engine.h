@@ -13,7 +13,6 @@ typedef struct EngineWrapper {
   bool should_stop;
   SF_Context ctx;
   uint64_t last_pos_hash;
-  Turn last_turn;
 } EngineWrapper;
 
 void engine_init(EngineWrapper *engine);
