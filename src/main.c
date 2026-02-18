@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   init_cursors();
+  init_zobrist_keys();
 
   SDL_DisplayID display_id    = SDL_GetPrimaryDisplay();
   const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(display_id);
@@ -53,11 +54,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   g_renderer = renderer;
-  
+
   SDL_SetRenderLogicalPresentation(renderer, W_WIDTH, W_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
   UI_State      ui={0};
-  EngineWrapper engine={0}; 
+  EngineWrapper engine={0};
   BoardState    board={0};
 
   board_init(&board);      /**/    render_board_init(renderer);
@@ -85,7 +86,7 @@ int main(int argc, char *argv[]) {
     if (elapsed_ms < target_ms) SDL_Delay((Uint32)(target_ms - elapsed_ms));
     prev = SDL_GetPerformanceCounter();
   }
-  
+
   ui_destroy(&ui);
   cleanup_cursors();
   engine_destroy(&engine);
