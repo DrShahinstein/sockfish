@@ -11,6 +11,7 @@ typedef struct EngineWrapper {
   SDL_Condition *cond;
   bool thr_working;
   bool should_stop;
+  bool abort_search;
   SF_Context ctx;
   uint64_t last_pos_hash;
 } EngineWrapper;
