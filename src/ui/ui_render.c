@@ -133,7 +133,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &fenbtn);
   draw_text_centered(r, ui->fonts.roboto15, "Load Fen", FBLACK, fenbtn);
-  
+
   /* --- PGN Input Area --- */
   render_text_input(r, &ui->pgn_loader, &ui->fonts);
 
@@ -209,9 +209,9 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
       SDL_snprintf(move_as_str, sizeof(move_as_str), "Best Move => %s%s", from_alg, to_alg);
 
       draw_text(r, ui->fonts.roboto15, move_as_str, FWHITE, x, y);
-
-      engine_req_search(engine, board);
     }
+
+    engine_req_search(engine, board);
   }
 
   // Undo Button
@@ -231,7 +231,7 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   draw_text_centered(r, ui->fonts.roboto15, "Redo", FBLACK, ui->redo_btn.rect);
 
   // Reset Button
-  SDL_FRect resetbtn = ui->reset_btn.rect; 
+  SDL_FRect resetbtn = ui->reset_btn.rect;
   SDL_SetRenderDrawColor(r, ui->reset_btn.hovered ? 170 : 200, 200, 200, 255);
   SDL_RenderFillRect(r, &resetbtn);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
