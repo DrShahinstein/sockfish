@@ -16,9 +16,10 @@ void engine_init(EngineWrapper *engine) {
 
   engine->mtx           = SDL_CreateMutex();
   engine->cond          = SDL_CreateCondition();
-  engine->last_pos_hash = 0ULL;
+  engine->last_pos_hash = 0;
   engine->ctx           = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
   engine->should_stop   = false;
+  engine->abort_search  = false;
   engine->thr_working   = false;
   engine->thr           = SDL_CreateThread(engine_thread, "EngineThread", engine);
 }
@@ -27,13 +28,18 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   if (board->promo.active) return;
 
   SDL_LockMutex(engine->mtx);
-  if (engine->thr_working) {
+
+  uint64_t hash_now    = board->position_hash;
+  uint64_t hash_before = engine->last_pos_hash;
+  bool same            = hash_now == hash_before;
+
+  if (same) {
     SDL_UnlockMutex(engine->mtx);
     return;
   }
 
-  uint64_t hash = zobrist_hash(board->board, board->turn);
-  if (engine->last_pos_hash == hash) {
+  if (engine->thr_working) {
+    engine->abort_search = true;
     SDL_UnlockMutex(engine->mtx);
     return;
   }
@@ -44,8 +50,9 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   SF_Context ctx    = create_sf_ctx(&bbset, board->turn, board->castling, en_passant);
 
   engine->ctx             = ctx;
-  engine->ctx.should_stop = &engine->should_stop;
-  engine->last_pos_hash   = hash;
+  engine->ctx.should_stop = &engine->abort_search;
+  engine->abort_search    = false;
+  engine->last_pos_hash   = hash_now;
   engine->thr_working     = true;
 
   SDL_SignalCondition(engine->cond);
@@ -84,7 +91,8 @@ static int engine_thread(void *data) {
 
 void engine_destroy(EngineWrapper *engine) {
   SDL_LockMutex(engine->mtx);
-  engine->should_stop = true;
+  engine->should_stop  = true;
+  engine->abort_search = true;
   SDL_SignalCondition(engine->cond);
   SDL_UnlockMutex(engine->mtx);
 
