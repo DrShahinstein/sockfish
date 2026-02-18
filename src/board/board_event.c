@@ -178,6 +178,7 @@ static void pawn_promotes(BoardState *board, float mx, float my) {
   }
 
   board_update_king_in_check(board);
+  board_update_position_hash(board);
 
   return;
 }
@@ -212,6 +213,7 @@ static void piece_movements(BoardState *board, float mx, float my) {
       board->drag.active           = false;
 
       board_update_king_in_check(board);
+      board_update_position_hash(board);
 
       return;
     }
@@ -227,6 +229,7 @@ static void piece_movements(BoardState *board, float mx, float my) {
       board->drag.active             = false;
 
       board_update_king_in_check(board);
+      board_update_position_hash(board);
 
       return;
     }
@@ -267,6 +270,8 @@ static void piece_movements(BoardState *board, float mx, float my) {
       else {
         if (board->turn == WHITE) board->turn = BLACK;
         else                      board->turn = WHITE;
+
+        board_update_position_hash(board);
       }
     }
 
