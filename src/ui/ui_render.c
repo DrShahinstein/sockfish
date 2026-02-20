@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "ui_render.h"
 #include <SDL3/SDL.h>
+#include <stdint.h>
 
 void ui_render_init(SDL_Renderer *renderer) {
   SDL_memset(&text_cache, 0, sizeof(TextCache));
@@ -76,22 +77,27 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   /* --- Sockfish Engine --- */
   if (ui->engine_on) {
     SDL_FRect separator = ui->separator.rect;
+    float x = UI_START_X;
+    float y = separator.y + 20;
     SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
     SDL_RenderFillRect(r, &separator);
     SDL_RenderRect(r, &separator);
 
     Move best;
     bool thr_working;
+    uint64_t engine_hash;
+    uint64_t board_hash = board->position_hash;
 
     SDL_LockMutex(engine->mtx);
     best        = engine->ctx.best;
     thr_working = engine->thr_working;
+    engine_hash = engine->last_pos_hash;
     SDL_UnlockMutex(engine->mtx);
 
-    float x = UI_START_X;
-    float y = ui->separator.rect.y + 20;
+    bool out_of_date = engine_hash != board_hash;
+    bool thinking    = thr_working || out_of_date;
 
-    if (thr_working) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
+    if (thinking) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
     else {
       char from_alg[3], to_alg[3];
 
