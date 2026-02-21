@@ -59,6 +59,13 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   SDL_UnlockMutex(engine->mtx);
 }
 
+void engine_abort_search(EngineWrapper *engine) {
+  SDL_LockMutex(engine->mtx);
+  engine->abort_search  = true;
+  engine->last_pos_hash = 0;
+  SDL_UnlockMutex(engine->mtx);
+}
+
 static int engine_thread(void *data) {
   EngineWrapper *engine = data;
   if (engine == NULL) return -1;
