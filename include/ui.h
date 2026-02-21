@@ -83,7 +83,7 @@ typedef struct {
 } UI_State;
 
 void ui_init(UI_State *ui);
-void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board);
+void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board, EngineWrapper *engine);
 void ui_destroy(UI_State *ui);
 
 // ui_helpers.c
