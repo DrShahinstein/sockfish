@@ -1,3 +1,4 @@
+#include "engine.h"
 #include "ui.h"
 #include "cursor.h"
 #include <SDL3/SDL.h>
@@ -5,7 +6,7 @@
 static void handle_text_input_activation(UI_TextInput *ui_text_input, float mx, float my);
 static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max_len, void (*load_callback)(const char *, BoardState *), BoardState *board);
 
-void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
+void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board, EngineWrapper *engine) {
   float mx, my;
   static bool last_over;
   static bool last_over_text_area;
@@ -72,6 +73,10 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board) {
 
       if (cursor_in_rect(mx, my, &ui->engine_toggler.rect)) {
         ui->engine_on = !ui->engine_on;
+
+        if (ui->engine_on == false) {
+          engine_abort_search(engine);
+        }
       }
 
       if (cursor_in_rect(mx, my, &ui->arrow_changer.rect)) {
