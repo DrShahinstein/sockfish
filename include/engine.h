@@ -18,6 +18,7 @@ typedef struct EngineWrapper {
 
 void engine_init(EngineWrapper *engine);
 void engine_req_search(EngineWrapper *engine, const BoardState *board);
+void engine_abort_search(EngineWrapper *engine);
 void engine_destroy(EngineWrapper *engine);
 
 BitboardSet make_bitboards_from_charboard(const char board[8][8]); // bitboard_maker.c
