@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
       SDL_ConvertEventToRenderCoordinates(renderer, &e);
 
       board_handle_event(&e, &board);
-      ui_handle_event(&e, &ui, &board);
+      ui_handle_event(&e, &ui, &board, &engine);
     }
 
     render_board(renderer, &board);
