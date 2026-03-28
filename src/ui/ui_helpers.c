@@ -72,7 +72,7 @@ int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, char **l
       if (start < len && text[end] == ' ') end++;
       start = end;
     }
-    
+
     else {
       if (start < len) {
         lines[line_count][0] = text[start];
@@ -91,7 +91,7 @@ int wrap_text_into_lines(TTF_Font *font, const char *text, float max_w, char **l
 void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *fonts) {
   SDL_FRect rect = ui_text_input->area.rect;
 
-  SDL_SetRenderDrawColor(r, 255, 255, 255, 0);
+  SDL_SetRenderDrawColor(r, 255, 255, 255, 255);
   SDL_RenderFillRect(r, &rect);
   SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
   SDL_RenderRect(r, &rect);
@@ -108,9 +108,9 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
 
   // check if we need to recalculate wrapping (saves cpu overhead)
   size_t current_hash = hash_string(ui_text_input->buf);
-  bool needs_rewrap   = !ui_text_input->cache_valid                      ||
-                        ui_text_input->cached_text_hash  != current_hash ||
-                        ui_text_input->cached_wrap_width != wrap_width;
+  bool needs_rewrap   = !ui_text_input->cache.valid                     ||
+                        ui_text_input->cache.text_hash  != current_hash ||
+                        ui_text_input->cache.wrap_width != wrap_width;
 
   int total_lines;
 
@@ -122,23 +122,22 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
     int max_buf_size = (ui_text_input->type == FEN) ? MAX_FEN : MAX_PGN;
 
     total_lines =
-        wrap_text_into_lines(fonts->jbmono14, ui_text_input->buf, wrap_width,
-                             ui_text_input->wrap_lines,
-                             ui_text_input->wrap_line_count, max_buf_size);
+      wrap_text_into_lines(fonts->jbmono14, ui_text_input->buf, wrap_width,
+                           ui_text_input->wrap_lines,
+                           ui_text_input->wrap_line_count, max_buf_size);
 
-    ui_text_input->cached_line_count = total_lines;
-    ui_text_input->cached_text_hash  = current_hash;
-    ui_text_input->cached_wrap_width = wrap_width;
-    ui_text_input->cache_valid       = true;
+    ui_text_input->cache.line_count = total_lines;
+    ui_text_input->cache.text_hash  = current_hash;
+    ui_text_input->cache.wrap_width = wrap_width;
+    ui_text_input->cache.valid      = true;
   } else {
-    total_lines = ui_text_input->cached_line_count;
+    total_lines = ui_text_input->cache.line_count;
   }
 
   int first_line = 0;
   if (total_lines > max_vis_lines) {
-    if (ui_text_input->active) {
+    if (ui_text_input->active)
       first_line = total_lines - max_vis_lines;
-    }
   }
 
   int last_line = SDL_min(first_line + max_vis_lines, total_lines);
@@ -146,7 +145,6 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
   if (ui_text_input->length == 0 && !ui_text_input->active) {
     draw_text(r, fonts->roboto15, ui_text_input->placeholder, FGRAY, text_x, text_y);
   }
-  
   else {
     for (int li = first_line, row_i = 0; li < last_line; ++li, ++row_i) {
       float y = text_y + row_i * (float)line_h;
@@ -155,7 +153,7 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
   }
 
   if (ui_text_input->active && (SDL_GetTicks() % 1000 < 500)) {
-    int visible_count = last_line - first_line;
+    int visible_count    = last_line - first_line;
     int last_visible_idx = (visible_count > 0) ? (last_line - 1) : -1;
 
     int w = 0;
@@ -178,6 +176,6 @@ static size_t hash_string(const char *str) {
   while ((c = *str++)) {
     hash = ((hash << 5) + hash) + c;
   }
-  
+
   return hash;
 }

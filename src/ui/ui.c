@@ -35,14 +35,14 @@ void ui_init(UI_State *ui) {
   ui->fen_loader.type          = FEN;
   ui->fen_loader.active        = false;
   ui->fen_loader.area.rect     = (SDL_FRect){UI_MIDDLE-115, UI_START_Y+50, UI_FILLER_W, 70};
-  ui->fen_loader.area.hovered  = false; 
+  ui->fen_loader.area.hovered  = false;
   ui->fen_loader.length        = 0;
   ui->fen_loader.btn.rect      = (SDL_FRect){UI_MIDDLE-50, ui->fen_loader.area.rect.y + 75, 100, 30};
   ui->fen_loader.btn.hovered   = false;
   ui->pgn_loader.type          = PGN;
   ui->pgn_loader.active        = false;
   ui->pgn_loader.area.rect     = (SDL_FRect){UI_MIDDLE-115, ui->fen_loader.btn.rect.y + 40, UI_FILLER_W, 70};
-  ui->pgn_loader.area.hovered  = false; 
+  ui->pgn_loader.area.hovered  = false;
   ui->pgn_loader.length        = 0;
   ui->pgn_loader.btn.rect      = (SDL_FRect){UI_MIDDLE-50, ui->pgn_loader.area.rect.y + 75, 100, 30};
   ui->pgn_loader.btn.hovered   = false;
@@ -98,14 +98,14 @@ void ui_destroy(UI_State *ui) {
 }
 
 static void init_text_input_buffers(UI_TextInput *text_inp, size_t max_len) {
-  text_inp->buf               = SDL_malloc(max_len * sizeof(char));
-  text_inp->buf[0]            = '\0';
-  text_inp->cached_line_count = 0;
-  text_inp->cached_text_hash  = 0;
-  text_inp->cached_wrap_width = 0;
-  text_inp->cache_valid       = false;
+  text_inp->buf              = SDL_malloc(max_len * sizeof(char));
+  text_inp->buf[0]           = '\0';
+  text_inp->cache.line_count = 0;
+  text_inp->cache.text_hash  = 0;
+  text_inp->cache.wrap_width = 0;
+  text_inp->cache.valid      = false;
 
-  int max_lines    = (text_inp->type == FEN) ? 3 : 10;
+  int max_lines    = (text_inp->type == FEN) ? 5 : 20;
   int max_buf_size = (text_inp->type == FEN) ? MAX_FEN : MAX_PGN;
 
   text_inp->wrap_lines      = SDL_malloc(max_lines * sizeof(char *));

@@ -129,7 +129,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board, EngineWrappe
       if (avail > 0) {
         SDL_strlcat(ui->fen_loader.buf, txt, MAX_FEN);
         ui->fen_loader.length      = SDL_strlen(ui->fen_loader.buf);
-        ui->fen_loader.cache_valid = false;
+        ui->fen_loader.cache.valid = false;
       }
     }
 
@@ -140,7 +140,7 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board, EngineWrappe
       if (avail > 0) {
         SDL_strlcat(ui->pgn_loader.buf, txt, MAX_PGN);
         ui->pgn_loader.length      = SDL_strlen(ui->pgn_loader.buf);
-        ui->pgn_loader.cache_valid = false;
+        ui->pgn_loader.cache.valid = false;
       }
     }
     break;
@@ -187,7 +187,7 @@ static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max
     if (input->length > 0) {
       input->length--;
       input->buf[input->length] = '\0';
-      input->cache_valid        = false;
+      input->cache.valid        = false;
     }
     break;
 
@@ -204,7 +204,7 @@ static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max
     if (mod & SDL_KMOD_CTRL) {
       input->buf[0]      = '\0';
       input->length      = 0;
-      input->cache_valid = false;
+      input->cache.valid = false;
     }
     break;
 
@@ -217,7 +217,7 @@ static void handle_text_input_keys(SDL_Event *e, UI_TextInput *input, size_t max
         if (avail > 0) {
           SDL_strlcat(input->buf, clip, avail);
           input->length      = SDL_strlen(input->buf);
-          input->cache_valid = false;
+          input->cache.valid = false;
         }
         SDL_free(clip);
       }

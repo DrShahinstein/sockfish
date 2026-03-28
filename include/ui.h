@@ -42,10 +42,18 @@ typedef struct {
   bool hovered;
 } UI_Element;
 
+/* Internal Type for UI_TextInput */
+typedef struct {
+  int line_count;
+  size_t text_hash;
+  float wrap_width;
+  bool valid;
+} TextInputCache;
+
 enum InputType { FEN, PGN };
 typedef struct {
-  bool active;
   enum InputType type;
+  bool active;
   UI_Element area;
   UI_Element btn;
   char *buf;
@@ -53,10 +61,7 @@ typedef struct {
   size_t length;
   char **wrap_lines;
   int wrap_line_count;
-  int cached_line_count;
-  size_t cached_text_hash;
-  float cached_wrap_width;
-  bool cache_valid;
+  TextInputCache cache;
 } UI_TextInput;
 
 typedef struct {
