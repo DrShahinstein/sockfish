@@ -112,8 +112,6 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
       draw_text(r, ui->fonts.roboto15, move_as_str, FWHITE, x, y);
     }
-
-    engine_req_search(engine, board);
   }
 
   // Undo Button
