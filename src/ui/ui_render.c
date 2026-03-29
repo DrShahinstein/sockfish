@@ -42,9 +42,9 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
   draw_text_centered(r, ui->fonts.roboto15, "Load Pgn", FBLACK, pgnbtn);
 
   // Information Box
-  const char *msg = get_info_message();
-  draw_text(r, ui->fonts.noto15, "Info:", FWHITE, ui->info_box.rect.x, ui->info_box.rect.y - 20);
-  draw_text(r, ui->fonts.noto15, msg, FYELLOW, ui->info_box.rect.x, ui->info_box.rect.y);
+  char msg[MAX_INFO_LENGTH]; get_info_message(msg, sizeof(msg));
+  draw_text(r, ui->fonts.noto15, "Info:", FWHITE,  ui->info_box.rect.x, ui->info_box.rect.y - 20);
+  draw_text(r, ui->fonts.noto15,  msg,    FYELLOW, ui->info_box.rect.x, ui->info_box.rect.y);
 
   // Turn Changer
   SDL_FRect turn_changer = ui->turn_changer.rect;
