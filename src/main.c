@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
       ui_handle_event(&e, &ui, &board, &engine);
     }
 
+    if (ui.engine_on) {
+      engine_req_search(&engine, &board);
+    }
+
     render_board(renderer, &board);
     ui_render(renderer, &ui, &engine, &board);
     SDL_RenderPresent(renderer);
