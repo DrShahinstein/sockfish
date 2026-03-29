@@ -20,8 +20,7 @@ Dependencies below...
 
 #### pacman
 ```
-sudo pacman -S sdl3 sdl3_ttf
-sudo yay -S sdl3_image
+sudo pacman -S sdl3 sdl3_ttf sdl3_image
 ```
 
 #### dnf
