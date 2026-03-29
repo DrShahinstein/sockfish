@@ -50,6 +50,9 @@ static int calc_positional_score(const SF_Context *ctx) {
   U64 queens;
   U64 kings;
 
+  bool no_queens = COUNT_BITS(bbset->queens[WHITE]) == 0 && COUNT_BITS(bbset->queens[BLACK] == 0);
+  const int *KING_TABLE_ = no_queens ? KING_END_GAME_TABLE : KING_TABLE;
+
   pawns = bbset->pawns[WHITE];
   while (pawns) {
     int sq = POP_LSB(&pawns);
@@ -113,15 +116,16 @@ static int calc_positional_score(const SF_Context *ctx) {
   kings = bbset->kings[WHITE];
   while (kings) {
     int sq = POP_LSB(&kings);
-    score += KING_MIDDLE_GAME_TABLE[sq];
+    score += KING_TABLE_[sq];
   }
 
   kings = bbset->kings[BLACK];
   while (kings) {
     int sq = POP_LSB(&kings);
-    score -= KING_MIDDLE_GAME_TABLE[flip(sq)];
+    score -= KING_TABLE_[flip(sq)];
   }
 
+  /* ++ Bishop Pair ++  */
   if (COUNT_BITS(bbset->bishops[WHITE]) >= 2) score += 50;
   if (COUNT_BITS(bbset->bishops[BLACK]) >= 2) score -= 50;
 
