@@ -101,4 +101,4 @@ void render_text_input(SDL_Renderer *r, UI_TextInput *ui_text_input, FontMenu *f
 void info_system_init(void);
 void info_system_cleanup(void);
 void ui_set_info(const char *msg, ...);
-const char *get_info_message(void);
+void get_info_message(char *buf, size_t bufsize);
