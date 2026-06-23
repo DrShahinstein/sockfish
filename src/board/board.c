@@ -1,6 +1,7 @@
 #include "board.h"
 #include "sockfish/move_helper.h" /* king_in_check() */
 #include "engine.h"               /* make_bitboards_from_charboard() */
+#include "sockfish/sockfish.h"
 #include "ui.h"                   /* ui_set_info() */
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -81,17 +82,10 @@ void board_update_king_in_check(BoardState *b) {
   if (king_in_check(&bbset, b->turn)) {
     in_check = true;
 
-    char king_to_find = (b->turn == WHITE) ? 'K' : 'k';
-
-    for (int r = 0; r < 8; ++r) {
-      for (int c = 0; c < 8; ++c) {
-        if (b->board[r][c] == king_to_find) {
-          king_row = r;
-          king_col = c;
-          break;
-        }
-      }
-    }
+    uint64_t bb = bbset.kings[b->turn];
+    Square sq   = GET_LSB(bb);           /* since king is always an only piece */
+    king_row    = square_to_row(sq);
+    king_col    = square_to_col(sq);
   }
 
   b->king.in_check = in_check;
