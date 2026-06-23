@@ -50,7 +50,7 @@ static int calc_positional_score(const SF_Context *ctx) {
   U64 queens;
   U64 kings;
 
-  bool no_queens = COUNT_BITS(bbset->queens[WHITE]) == 0 && COUNT_BITS(bbset->queens[BLACK] == 0);
+  bool no_queens = COUNT_BITS(bbset->queens[WHITE]) == 0 && COUNT_BITS(bbset->queens[BLACK]) == 0;
   const int *KING_TABLE_ = no_queens ? KING_END_GAME_TABLE : KING_TABLE;
 
   pawns = bbset->pawns[WHITE];
