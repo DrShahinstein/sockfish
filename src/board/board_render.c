@@ -1,7 +1,5 @@
 #include "board_render.h"
-#include "cursor.h"                /* get_mouse_pos() */
-#include "sockfish/move_helper.h"  /* king_in_check() */
-#include "engine.h"                /* make_bitboards_from_charboard() */
+#include "cursor.h"   /* get_mouse_pos() */
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
