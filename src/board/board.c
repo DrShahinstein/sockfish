@@ -438,8 +438,13 @@ static bool validate_castling(const char *str) {
 
   for (; *str; str++) {
     switch (*str) {
-      case 'K': case 'Q': case 'k': case 'q':
-      return false;
+      case 'K':
+      case 'Q':
+      case 'k':
+      case 'q':
+      continue;
+
+      default: return false;
     }
   }
 
