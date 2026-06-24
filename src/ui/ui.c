@@ -95,6 +95,8 @@ void ui_destroy(UI_State *ui) {
   ui->fonts.noto15 = NULL;
 
   SDL_StopTextInput(SDL_GetKeyboardFocus());
+
+  info_system_cleanup();
 }
 
 static void init_text_input_buffers(UI_TextInput *text_inp, size_t max_len) {
