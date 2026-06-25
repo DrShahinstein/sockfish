@@ -34,6 +34,8 @@ void ui_set_info(const char *msg, ...) {
 }
 
 void get_info_message(char *buf, size_t bufsize) {
+  if (!info_state.mutex) return;
+
   SDL_LockMutex(info_state.mutex);
   SDL_strlcpy(buf, info_state.message, bufsize);
   SDL_UnlockMutex(info_state.mutex);
