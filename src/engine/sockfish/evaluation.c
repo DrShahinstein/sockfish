@@ -13,9 +13,10 @@ int sf_evaluate_position(const SF_Context *ctx) {
   int material_score   = calc_material_score(ctx);
   int positional_score = calc_positional_score(ctx);
   int mobility_score   = calc_mobility_score(ctx);
+  int color_offset     = calc_color_offset(ctx->search_color);
 
   int eval = (material_score + positional_score + mobility_score);
-  return eval;
+  return eval * color_offset;
 }
 
 static int calc_material_score(const SF_Context *ctx) {
