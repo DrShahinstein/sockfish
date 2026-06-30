@@ -23,12 +23,11 @@ void init_attack_tables(void) {
 
 static U64 rook_mask             (Square square);
 static U64 compute_rook_attacks  (Square square, U64 occupancy);
-static U64 get_rook_attacks      (Square square, U64 occupancy);
 static U64 bishop_mask           (Square square);
 static U64 compute_bishop_attacks(Square square, U64 occupancy);
-static U64 get_bishop_attacks    (Square square, U64 occupancy);
+
 void init_magic_bitboards(void) {
-  memcpy(rook_magics, MAGIC_NUMBERS_FOR_ROOK, sizeof(rook_magics));
+  memcpy(rook_magics,   MAGIC_NUMBERS_FOR_ROOK,   sizeof(rook_magics));
   memcpy(bishop_magics, MAGIC_NUMBERS_FOR_BISHOP, sizeof(bishop_magics));
 
   /* - Initialize Rook Magic Entries - */
@@ -426,7 +425,7 @@ static U64 compute_rook_attacks(Square square, U64 occupancy) {
   return attacks;
 }
 
-static U64 get_rook_attacks(Square square, U64 occupancy) {
+U64 get_rook_attacks(Square square, U64 occupancy) {
   MagicEntry *m          = &rook_magic[square];
   U64 relevant_occupancy = occupancy & m->mask;
   U64 index              = (relevant_occupancy * m->magic) >> m->shift;
@@ -471,7 +470,7 @@ static U64 compute_bishop_attacks(Square square, U64 occupancy) {
   return attacks;
 }
 
-static U64 get_bishop_attacks(Square square, U64 occupancy) {
+U64 get_bishop_attacks(Square square, U64 occupancy) {
   MagicEntry *m          = &bishop_magic[square];
   U64 relevant_occupancy = occupancy & m->mask;
   U64 index              = (relevant_occupancy * m->magic) >> m->shift;

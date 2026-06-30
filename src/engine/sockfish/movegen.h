@@ -14,11 +14,16 @@ typedef struct {
   int shift;
 } MagicEntry;
 
+/* - Leaping Pieces - */
 extern U64 pawn_attacks[2][64];
 extern U64 knight_attacks[64];
 extern U64 king_attacks[64];
+
+/* - Sliding Pieces - */
 extern U64 rook_magics[64];   extern MagicEntry rook_magic[64];
 extern U64 bishop_magics[64]; extern MagicEntry bishop_magic[64];
+U64 get_bishop_attacks(Square square, U64 occupancy);
+U64 get_rook_attacks(Square square, U64 occupancy);
 
 void init_attack_tables(void);      // for leaping pieces (pawn, knight, king)
 void init_magic_bitboards(void);    // for sliding pieces (bishop, rook, queen)
