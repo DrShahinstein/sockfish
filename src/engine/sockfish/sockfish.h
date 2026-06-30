@@ -36,11 +36,12 @@ typedef enum {
 } Turn;
 
 #define NO_ENPASSANT -1
-#define CASTLE_ALL 0x00
-#define CASTLE_WK  0x01
-#define CASTLE_WQ  0x02
-#define CASTLE_BK  0x04
-#define CASTLE_BQ  0x08
+#define CASTLE_NONE 0x00
+#define CASTLE_WK   0x01
+#define CASTLE_WQ   0x02
+#define CASTLE_BK   0x04
+#define CASTLE_BQ   0x08
+#define CASTLE_ALL  0x0F
 
 /* == 16bit Move == */
 typedef uint16_t Move;
