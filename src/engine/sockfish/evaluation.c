@@ -134,13 +134,60 @@ static int calc_positional_score(const SF_Context *ctx) {
 }
 
 static int calc_mobility_score(const SF_Context *ctx) {
-  SF_Context white_tmpctx   = *ctx;
-  white_tmpctx.search_color = WHITE;
-  MoveList white_moves      = generate_pseudo_legal_moves(&white_tmpctx);
+  int mobility_score;
+  int white_mobility = 0;
+  int black_mobility = 0;
 
-  SF_Context black_tmpctx   = *ctx;
-  black_tmpctx.search_color = BLACK;
-  MoveList black_moves      = generate_pseudo_legal_moves(&black_tmpctx);
+  const BitboardSet *bbset = &ctx->bitboard_set;
 
-  return (white_moves.count - black_moves.count) * 10;
+  U64 occupied        = bbset->occupied;
+  U64 friendly_whites = bbset->all_pieces[WHITE];
+  U64 friendly_blacks = bbset->all_pieces[BLACK];
+  U64 w_knights       = bbset->knights[WHITE];
+  U64 w_bishops       = bbset->bishops[WHITE];
+  U64 w_rooks         = bbset->rooks[WHITE];
+  U64 b_knights       = bbset->knights[BLACK];
+  U64 b_bishops       = bbset->bishops[BLACK];
+  U64 b_rooks         = bbset->rooks[BLACK];
+
+  while (w_knights) {
+    Square sq       = POP_LSB(&w_knights);
+    U64 attacks     = knight_attacks[sq] & ~friendly_whites;
+    white_mobility += COUNT_BITS(attacks);
+  }
+
+  while (w_bishops) {
+    Square sq       = POP_LSB(&w_bishops);
+    U64 attacks     = get_bishop_attacks(sq, occupied) & ~friendly_whites;
+    white_mobility += COUNT_BITS(attacks);
+  }
+
+  while (w_rooks) {
+    Square sq       = POP_LSB(&w_rooks);
+    U64 attacks     = get_rook_attacks(sq, occupied) & ~friendly_whites;
+    white_mobility += COUNT_BITS(attacks);
+  }
+
+  while (b_knights) {
+    Square sq       = POP_LSB(&b_knights);
+    U64 attacks     = knight_attacks[sq] & ~friendly_blacks;
+    black_mobility += COUNT_BITS(attacks);
+  }
+
+  while (b_bishops) {
+    Square sq       = POP_LSB(&b_bishops);
+    U64 attacks     = get_bishop_attacks(sq, occupied) & ~friendly_blacks;
+    black_mobility += COUNT_BITS(attacks);
+  }
+
+  while (b_rooks) {
+    Square sq       = POP_LSB(&b_rooks);
+    U64 attacks     = get_rook_attacks(sq, occupied) & ~friendly_blacks;
+    black_mobility += COUNT_BITS(attacks);
+  }
+
+  mobility_score = (white_mobility - black_mobility) * 2;
+
+  return mobility_score;
 }
+
