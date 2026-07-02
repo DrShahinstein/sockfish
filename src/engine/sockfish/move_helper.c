@@ -134,8 +134,7 @@ void unmake_move(SF_Context *ctx, const MoveHistory *history) {
 bool king_in_check(const BitboardSet *bbset, Turn color) {
   Square king_sq = GET_LSB(bbset->kings[color]);
   Turn opponent  = !color;
-  U64 attacks    = compute_attacks(bbset, opponent);
-  return (attacks & (1ULL << king_sq)) != 0;
+  return square_attacked(bbset, king_sq, opponent);
 }
 
 PieceType get_piece_type(const BitboardSet *bbs, Square sq) {
