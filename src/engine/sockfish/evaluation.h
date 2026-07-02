@@ -11,6 +11,19 @@ int sf_evaluate_position(const SF_Context *ctx);
 #define QUEEN_VALUE  900
 #define KING_VALUE   20000
 
+static inline int piece_value(PieceType p) {
+  switch (p) {
+    case W_PAWN:   case B_PAWN:   return PAWN_VALUE;
+    case W_KNIGHT: case B_KNIGHT: return KNIGHT_VALUE;
+    case W_BISHOP: case B_BISHOP: return BISHOP_VALUE;
+    case W_ROOK:   case B_ROOK:   return ROOK_VALUE;
+    case W_QUEEN:  case B_QUEEN:  return QUEEN_VALUE;
+    case W_KING:   case B_KING:   return KING_VALUE;
+
+    default: return -1;
+  }
+}
+
 static const int PAWN_TABLE[64] = {
   0,  0,  0,  0,  0,  0,  0,  0,
  50, 50, 50, 50, 50, 50, 50, 50,
