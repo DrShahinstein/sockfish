@@ -2,8 +2,7 @@
 #include "sockfish/movegen.h"
 #include <stdlib.h>
 #include <string.h>
-
-static PieceType get_piece_type(const BitboardSet *bbs, Square sq);
+ 
 static void      remove_piece(BitboardSet *bbs, Square sq, PieceType piece);
 static void      place_piece(BitboardSet *bbs, Square sq, PieceType piece);
 static PieceType get_promotion_piece(Move move, Turn color);
@@ -139,7 +138,7 @@ bool king_in_check(const BitboardSet *bbset, Turn color) {
   return (attacks & (1ULL << king_sq)) != 0;
 }
 
-static PieceType get_piece_type(const BitboardSet *bbs, Square sq) {
+PieceType get_piece_type(const BitboardSet *bbs, Square sq) {
   if (GET_BIT(bbs->pawns[WHITE], sq))   return W_PAWN;
   if (GET_BIT(bbs->pawns[BLACK], sq))   return B_PAWN;
   if (GET_BIT(bbs->knights[WHITE], sq)) return W_KNIGHT;

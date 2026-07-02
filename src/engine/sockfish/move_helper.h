@@ -14,6 +14,8 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history);
 void unmake_move(SF_Context *ctx, const MoveHistory *history);
 bool king_in_check(const BitboardSet *bbset, Turn color);
 
+PieceType get_piece_type(const BitboardSet *bbs, Square sq);
+
 /*
 
 MoveList sf_generate_moves(SF_Context *ctx); // movegen.h
