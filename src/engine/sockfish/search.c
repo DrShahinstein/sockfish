@@ -14,6 +14,7 @@
 #define TIME_PASSED(t, nodes) ( (((nodes) & 2047) == 0) && (SDL_GetTicks() - (t) >= SEARCH_TIME) )
 
 static int score_move(const SF_Context *ctx, Move move, Move best_so_far);
+static bool giving_check(const SF_Context *ctx, Move move);
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 
 Move sf_search(const SF_Context *ctx) {
@@ -116,33 +117,75 @@ static int score_move(const SF_Context *ctx, Move move, Move best_so_far) {
   PieceType attacker = get_piece_type(bbset, from);
   PieceType victim   = get_piece_type(bbset, to);
 
+  bool check      = giving_check(ctx, move);
   bool capture    = victim != NO_PIECE;
-  bool en_passant = type == MOVE_EN_PASSANT;
   bool promote    = type == MOVE_PROMOTION;
   bool castle     = type == MOVE_CASTLING;
+  bool en_passant = type == MOVE_EN_PASSANT;
 
-  if (capture && promote) {
-    return 100000;
-  }
+  int score = 0;
 
-  if (capture) {
-    return 10000 + piece_value(victim)*10 - piece_value(attacker);
-  }
+  if (check)
+    score += 10000;
+  if (capture)
+    score += 10000 + piece_value(victim)*10 - piece_value(attacker);
+  if (promote)
+    score += 15000;
+  if (en_passant)
+    score += 10000;
+  if (castle)
+    score += 8000;
 
-  if (en_passant) {
-    return 10000;
-  }
-
-  if (promote) {
-    return 5000;
-  }
-
-  if (castle) {
-    return 4000;
-  }
-
-  // TODO: king_in_check() issue
-
-  return 0;
+  return score;
 }
 
+static bool giving_check(const SF_Context *ctx, Move move) {
+  Square from   = move_from(move);
+  Square to     = move_to(move);
+  MoveType type = move_type(move);
+
+  const BitboardSet *bbset = &ctx->bitboard_set;
+  Turn us   = ctx->search_color;
+  Turn them = !us;
+
+  if (bbset->kings[them] == 0) return false; 
+
+  Square enemy_king        = GET_LSB(bbset->kings[them]);
+  PieceType checking_piece = get_piece_type(bbset, from);
+
+  if (type == MOVE_PROMOTION) {
+    PromotionType promo = move_promotion(move);
+
+    if      (promo == PROMOTE_QUEEN)  checking_piece = (us == WHITE) ? W_QUEEN  : B_QUEEN;
+    else if (promo == PROMOTE_ROOK)   checking_piece = (us == WHITE) ? W_ROOK   : B_ROOK;
+    else if (promo == PROMOTE_BISHOP) checking_piece = (us == WHITE) ? W_BISHOP : B_BISHOP;
+    else if (promo == PROMOTE_KNIGHT) checking_piece = (us == WHITE) ? W_KNIGHT : B_KNIGHT;
+  }
+
+  /* We'll make the move without worrying about legality (make-unmake) and see if it threatens the king. */
+
+  // sliding pieces will need this updated occupancy map to find where they can go
+  U64 new_occ = (bbset->occupied ^ (1ULL << from)) | (1ULL << to);
+
+  if (type == MOVE_EN_PASSANT) {
+    int ep_offset = (us == WHITE) ? -8 : +8;
+    new_occ &= ~(1ULL << (to + ep_offset));
+  }
+ 
+  if (checking_piece == W_PAWN || checking_piece == B_PAWN)
+    return (pawn_attacks[us][to] & (1ULL << enemy_king)) != 0;
+
+  else if (checking_piece == W_KNIGHT || checking_piece == B_KNIGHT)
+    return (knight_attacks[to] & (1ULL << enemy_king)) != 0;
+
+  else if (checking_piece == W_BISHOP || checking_piece == B_BISHOP)
+    return (get_bishop_attacks(to, new_occ) & (1ULL << enemy_king)) != 0;
+
+  else if (checking_piece == W_ROOK || checking_piece == B_ROOK)
+    return (get_rook_attacks(to, new_occ) & (1ULL << enemy_king)) != 0;
+
+  else if (checking_piece == W_QUEEN || checking_piece == B_QUEEN)
+    return ((get_bishop_attacks(to, new_occ) | get_rook_attacks(to, new_occ)) & (1ULL << enemy_king)) != 0;
+ 
+  return false;
+}
