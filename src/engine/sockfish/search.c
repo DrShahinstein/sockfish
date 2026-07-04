@@ -159,23 +159,29 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
 
   if (check_time(ctx)) return 0;
 
-  int stand_pat = sf_evaluate_position(ctx);
+  bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
 
-  if (stand_pat >= beta) {
-    return beta;
+  if (!in_check) {
+    int stand_pat = sf_evaluate_position(ctx);
+    if (stand_pat >= beta) return beta; 
+    if (stand_pat > alpha) {
+      alpha = stand_pat; 
+    }
   }
 
-  if (stand_pat > alpha) {
-    alpha = stand_pat;
+  MoveList movelist;
+  if (in_check) {
+    movelist = generate_pseudo_legal_moves(ctx);
+  } else {
+    movelist = generate_noisy_moves(ctx);
   }
-
-  MoveList movelist = generate_noisy_moves(ctx);
-  Move best_so_far  = create_move(A1,A1);
 
   int scores[256];
   for (int i = 0; i < movelist.count; ++i) {
-    scores[i] = score_move(ctx, movelist.moves[i], best_so_far);
+    scores[i] = score_move(ctx, movelist.moves[i], 0);
   }
+
+  int legal_moves = 0;
 
   for (int i = 0; i < movelist.count; ++i) {
     bump_highest_scored_move(i, &movelist, scores);
@@ -187,6 +193,8 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
       unmake_move(ctx, &history);
       continue;
     }
+
+    legal_moves++;
 
     int score = -quiescence_search(ctx, -beta, -alpha);
 
@@ -200,7 +208,11 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
 
     if (score > alpha) {
       alpha = score;
-    }
+    } 
+  }
+
+  if (in_check && legal_moves==0) {
+    return -MATE_SCORE;
   }
 
   return alpha;
