@@ -11,25 +11,44 @@
 #define MATE_SCORE 9000000
 #define MAX_DEPTH 40
 #define SEARCH_TIME 2000  /* ms */
-#define TIME_PASSED(t, nodes) ( (((nodes) & 2047) == 0) && (SDL_GetTicks() - (t) >= SEARCH_TIME) )
 
-static int score_move(const SF_Context *ctx, Move move, Move best_so_far);
+static inline bool check_time(SF_Context *ctx) {
+  if (ctx->should_stop && *ctx->should_stop) return true;
+
+  if ((ctx->nodes & 2047) == 0) { 
+    if (SDL_GetTicks() - ctx->start_time >= ctx->time_limit) {
+      if (ctx->should_stop) *ctx->should_stop = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static int  score_move(const SF_Context *ctx, Move move, Move best_so_far);
 static bool giving_check(const SF_Context *ctx, Move move);
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 
 Move sf_search(const SF_Context *ctx) {
   SF_Context ctx_ = *ctx;
-  Move best_move  = create_move(A1,A1);
-  U64 start_time  = SDL_GetTicks();
+  ctx_.nodes      = 0;
+  ctx_.start_time = SDL_GetTicks();
+  ctx_.time_limit = SEARCH_TIME;
+
+  /* For Safety */
+  bool local_stop = false;
+  if (ctx_.should_stop == NULL)
+    ctx_.should_stop = &local_stop;
+
+  Move best_move = create_move(A1,A1);
 
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
-    if (should_stop(&ctx_) || TIME_PASSED(start_time, ctx_.nodes)) break;
+    if (check_time(&ctx_)) break;
     
-    int alpha               = -INF;
-    int beta                = +INF;
-    int max_score_so_far    = -INF;
-    Move best_so_far        = best_move;
-    bool search_interrupted = false;
+    int alpha            = -INF;
+    int beta             = +INF;
+    int max_score_so_far = -INF;
+    Move best_so_far     = best_move;
 
     MoveList movelist = generate_pseudo_legal_moves(&ctx_);
     if (movelist.count == 0) break;
@@ -40,11 +59,6 @@ Move sf_search(const SF_Context *ctx) {
     }
 
     for (int i=0; i < movelist.count; ++i) {
-      if (should_stop(&ctx_) || TIME_PASSED(start_time, ctx_.nodes)) {
-        search_interrupted = true;
-        break;
-      }
-
       /* move the highest scored move to the top of the move list */
       bump_highest_scored_move(i, &movelist, scores);
 
@@ -60,6 +74,8 @@ Move sf_search(const SF_Context *ctx) {
 
       unmake_move(&ctx_, &history);
 
+      if (*ctx_.should_stop) break;
+
       if (score > max_score_so_far) {
         max_score_so_far = score;
         best_so_far      = movelist.moves[i];
@@ -70,7 +86,7 @@ Move sf_search(const SF_Context *ctx) {
       }
     }
 
-    if (search_interrupted) break;
+    if (*ctx_.should_stop) break;
 
     best_move = best_so_far;
   }
@@ -80,6 +96,8 @@ Move sf_search(const SF_Context *ctx) {
 
 int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
   ctx->nodes++;
+
+  if (check_time(ctx)) return 0;
 
   (void)depth; (void)alpha; (void)beta;
   return 0;
