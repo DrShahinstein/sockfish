@@ -24,6 +24,17 @@ static inline int piece_value(PieceType p) {
   }
 }
 
+static const U64 FILE_MASKS[8] = {
+  0x0101010101010101ULL, // File A
+  0x0202020202020202ULL, // File B
+  0x0404040404040404ULL, // File C
+  0x0808080808080808ULL, // File D
+  0x1010101010101010ULL, // File E
+  0x2020202020202020ULL, // File F
+  0x4040404040404040ULL, // File G
+  0x8080808080808080ULL  // File H
+};
+
 static const int PAWN_TABLE[64] = {
    0,  0,  0,  0,  0,  0,  0,  0,
    5, 10, 10,-20,-20, 10, 10,  5,
