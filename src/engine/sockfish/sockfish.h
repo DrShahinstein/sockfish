@@ -63,6 +63,8 @@ typedef enum {
 typedef struct SF_Context {
   BitboardSet bitboard_set;
   U64 nodes;
+  U64 start_time;
+  U64 time_limit;
   bool *should_stop;
   Turn search_color;
   Square enpassant_sq;
@@ -102,6 +104,8 @@ static inline SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_co
   ctx.enpassant_sq    = ep_sq;
   ctx.should_stop     = NULL;
   ctx.nodes           = 0;
+  ctx.start_time      = 0;
+  ctx.time_limit      = 0;
   ctx.best            = create_move(0,0);
   return ctx;
 }
