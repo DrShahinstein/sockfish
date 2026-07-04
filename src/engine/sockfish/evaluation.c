@@ -8,14 +8,16 @@
 static int calc_material_score(const SF_Context *ctx);
 static int calc_positional_score(const SF_Context *ctx);
 static int calc_mobility_score(const SF_Context *ctx);
+static int calc_king_safety(const SF_Context *ctx);
 
 int sf_evaluate_position(const SF_Context *ctx) {
-  int material_score   = calc_material_score(ctx);
-  int positional_score = calc_positional_score(ctx);
-  int mobility_score   = calc_mobility_score(ctx);
-  int color_offset     = calc_color_offset(ctx->search_color);
+  int material_score    = calc_material_score(ctx);
+  int positional_score  = calc_positional_score(ctx);
+  int mobility_score    = calc_mobility_score(ctx);
+  int king_safety_score = calc_king_safety(ctx);
+  int color_offset      = calc_color_offset(ctx->search_color);
 
-  int eval = (material_score + positional_score + mobility_score);
+  int eval = (material_score + positional_score + mobility_score + king_safety_score);
   return eval * color_offset;
 }
 
@@ -191,3 +193,48 @@ static int calc_mobility_score(const SF_Context *ctx) {
   return mobility_score;
 }
 
+static int calc_king_safety(const SF_Context *ctx) {
+  int score = 0;
+
+  const BitboardSet *bbset = &ctx->bitboard_set;
+
+  bool queens_on_board = (bbset->queens[WHITE] | bbset->queens[BLACK]) != 0;
+
+  for (int color = WHITE; color <= BLACK; ++color) {
+    int king_score = 0;
+    
+    if (bbset->kings[color] == 0) continue; // for safety
+
+    Square ksq = GET_LSB(bbset->kings[color]);
+    int k_file = ksq % 8; // 0=A, 7=H
+
+    /* If the king is on the flanks */
+    if (k_file <= 2 || k_file >= 5) {
+      
+      int start_file = (k_file == 0) ? 0 : k_file - 1;
+      int end_file   = (k_file == 7) ? 7 : k_file + 1;
+
+      for (int f = start_file; f <= end_file; ++f) {
+        U64 file_mask = FILE_MASKS[f];
+
+        int our_pawns   = COUNT_BITS(bbset->pawns[color]  & file_mask);
+        int enemy_pawns = COUNT_BITS(bbset->pawns[!color] & file_mask);
+
+        if (our_pawns == 0)
+          king_score -= 30;
+        if (enemy_pawns == 0)
+          king_score -= 20;
+        if (our_pawns == 0 && enemy_pawns == 0)
+          king_score -= 15;
+      }
+    }
+
+    /* If the king is in the center */
+    else if (queens_on_board) king_score -= 50; 
+
+    if (color == WHITE) score += king_score;
+    else                score -= king_score;
+  }
+
+  return score;
+}
