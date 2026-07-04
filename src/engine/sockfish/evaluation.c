@@ -200,10 +200,10 @@ static int calc_king_safety(const SF_Context *ctx) {
 
   bool queens_on_board = (bbset->queens[WHITE] | bbset->queens[BLACK]) != 0;
 
-  for (int color = WHITE; color <= BLACK; ++color) {
-    int king_score = 0;
-    
+  for (int color = WHITE; color <= BLACK; ++color) { 
     if (bbset->kings[color] == 0) continue; // for safety
+
+    int king_score = 0;
 
     Square ksq = GET_LSB(bbset->kings[color]);
     int k_file = ksq % 8; // 0=A, 7=H
