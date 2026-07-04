@@ -59,7 +59,6 @@ Move sf_search(const SF_Context *ctx) {
     }
 
     for (int i=0; i < movelist.count; ++i) {
-      /* move the highest scored move to the top of the move list */
       bump_highest_scored_move(i, &movelist, scores);
 
       MoveHistory history;
@@ -99,10 +98,126 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
 
   if (check_time(ctx)) return 0;
 
-  (void)depth; (void)alpha; (void)beta;
-  return 0;
+  if (depth == 0) {
+    return quiescence_search(ctx, alpha, beta);
+  }
+
+  MoveList movelist = generate_pseudo_legal_moves(ctx);
+  Move best_so_far  = create_move(A1,A1); 
+  int legal_moves   = 0;
+  int max_score     = -INF;
+
+  int scores[256];
+  for (int i = 0; i < movelist.count; ++i) {
+    scores[i] = score_move(ctx, movelist.moves[i], best_so_far);
+  }
+
+  for (int i = 0; i < movelist.count; ++i) {
+    bump_highest_scored_move(i, &movelist, scores);
+
+    MoveHistory history;
+    make_move(ctx, movelist.moves[i], &history);
+
+    if (king_in_check(&ctx->bitboard_set, !ctx->search_color)) {
+      unmake_move(ctx, &history);
+      continue;
+    }
+
+    legal_moves++;
+
+    int score = -negamax(ctx, depth-1, -beta, -alpha);
+
+    unmake_move(ctx, &history);
+
+    if (*ctx->should_stop) return 0;
+
+    if (score > max_score) {
+      max_score = score;
+    }
+
+    if (score > alpha) {
+      alpha = score;
+    }
+
+    if (alpha >= beta) {
+      break;
+    }
+  }
+
+  if (legal_moves == 0) {
+    if (king_in_check(&ctx->bitboard_set, ctx->search_color))
+      return -MATE_SCORE + (MAX_DEPTH - depth);
+    return 0;
+  }
+
+  return max_score;
 }
 
+// https://www.chessprogramming.org/Quiescence_Search
+int quiescence_search(SF_Context *ctx, int alpha, int beta) {
+  ctx->nodes++;
+
+  if (check_time(ctx)) return 0;
+
+  int stand_pat = sf_evaluate_position(ctx);
+
+  if (stand_pat >= beta) {
+    return beta;
+  }
+
+  if (stand_pat > alpha) {
+    alpha = stand_pat;
+  }
+
+  MoveList movelist = generate_pseudo_legal_moves(ctx);
+  Move best_so_far  = create_move(A1,A1);
+
+  int scores[256];
+  for (int i = 0; i < movelist.count; ++i) {
+    scores[i] = score_move(ctx, movelist.moves[i], best_so_far);
+  }
+
+  for (int i = 0; i < movelist.count; ++i) {
+    bump_highest_scored_move(i, &movelist, scores);
+
+    Move move     = movelist.moves[i];
+    Square to     = move_to(move);
+    MoveType type = move_type(move);
+    
+    bool is_capture   = (get_piece_type(&ctx->bitboard_set, to) != NO_PIECE) || (type == MOVE_EN_PASSANT);
+    bool is_promotion = (type == MOVE_PROMOTION);
+
+    if (!is_capture && !is_promotion) {
+      continue; // quiescence search looks for attraction, so we should avoid quiet moves
+    }
+
+    MoveHistory history;
+    make_move(ctx, move, &history);
+
+    if (king_in_check(&ctx->bitboard_set, !ctx->search_color)) {
+      unmake_move(ctx, &history);
+      continue;
+    }
+
+    int score = -quiescence_search(ctx, -beta, -alpha);
+
+    unmake_move(ctx, &history);
+
+    if (*ctx->should_stop) return 0;
+
+    if (score >= beta) {
+      return beta;
+    }
+
+    if (score > alpha) {
+      alpha = score;
+    }
+  }
+
+  return alpha;
+}
+
+/* Move the highest scored move to the top of the move list */
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores) {
   int best_i = i;
   
@@ -207,3 +322,4 @@ static bool giving_check(const SF_Context *ctx, Move move) {
  
   return false;
 }
+
