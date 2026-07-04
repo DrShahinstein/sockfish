@@ -127,6 +127,119 @@ MoveList generate_pseudo_legal_moves(const SF_Context *ctx) {
   return movelist;
 }
 
+/*
+ * the focus of quiescence search algorithm is on "noisy" moves
+ * so this function is written to help with the quiescence search
+ * see search.c -> quiescence_search() implementation
+ */
+MoveList generate_noisy_moves(const SF_Context *ctx) {
+  MoveList movelist;
+  movelist.count = 0;
+
+  const BitboardSet *bbset = &ctx->bitboard_set;
+
+  Turn us   = ctx->search_color;
+  Turn them = !us;
+  
+  U64 enemies  = bbset->all_pieces[them];
+  U64 occupied = bbset->occupied;
+  Square ep_sq = ctx->enpassant_sq;
+
+  /* --- Pawns --- */
+  U64 pawns = bbset->pawns[us];
+  int promo_rank = (us == WHITE) ? 7 : 0;
+
+  while (pawns) {
+    int sq = POP_LSB(&pawns);
+    
+    // pawn attacks making threat
+    U64 attacks = pawn_attacks[us][sq] & enemies;
+    
+    while (attacks) {
+      int target = POP_LSB(&attacks);
+      if (target / 8 == promo_rank) {
+        movelist.moves[movelist.count++] = create_promotion(sq, target, PROMOTE_QUEEN);
+        movelist.moves[movelist.count++] = create_promotion(sq, target, PROMOTE_ROOK);
+        movelist.moves[movelist.count++] = create_promotion(sq, target, PROMOTE_BISHOP);
+        movelist.moves[movelist.count++] = create_promotion(sq, target, PROMOTE_KNIGHT);
+      } else {
+        movelist.moves[movelist.count++] = create_move(sq, target);
+      }
+    }
+
+    // promoting pawns are attraction for quiescence search logic so we also include promotions
+    int dir = (us == WHITE) ? +8 : -8;
+    int forward_sq = sq + dir;
+    if (forward_sq >= 0 && forward_sq < 64 && !GET_BIT(occupied, forward_sq)) {
+      if (forward_sq / 8 == promo_rank) {
+        movelist.moves[movelist.count++] = create_promotion(sq, forward_sq, PROMOTE_QUEEN);
+        movelist.moves[movelist.count++] = create_promotion(sq, forward_sq, PROMOTE_ROOK);
+        movelist.moves[movelist.count++] = create_promotion(sq, forward_sq, PROMOTE_BISHOP);
+        movelist.moves[movelist.count++] = create_promotion(sq, forward_sq, PROMOTE_KNIGHT);
+      }
+    }
+
+    // en passant
+    if (ep_sq >= 0 && ep_sq < 64) {
+      if (pawn_attacks[us][sq] & (1ULL << ep_sq)) {
+        movelist.moves[movelist.count++] = create_en_passant(sq, ep_sq);
+      }
+    }
+  }
+
+  /* --- Knights --- */
+  U64 knights = bbset->knights[us];
+  while (knights) {
+    int sq      = POP_LSB(&knights);
+    U64 attacks = knight_attacks[sq] & enemies;
+    while (attacks) {
+      movelist.moves[movelist.count++] = create_move(sq, POP_LSB(&attacks));
+    }
+  }
+
+  /* --- Bishops --- */
+  U64 bishops = bbset->bishops[us];
+  while (bishops) {
+    int sq      = POP_LSB(&bishops);
+    U64 attacks = get_bishop_attacks(sq, occupied) & enemies;
+    while (attacks) {
+      movelist.moves[movelist.count++] = create_move(sq, POP_LSB(&attacks));
+    }
+  }
+
+  /* --- Rooks --- */
+  U64 rooks = bbset->rooks[us];
+  while (rooks) {
+    int sq      = POP_LSB(&rooks);
+    U64 attacks = get_rook_attacks(sq, occupied) & enemies;
+    while (attacks) {
+      movelist.moves[movelist.count++] = create_move(sq, POP_LSB(&attacks));
+    }
+  }
+
+  /* --- Queens --- */
+  U64 queens = bbset->queens[us];
+  while (queens) {
+    int sq = POP_LSB(&queens);
+    U64 attacks = (get_rook_attacks(sq, occupied) | get_bishop_attacks(sq, occupied)) & enemies;
+    while (attacks) {
+      movelist.moves[movelist.count++] = create_move(sq, POP_LSB(&attacks));
+    }
+  }
+
+  /* --- Kings --- */
+  U64 kings = bbset->kings[us];
+  if (kings) {
+    int sq      = GET_LSB(kings);
+    U64 attacks = king_attacks[sq] & enemies & ~compute_attacks(bbset, them);
+    while (attacks) {
+      movelist.moves[movelist.count++] = create_move(sq, POP_LSB(&attacks));
+    }
+  }
+
+  return movelist;
+}
+
 void gen_pawns(const BitboardSet *bbset, MoveList *movelist, Turn color, Square enpassant_sq) {
   U64 pawns        = bbset->pawns[color];
   U64 enemy_pieces = bbset->all_pieces[!color];
