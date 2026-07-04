@@ -169,7 +169,7 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
     alpha = stand_pat;
   }
 
-  MoveList movelist = generate_pseudo_legal_moves(ctx);
+  MoveList movelist = generate_noisy_moves(ctx);
   Move best_so_far  = create_move(A1,A1);
 
   int scores[256];
@@ -180,19 +180,8 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
   for (int i = 0; i < movelist.count; ++i) {
     bump_highest_scored_move(i, &movelist, scores);
 
-    Move move     = movelist.moves[i];
-    Square to     = move_to(move);
-    MoveType type = move_type(move);
-    
-    bool is_capture   = (get_piece_type(&ctx->bitboard_set, to) != NO_PIECE) || (type == MOVE_EN_PASSANT);
-    bool is_promotion = (type == MOVE_PROMOTION);
-
-    if (!is_capture && !is_promotion) {
-      continue; // quiescence search looks for attraction, so we should avoid quiet moves
-    }
-
     MoveHistory history;
-    make_move(ctx, move, &history);
+    make_move(ctx, movelist.moves[i], &history);
 
     if (king_in_check(&ctx->bitboard_set, !ctx->search_color)) {
       unmake_move(ctx, &history);
