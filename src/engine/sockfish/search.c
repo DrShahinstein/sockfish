@@ -144,15 +144,15 @@ static int score_move(const SF_Context *ctx, Move move, Move best_so_far) {
   int score = 0;
 
   if (check)
-    score += 10000;
+    score += 50000;
   if (capture)
-    score += 10000 + piece_value(victim)*10 - piece_value(attacker);
+    score += 50000 + piece_value(victim)*10 - piece_value(attacker);
   if (promote)
-    score += 15000;
+    score += 60000;
   if (en_passant)
-    score += 10000;
+    score += 20000;
   if (castle)
-    score += 8000;
+    score += 10000;
 
   return score;
 }
