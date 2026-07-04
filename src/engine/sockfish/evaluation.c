@@ -210,7 +210,6 @@ static int calc_king_safety(const SF_Context *ctx) {
 
     /* If the king is on the flanks */
     if (k_file <= 2 || k_file >= 5) {
-      
       int start_file = (k_file == 0) ? 0 : k_file - 1;
       int end_file   = (k_file == 7) ? 7 : k_file + 1;
 
