@@ -49,6 +49,12 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   Square en_passant = ep_valid ? rowcol_to_sq(board->ep_row, board->ep_col) : NO_ENPASSANT;
   SF_Context ctx    = create_sf_ctx(&bbset, board->turn, board->castling, en_passant);
 
+  /* Make position history for Sockfish by transferring the one that BoardState already has  */
+  ctx.history_count = board->undo_count;
+  for (int i=0; i < board->undo_count; ++i) {
+    ctx.pos_history[i] = board->hash_history[i];
+  }
+
   engine->ctx             = ctx;
   engine->ctx.should_stop = &engine->abort_search;
   engine->abort_search    = false;
