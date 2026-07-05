@@ -65,12 +65,26 @@ typedef struct SF_Context {
   U64 nodes;
   U64 start_time;
   U64 time_limit;
+  U64 hash_key;
+  U64 pos_history[1024];
+  int history_count;
   bool *should_stop;
   Turn search_color;
   Square enpassant_sq;
   Move best;
   uint8_t castling_rights;
 } SF_Context;
+
+/* == ZOBRIST == */
+extern U64 zobrist_pieces[12][64];
+extern U64 zobrist_black_to_move;
+extern U64 zobrist_castling[16];
+extern U64 zobrist_enpassant[8];
+
+void init_zobrist_keys(void);
+U64 zobrist_hash(const char board[8][8], Turn turn);
+void sf_init_hash_key(SF_Context *ctx);
+/* -end- */
 
 /* ===== Move Utilities ===== */
 #define create_move(from, to)             ((from) | ((to) << 6) | MOVE_NORMAL)
@@ -106,7 +120,12 @@ static inline SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_co
   ctx.nodes           = 0;
   ctx.start_time      = 0;
   ctx.time_limit      = 0;
+  ctx.hash_key        = 0;
+  ctx.history_count   = 0;
   ctx.best            = create_move(0,0);
+
+  sf_init_hash_key(&ctx);
+
   return ctx;
 }
 
