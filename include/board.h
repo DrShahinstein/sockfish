@@ -85,6 +85,7 @@ typedef struct {
 
 typedef struct BoardState {
   uint64_t position_hash;
+  uint64_t hash_history[MAX_HISTORY];
   char board[8][8];
   Turn turn;
   uint8_t castling;
