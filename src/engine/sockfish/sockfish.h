@@ -82,7 +82,6 @@ extern U64 zobrist_castling[16];
 extern U64 zobrist_enpassant[8];
 
 void init_zobrist_keys(void);
-U64 zobrist_hash(const char board[8][8], Turn turn);
 void sf_init_hash_key(SF_Context *ctx);
 /* -end- */
 
