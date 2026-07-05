@@ -25,6 +25,19 @@ static inline bool check_time(SF_Context *ctx) {
   return false;
 }
 
+static inline bool is_repetition(const SF_Context *ctx) {
+  int count = 0;
+  
+  for (int i = ctx->history_count - 4; i >= 0; i -= 2) {
+    if (ctx->pos_history[i] == ctx->hash_key) {
+      if (++count >= 2)
+        return true; 
+    }
+  }
+
+  return false;
+}
+
 static int  score_move(const SF_Context *ctx, Move move, Move best_so_far);
 static bool giving_check(const SF_Context *ctx, Move move);
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
@@ -100,6 +113,10 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
 
   if (depth == 0) {
     return quiescence_search(ctx, alpha, beta);
+  }
+
+  if (is_repetition(ctx)) {
+    return 0; // threefold repetition draw
   }
 
   MoveList movelist = generate_pseudo_legal_moves(ctx);
