@@ -3,11 +3,12 @@
 #include "sockfish/sockfish.h"
 
 typedef struct {
-  Move move;
-  PieceType captured_piece;
-  Square captured_square;
-  uint8_t prev_castling; // previous castling rights
+  U64 prev_hash;
   Square prev_ep_sq;
+  Square captured_square;
+  PieceType captured_piece;
+  Move move;
+  uint8_t prev_castling;
 } MoveHistory;
 
 void make_move(SF_Context *ctx, Move move, MoveHistory *history);
