@@ -13,16 +13,6 @@ static U64 rand64(void) {
   return seed * 0x2545F4914F6CDD1DULL;
 }
 
-static inline int piece_to_index(char piece) {
-  switch (piece) {
-    case 'P': return 0; case 'N': return 1; case 'B': return 2;
-    case 'R': return 3; case 'Q': return 4; case 'K': return 5;
-    case 'p': return 6; case 'n': return 7; case 'b': return 8;
-    case 'r': return 9; case 'q': return 10; case 'k': return 11;
-    default:  return -1;
-  }
-}
-
 void init_zobrist_keys(void) {
   for (int piece=0; piece < 12; ++piece) {
     for (int square=0; square < 64; ++square) {
@@ -49,7 +39,7 @@ void sf_init_hash_key(SF_Context *ctx) {
       PieceType piece = (color == WHITE) ? pt : pt + 6;
 
       U64 bitboard=0;
-      if (pt == 0)      bitboard = ctx->bitboard_set.pawns[color];
+      if      (pt == 0) bitboard = ctx->bitboard_set.pawns[color];
       else if (pt == 1) bitboard = ctx->bitboard_set.knights[color];
       else if (pt == 2) bitboard = ctx->bitboard_set.bishops[color];
       else if (pt == 3) bitboard = ctx->bitboard_set.rooks[color];
@@ -74,25 +64,4 @@ void sf_init_hash_key(SF_Context *ctx) {
   }
 
   ctx->hash_key = hash;
-}
-
-U64 zobrist_hash(const char board[8][8], Turn turn) {
-  U64 hash = 0;
-
-  for (int row=0; row < 8; ++row) {
-    for (int col=0; col < 8; ++col) {
-      char piece = board[row][col];
-      if (piece != 0) {
-        int piece_idx = piece_to_index(piece);
-        if (piece_idx >= 0) {
-          Square s = rowcol_to_sq(row, col);
-          hash ^= zobrist_pieces[piece_idx][s];
-        }
-      }
-    }
-  }
-
-  if (turn == BLACK) hash ^= zobrist_black_to_move;
-
-  return hash;
 }
