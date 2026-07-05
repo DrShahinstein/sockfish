@@ -11,6 +11,7 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   history->move          = move;
   history->prev_castling = ctx->castling_rights;
   history->prev_ep_sq    = ctx->enpassant_sq;
+  history->prev_hash     = ctx->hash_key;
 
   Square from            = move_from(move);
   Square to              = move_to(move);
@@ -28,16 +29,22 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     history->captured_piece  = get_piece_type(&ctx->bitboard_set, to);
   }
 
+  ctx->hash_key ^= zobrist_pieces[moving_piece][from];
   remove_piece(&ctx->bitboard_set, from, moving_piece);
 
   if (history->captured_piece != NO_PIECE) {
+    ctx->hash_key ^= zobrist_pieces[history->captured_piece][history->captured_square];
     remove_piece(&ctx->bitboard_set, history->captured_square, history->captured_piece);
   }
 
   if (type == MOVE_PROMOTION) {
     PieceType promoted_piece = get_promotion_piece(move, ctx->search_color);
+    ctx->hash_key ^= zobrist_pieces[promoted_piece][to];
     place_piece(&ctx->bitboard_set, to, promoted_piece);
-  } else place_piece(&ctx->bitboard_set, to, moving_piece);
+  } else {
+    ctx->hash_key ^= zobrist_pieces[moving_piece][to];
+    place_piece(&ctx->bitboard_set, to, moving_piece);
+  }
 
   if (type == MOVE_CASTLING) {
     Square rook_from=-1, rook_to=-1;
@@ -51,6 +58,10 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     }
 
     PieceType rook = (ctx->search_color == WHITE) ? W_ROOK : B_ROOK;
+    
+    ctx->hash_key ^= zobrist_pieces[rook][rook_from];
+    ctx->hash_key ^= zobrist_pieces[rook][rook_to];
+    
     remove_piece(&ctx->bitboard_set, rook_from, rook);
     place_piece (&ctx->bitboard_set, rook_to,   rook);
   }
@@ -74,6 +85,9 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     else if (history->captured_square == A8) ctx->castling_rights &= ~CASTLE_BQ;
   }
 
+  ctx->hash_key ^= zobrist_castling[history->prev_castling];
+  ctx->hash_key ^= zobrist_castling[ctx->castling_rights];
+
   if (type == MOVE_NORMAL && (moving_piece == W_PAWN || moving_piece == B_PAWN)) {
     int from_rank = from / 8;
     int to_rank   = to   / 8;
@@ -85,10 +99,23 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     ctx->enpassant_sq = NO_ENPASSANT;
   }
 
+  if ((int) history->prev_ep_sq != NO_ENPASSANT) {
+    ctx->hash_key ^= zobrist_enpassant[history->prev_ep_sq % 8];
+  }
+
+  if ((int) ctx->enpassant_sq != NO_ENPASSANT) {
+    ctx->hash_key ^= zobrist_enpassant[ctx->enpassant_sq % 8];
+  }
+
+  ctx->hash_key ^= zobrist_black_to_move;
   ctx->search_color = !ctx->search_color;
+  ctx->pos_history[ctx->history_count++] = ctx->hash_key;
 }
 
 void unmake_move(SF_Context *ctx, const MoveHistory *history) {
+  ctx->hash_key = history->prev_hash;
+  ctx->history_count--;
+
   Move move     = history->move;
   Square from   = move_from(move);
   Square to     = move_to(move);
