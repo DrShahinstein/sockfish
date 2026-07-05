@@ -53,7 +53,22 @@ void board_init(BoardState *board) {
 }
 
 void board_update_position_hash(BoardState *board) {
-  board->position_hash = zobrist_hash((const char (*)[8])board->board, board->turn);
+  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8])board->board);
+  Square ep_sq      = (board->ep_row >= 0 && board->ep_col >= 0) ? rowcol_to_sq(board->ep_row, board->ep_col) : NO_ENPASSANT;
+  
+  SF_Context temp_ctx;
+  temp_ctx.bitboard_set    = bbset;
+  temp_ctx.search_color    = board->turn;
+  temp_ctx.castling_rights = board->castling;
+  temp_ctx.enpassant_sq    = ep_sq;
+
+  sf_init_hash_key(&temp_ctx);
+  
+  board->position_hash = temp_ctx.hash_key;
+
+  if (board->undo_count >= 0 && board->undo_count < MAX_HISTORY) {
+    board->hash_history[board->undo_count] = board->position_hash;
+  }
 }
 
 void board_update_valid_moves(BoardState *b) {
