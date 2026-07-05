@@ -29,12 +29,12 @@ sources = files(
   'src/ui/info.c',
   'src/engine/engine.c',
   'src/engine/bitboard_maker.c',
-  'src/engine/zobrist.c',
   'src/engine/sockfish/bitboard.c',
   'src/engine/sockfish/search.c',
   'src/engine/sockfish/movegen.c',
   'src/engine/sockfish/move_helper.c',
   'src/engine/sockfish/evaluation.c',
+  'src/engine/sockfish/zobrist.c',
 )
 
 executable('sockfish',
