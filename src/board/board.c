@@ -1,8 +1,9 @@
 #include "board.h"
-#include "sockfish/move_helper.h" /* king_in_check() */
-#include "engine.h"               /* make_bitboards_from_charboard() */
 #include "sockfish/sockfish.h"
-#include "ui.h"                   /* ui_set_info() */
+#include "sockfish/move_helper.h"         /* king_in_check() */
+#include "sockfish/transposition_table.h" /* tt_clear() */
+#include "engine.h"                       /* make_bitboards_from_charboard() */
+#include "ui.h"                           /* ui_set_info() */
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
@@ -123,6 +124,8 @@ void load_fen(const char *fen, BoardState *board) {
   board->king.color    = 0;
   board->king.row      = -1;
   board->king.col      = -1;
+
+  tt_clear();
 
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
   int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
