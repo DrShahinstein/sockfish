@@ -397,6 +397,9 @@ void board_redo(BoardState *board) {
   board->turn                            = (h->turn == WHITE) ? BLACK : WHITE;
   board->selected_piece.active           = false;
 
+  Move move = create_move(rowcol_to_sq(h->from_row, h->from_col), rowcol_to_sq(h->to_row, h->to_col));
+  update_castling_rights(board, moving_piece, h->captured_piece, move);
+
   bool castling = (moving_piece == 'K' || moving_piece == 'k') && SDL_abs(h->from_col - h->to_col) == 2;
   if (castling) {
     int rook_from_col, rook_to_col;
