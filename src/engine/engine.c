@@ -18,14 +18,15 @@ void engine_init(EngineWrapper *engine) {
   /* init 16MB transposition table (≈1.000.000 positions) */
   tt_init(16);
 
-  engine->mtx           = SDL_CreateMutex();
-  engine->cond          = SDL_CreateCondition();
-  engine->last_pos_hash = 0;
-  engine->ctx           = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
-  engine->should_stop   = false;
-  engine->abort_search  = false;
-  engine->thr_working   = false;
-  engine->thr           = SDL_CreateThread(engine_thread, "EngineThread", engine);
+  engine->mtx              = SDL_CreateMutex();
+  engine->cond             = SDL_CreateCondition();
+  engine->last_pos_hash    = 0;
+  engine->ctx              = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
+  engine->should_stop      = false;
+  engine->abort_search     = false;
+  engine->pending_tt_clear = false;
+  engine->thr_working      = false;
+  engine->thr              = SDL_CreateThread(engine_thread, "EngineThread", engine);
 }
 
 void engine_req_search(EngineWrapper *engine, const BoardState *board) {
@@ -48,6 +49,11 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
     return;
   }
 
+  if (engine->pending_tt_clear) {
+    tt_clear();
+    engine->pending_tt_clear = false;
+  }
+
   bool ep_valid     = board->ep_row >= 0 && board->ep_col >= 0;
   BitboardSet bbset = make_bitboards_from_charboard(board->board);
   Square en_passant = ep_valid ? rowcol_to_sq(board->ep_row, board->ep_col) : NO_ENPASSANT;
@@ -66,6 +72,12 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   engine->thr_working     = true;
 
   SDL_SignalCondition(engine->cond);
+  SDL_UnlockMutex(engine->mtx);
+}
+
+void engine_request_tt_clear(EngineWrapper *engine) {
+  SDL_LockMutex(engine->mtx);
+  engine->pending_tt_clear = true;
   SDL_UnlockMutex(engine->mtx);
 }
 
