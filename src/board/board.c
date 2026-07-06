@@ -125,8 +125,6 @@ void load_fen(const char *fen, BoardState *board) {
   board->king.row      = -1;
   board->king.col      = -1;
 
-  tt_clear();
-
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
   int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
     placement, active, castling, ep, halfmove, fullmove);
