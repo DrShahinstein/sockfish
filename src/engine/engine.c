@@ -3,6 +3,7 @@
 #include "sockfish/sockfish.h"
 #include "sockfish/search.h"
 #include "sockfish/movegen.h"
+#include "sockfish/transposition_table.h"
 #include <SDL3/SDL.h>
 
 static int engine_thread(void *data);
@@ -13,6 +14,9 @@ void engine_init(EngineWrapper *engine) {
 
   /* init magic bitboards for sliding pieces in move generation logic */
   init_magic_bitboards();
+
+  /* init 16MB transposition table (≈1.000.000 positions) */
+  tt_init(16);
 
   engine->mtx           = SDL_CreateMutex();
   engine->cond          = SDL_CreateCondition();
@@ -118,4 +122,6 @@ void engine_destroy(EngineWrapper *engine) {
   engine->cond = NULL;
 
   cleanup_magic_bitboards();
+
+  tt_free();
 }
