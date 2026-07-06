@@ -9,15 +9,17 @@ typedef struct EngineWrapper {
   SDL_Mutex *mtx;
   SDL_Thread *thr;
   SDL_Condition *cond;
+  SF_Context ctx;
+  uint64_t last_pos_hash;
   bool thr_working;
   bool should_stop;
   bool abort_search;
-  SF_Context ctx;
-  uint64_t last_pos_hash;
+  bool pending_tt_clear;
 } EngineWrapper;
 
 void engine_init(EngineWrapper *engine);
 void engine_req_search(EngineWrapper *engine, const BoardState *board);
+void engine_request_tt_clear(EngineWrapper *engine);
 void engine_abort_search(EngineWrapper *engine);
 void engine_destroy(EngineWrapper *engine);
 
