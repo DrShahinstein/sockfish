@@ -93,17 +93,20 @@ void ui_handle_event(SDL_Event *e, UI_State *ui, BoardState *board, EngineWrappe
         if (ui->fen_loader.length > 0) {
           load_fen(ui->fen_loader.buf, board);
           board_update_king_in_check(board);
+          engine_request_tt_clear(engine);
         }
       }
 
       if (cursor_in_rect(mx, my, &ui->pgn_loader.btn.rect)) {
         if (ui->pgn_loader.length > 0) {
           load_pgn(ui->pgn_loader.buf, board);
+          engine_request_tt_clear(engine);
         }
       }
 
       if (cursor_in_rect(mx, my, &ui->reset_btn.rect)) {
         load_fen(START_FEN, board);
+        engine_request_tt_clear(engine);
       }
 
       if (cursor_in_rect(mx, my, &ui->undo_btn.rect)) {
