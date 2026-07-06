@@ -164,13 +164,11 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
       best_move = movelist.moves[i]; // this will go to TT
     }
 
-    if (score > alpha) {
+    if (score > alpha)
       alpha = score;
-    }
 
-    if (alpha >= beta) {
+    if (alpha >= beta)
       break;
-    }
   }
 
   if (legal_moves == 0) {
@@ -200,14 +198,29 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
 
   if (check_time(ctx)) return 0;
 
+  int original_alpha = alpha;
+  int tt_score = 0;
+  Move tt_move = 0;
+
+  if (tt_probe(ctx->hash_key, 0, alpha, beta, &tt_score, &tt_move))
+    return tt_score;
+
   bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
+  int max_score = -INF; // we'll track the best score to write to TT
 
   if (!in_check) {
     int stand_pat = sf_evaluate_position(ctx);
-    if (stand_pat >= beta) return beta; 
-    if (stand_pat > alpha) {
-      alpha = stand_pat; 
+
+    if (stand_pat > max_score)
+      max_score = stand_pat;
+
+    if (stand_pat >= beta) {
+      tt_record(ctx->hash_key, 0, stand_pat, TT_BETA, 0);
+      return beta;
     }
+
+    if (stand_pat > alpha)
+      alpha = stand_pat; 
   }
 
   MoveList movelist;
@@ -217,12 +230,14 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
     movelist = generate_noisy_moves(ctx);
   }
 
+  Move best_so_far = tt_move;
+  Move best_move   = 0;
+  int legal_moves  = 0;
+
   int scores[256];
   for (int i = 0; i < movelist.count; ++i) {
-    scores[i] = score_move(ctx, movelist.moves[i], 0);
+    scores[i] = score_move(ctx, movelist.moves[i], best_so_far);
   }
-
-  int legal_moves = 0;
 
   for (int i = 0; i < movelist.count; ++i) {
     bump_highest_scored_move(i, &movelist, scores);
@@ -243,7 +258,13 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
 
     if (*ctx->should_stop) return 0;
 
+    if (score > max_score) {
+      max_score = score;
+      best_move = movelist.moves[i];
+    }
+
     if (score >= beta) {
+      tt_record(ctx->hash_key, 0, score, TT_BETA, best_move);
       return beta;
     }
 
@@ -255,6 +276,16 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
   if (in_check && legal_moves==0) {
     return -MATE_SCORE;
   }
+
+  TT_Flag flag;
+
+  if (max_score <= original_alpha) {
+    flag = TT_ALPHA;
+  } else {
+    flag = TT_EXACT;
+  }
+
+  tt_record(ctx->hash_key, 0, max_score, flag, best_move);
 
   return alpha;
 }
