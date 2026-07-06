@@ -60,13 +60,15 @@ typedef enum {
 // EXAMPLE: 00  -  00   - 000000 - 000000   |   0000011100001100 => E2=12 to E4=28
 //         type   promo     to      from
 
+#define SF_MAX_HIST 1024
+
 typedef struct SF_Context {
   BitboardSet bitboard_set;
   U64 nodes;
   U64 start_time;
   U64 time_limit;
   U64 hash_key;
-  U64 pos_history[1024];
+  U64 pos_history[SF_MAX_HIST];
   int history_count;
   bool *should_stop;
   Turn search_color;
