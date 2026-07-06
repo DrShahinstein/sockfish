@@ -3,6 +3,7 @@
 #include "sockfish/evaluation.h"
 #include "sockfish/move_helper.h"
 #include "sockfish/movegen.h"
+#include "sockfish/transposition_table.h"
 
 #include <SDL3/SDL_timer.h>  /* SDL_GetTicks() */
 #include <SDL3/SDL.h>        // DEBUG
@@ -100,6 +101,8 @@ Move sf_search(const SF_Context *ctx) {
 
     if (*ctx_.should_stop) break;
 
+    tt_record(ctx_.hash_key, depth, max_score_so_far, TT_EXACT, best_so_far);
+
     best_move = best_so_far;
   }
 
@@ -119,8 +122,16 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
     return 0; // threefold repetition draw
   }
 
+  int original_alpha = alpha;
+  int tt_score = 0;
+  Move tt_move = 0;
+
+  if (tt_probe(ctx->hash_key, depth, alpha, beta, &tt_score, &tt_move))
+    return tt_score;
+
   MoveList movelist = generate_pseudo_legal_moves(ctx);
-  Move best_so_far  = create_move(A1,A1); 
+  Move best_so_far  = tt_move; // the best result we obtained in previous nodes
+  Move best_move    = 0;       // the best result from this node (will be recorded to TT and potentially become next "best_so_far" if strong enough)
   int legal_moves   = 0;
   int max_score     = -INF;
 
@@ -150,6 +161,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
 
     if (score > max_score) {
       max_score = score;
+      best_move = movelist.moves[i]; // this will go to TT
     }
 
     if (score > alpha) {
@@ -166,6 +178,18 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
       return -MATE_SCORE + (MAX_DEPTH - depth);
     return 0;
   }
+
+  TT_Flag flag;
+
+  if (max_score <= original_alpha) {
+    flag = TT_ALPHA;
+  } else if (max_score >= beta) {
+    flag = TT_BETA;
+  } else {
+    flag = TT_EXACT;
+  }
+
+  tt_record(ctx->hash_key, depth, max_score, flag, best_move);
 
   return max_score;
 }
