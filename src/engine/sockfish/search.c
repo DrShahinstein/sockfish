@@ -122,6 +122,9 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
     return 0; // threefold repetition draw
   }
 
+  if (ctx->history_count >= SF_MAX_HIST)
+    return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
+
   int original_alpha = alpha;
   int tt_score = 0;
   Move tt_move = 0;
@@ -197,6 +200,11 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
   ctx->nodes++;
 
   if (check_time(ctx)) return 0;
+
+  if (is_repetition(ctx)) return 0;
+
+  if (ctx->history_count >= SF_MAX_HIST)
+    return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
   int original_alpha = alpha;
   int tt_score = 0;
