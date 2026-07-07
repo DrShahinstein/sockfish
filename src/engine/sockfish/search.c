@@ -10,34 +10,16 @@
 
 #define INF 9999999
 #define MATE_SCORE 9000000
+#define MATE_BOUND 8000000
 #define MAX_DEPTH 40
 #define SEARCH_TIME 2000  /* ms */
 
-static inline bool check_time(SF_Context *ctx) {
-  if (ctx->should_stop && *ctx->should_stop) return true;
+static const int ROOT_PLY=0;
 
-  if ((ctx->nodes & 2047) == 0) { 
-    if (SDL_GetTicks() - ctx->start_time >= ctx->time_limit) {
-      if (ctx->should_stop) *ctx->should_stop = true;
-      return true;
-    }
-  }
-
-  return false;
-}
-
-static inline bool is_repetition(const SF_Context *ctx) {
-  int count = 0;
-  
-  for (int i = ctx->history_count - 4; i >= 0; i -= 2) {
-    if (ctx->pos_history[i] == ctx->hash_key) {
-      if (++count >= 2)
-        return true; 
-    }
-  }
-
-  return false;
-}
+static inline bool check_time(SF_Context *ctx);
+static inline bool is_repetition(const SF_Context *ctx);
+static inline int score_to_tt(int score, int ply);
+static inline int score_from_tt(int score, int ply);
 
 static int  score_move(const SF_Context *ctx, Move move, Move best_so_far);
 static bool giving_check(const SF_Context *ctx, Move move);
@@ -83,7 +65,7 @@ Move sf_search(const SF_Context *ctx) {
         continue;
       }
 
-      int score = -negamax(&ctx_, depth-1, -beta, -alpha);
+      int score = -negamax(&ctx_, depth-1, ROOT_PLY+1, -beta, -alpha);
 
       unmake_move(&ctx_, &history);
 
@@ -101,7 +83,8 @@ Move sf_search(const SF_Context *ctx) {
 
     if (*ctx_.should_stop) break;
 
-    tt_record(ctx_.hash_key, depth, max_score_so_far, TT_EXACT, best_so_far);
+    int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
+    tt_record(ctx_.hash_key, depth, tt_record_score, TT_EXACT, best_so_far);
 
     best_move = best_so_far;
   }
@@ -109,13 +92,13 @@ Move sf_search(const SF_Context *ctx) {
   return best_move;
 }
 
-int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
+int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta) {
   ctx->nodes++;
 
   if (check_time(ctx)) return 0;
 
   if (depth == 0) {
-    return quiescence_search(ctx, alpha, beta);
+    return quiescence_search(ctx, ply, alpha, beta);
   }
 
   if (is_repetition(ctx)) {
@@ -129,8 +112,9 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
   int tt_score = 0;
   Move tt_move = 0;
 
-  if (tt_probe(ctx->hash_key, depth, alpha, beta, &tt_score, &tt_move))
-    return tt_score;
+  if (tt_probe(ctx->hash_key, depth, alpha, beta, &tt_score, &tt_move)) {
+    return score_from_tt(tt_score, ply);
+  }
 
   MoveList movelist = generate_pseudo_legal_moves(ctx);
   Move best_so_far  = tt_move; // the best result we obtained in previous nodes
@@ -156,7 +140,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
 
     legal_moves++;
 
-    int score = -negamax(ctx, depth-1, -beta, -alpha);
+    int score = -negamax(ctx, depth-1, ply+1, -beta, -alpha);
 
     unmake_move(ctx, &history);
 
@@ -176,7 +160,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
 
   if (legal_moves == 0) {
     if (king_in_check(&ctx->bitboard_set, ctx->search_color))
-      return -MATE_SCORE + (MAX_DEPTH - depth);
+      return -MATE_SCORE + ply;
     return 0;
   }
 
@@ -190,13 +174,14 @@ int negamax(SF_Context *ctx, unsigned int depth, int alpha, int beta) {
     flag = TT_EXACT;
   }
 
-  tt_record(ctx->hash_key, depth, max_score, flag, best_move);
+  int tt_record_score = score_to_tt(max_score, ply);
+  tt_record(ctx->hash_key, depth, tt_record_score, flag, best_move);
 
   return max_score;
 }
 
 // https://www.chessprogramming.org/Quiescence_Search
-int quiescence_search(SF_Context *ctx, int alpha, int beta) {
+int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   ctx->nodes++;
 
   if (check_time(ctx)) return 0;
@@ -210,8 +195,9 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
   int tt_score = 0;
   Move tt_move = 0;
 
-  if (tt_probe(ctx->hash_key, 0, alpha, beta, &tt_score, &tt_move))
-    return tt_score;
+  if (tt_probe(ctx->hash_key, 0, alpha, beta, &tt_score, &tt_move)) {
+    return score_from_tt(tt_score, ply);
+  }
 
   bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
   int max_score = -INF; // we'll track the best score to write to TT
@@ -260,7 +246,7 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
 
     legal_moves++;
 
-    int score = -quiescence_search(ctx, -beta, -alpha);
+    int score = -quiescence_search(ctx, ply+1, -beta, -alpha);
 
     unmake_move(ctx, &history);
 
@@ -272,7 +258,8 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
     }
 
     if (score >= beta) {
-      tt_record(ctx->hash_key, 0, score, TT_BETA, best_move);
+      int tt_record_score = score_to_tt(score, ply);
+      tt_record(ctx->hash_key, 0, tt_record_score, TT_BETA, best_move);
       return beta;
     }
 
@@ -282,7 +269,7 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
   }
 
   if (in_check && legal_moves==0) {
-    return -MATE_SCORE;
+    return -MATE_SCORE + ply;
   }
 
   TT_Flag flag;
@@ -293,7 +280,8 @@ int quiescence_search(SF_Context *ctx, int alpha, int beta) {
     flag = TT_EXACT;
   }
 
-  tt_record(ctx->hash_key, 0, max_score, flag, best_move);
+  int tt_record_score = score_to_tt(max_score, ply);
+  tt_record(ctx->hash_key, 0, tt_record_score, flag, best_move);
 
   return alpha;
 }
@@ -402,5 +390,50 @@ static bool giving_check(const SF_Context *ctx, Move move) {
     return ((get_bishop_attacks(to, new_occ) | get_rook_attacks(to, new_occ)) & (1ULL << enemy_king)) != 0;
  
   return false;
+}
+
+
+
+static inline bool check_time(SF_Context *ctx) {
+  if (ctx->should_stop && *ctx->should_stop) return true;
+
+  if ((ctx->nodes & 2047) == 0) { 
+    if (SDL_GetTicks() - ctx->start_time >= ctx->time_limit) {
+      if (ctx->should_stop) *ctx->should_stop = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static inline bool is_repetition(const SF_Context *ctx) {
+  int count = 0;
+  
+  for (int i = ctx->history_count - 4; i >= 0; i -= 2) {
+    if (ctx->pos_history[i] == ctx->hash_key) {
+      if (++count >= 2)
+        return true; 
+    }
+  }
+
+  return false;
+}
+
+/*
+ * TT Mate Adjustments
+ * When writing or reading a mate score into the transposition table,
+ * We consider the score's distance (ply) from the root node.
+ * This way we get quicker mates.
+ */
+static inline int score_to_tt(int score, int ply) {
+  if (score > MATE_BOUND)  return score + ply;
+  if (score < -MATE_BOUND) return score - ply;
+  return score;
+}
+static inline int score_from_tt(int score, int ply) {
+  if (score > MATE_BOUND)  return score - ply;
+  if (score < -MATE_BOUND) return score + ply;
+  return score;
 }
 
