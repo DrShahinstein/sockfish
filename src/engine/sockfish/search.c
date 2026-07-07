@@ -12,7 +12,7 @@
 #define MATE_SCORE 9000000
 #define MATE_BOUND 8000000
 #define MAX_DEPTH 40
-#define SEARCH_TIME 2000  /* ms */
+#define SEARCH_TIME 3000  /* ms */
 
 static const int ROOT_PLY=0;
 
@@ -408,15 +408,9 @@ static inline bool check_time(SF_Context *ctx) {
 }
 
 static inline bool is_repetition(const SF_Context *ctx) {
-  int count = 0;
-  
-  for (int i = ctx->history_count - 4; i >= 0; i -= 2) {
-    if (ctx->pos_history[i] == ctx->hash_key) {
-      if (++count >= 2)
-        return true; 
-    }
-  }
-
+  for (int i = ctx->history_count - 4; i >= 0; i -= 2)
+    if (ctx->pos_history[i] == ctx->hash_key)
+      return true; 
   return false;
 }
 
