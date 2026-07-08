@@ -23,6 +23,7 @@ static inline int score_to_tt(int score, int ply);
 static inline int score_from_tt(int score, int ply);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
+static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 
 static int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks);
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
@@ -149,6 +150,12 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
   for (int i = 0; i < movelist.count; ++i) {
     bump_highest_scored_move(i, &movelist, scores);
 
+    Move move          = movelist.moves[i];
+    PieceType attacker = get_piece_type(&ctx->bitboard_set, move_from(move));
+    PieceType victim   = get_piece_type(&ctx->bitboard_set, move_to(move));
+    bool is_quiet      = (move_type(move) == MOVE_NORMAL) && (victim == NO_PIECE);
+    bool gives_check   = giving_check(move, attacker, &masks);
+
     MoveHistory history;
     make_move(ctx, movelist.moves[i], &history);
 
@@ -158,8 +165,22 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
     }
 
     legal_moves++;
+ 
+    int score;
 
-    int score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
+    int r = get_lmr_reduction(depth, legal_moves, is_quiet, gives_check, in_check);
+    if (r > 0) {
+      // reduced depth search with a zero-window (testing if it beats alpha)
+      score = -negamax(ctx, depth-1-r, ply+1, -alpha-1, -alpha, ALLOW_NULL);
+      
+      // re-search: if the move is surprisingly good, search again at full depth and normal window
+      if (score > alpha && score < beta)
+        score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
+
+    } else {
+      // normal search same as before (no reduction)
+      score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
+    }
 
     unmake_move(ctx, &history);
 
@@ -466,5 +487,28 @@ static inline bool has_non_pawn_material(const SF_Context *ctx) {
   Turn us = ctx->search_color;
   const BitboardSet *bbs = &ctx->bitboard_set;
   return (bbs->knights[us] | bbs->bishops[us] | bbs->rooks[us] | bbs->queens[us]) != 0;
+}
+
+/*
+ * LMR (Late Move Reductions) Conditions:
+ * 1. Depth must be at least 3 (do not reduce at shallow depths)
+ * 2. Must have searched at least 3 moves already (protect TT move and good captures)
+ * 3. The move must be quiet (no captures or promotions)
+ * 4. The move must not give a check
+ * 5. We must not currently be in check
+ */
+static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check) {
+  if (depth >= 3 && legal_moves >= 4 && is_quiet && !gives_check && !in_check) {
+    int reduction = 1;
+    
+    // aggressive reduction: if depth is high and the move is searched very late, reduce further
+    if (depth >= 5 && legal_moves >= 6) {
+      reduction = 2;
+    }
+    
+    return reduction;
+  }
+  
+  return 0; // LMR conditions aren't met so we'll keep going with a full-depth search
 }
 
