@@ -15,8 +15,8 @@ void engine_init(EngineWrapper *engine) {
   /* init magic bitboards for sliding pieces in move generation logic */
   init_magic_bitboards();
 
-  /* init 16MB transposition table (≈1.000.000 positions) */
-  tt_init(16);
+  /* init 32MB transposition table (≈2.000.000 positions) */
+  tt_init(32);
 
   engine->mtx              = SDL_CreateMutex();
   engine->cond             = SDL_CreateCondition();
