@@ -11,6 +11,9 @@ typedef struct {
 
 Move sf_search(const SF_Context *ctx);
 
-int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta);
+int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, bool allow_null);
 
 int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta);
+
+int null_move_search(SF_Context *ctx, unsigned int depth, int ply, int beta);
+
