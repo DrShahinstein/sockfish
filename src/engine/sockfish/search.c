@@ -15,12 +15,14 @@
 #define SEARCH_TIME 3000  /* ms */
 
 static const int ROOT_PLY=0;
+static const int ALLOW_NULL=true;
 
 static inline bool check_time(SF_Context *ctx);
 static inline bool is_repetition(const SF_Context *ctx);
 static inline int score_to_tt(int score, int ply);
 static inline int score_from_tt(int score, int ply);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
+static inline bool has_non_pawn_material(const SF_Context *ctx);
 
 static int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks);
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
@@ -69,7 +71,7 @@ Move sf_search(const SF_Context *ctx) {
         continue;
       }
 
-      int score = -negamax(&ctx_, depth-1, ROOT_PLY+1, -beta, -alpha);
+      int score = -negamax(&ctx_, depth-1, ROOT_PLY+1, -beta, -alpha, ALLOW_NULL);
 
       unmake_move(&ctx_, &history);
 
@@ -96,7 +98,7 @@ Move sf_search(const SF_Context *ctx) {
   return best_move;
 }
 
-int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta) {
+int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, bool allow_null) {
   ctx->nodes++;
 
   if (check_time(ctx)) return 0;
@@ -118,6 +120,17 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta) {
 
   if (tt_probe(ctx->hash_key, depth, alpha, beta, &tt_score, &tt_move)) {
     return score_from_tt(tt_score, ply);
+  }
+
+  int static_eval = sf_evaluate_position(ctx);
+  bool in_check   = king_in_check(&ctx->bitboard_set, ctx->search_color);
+  bool nmp        = allow_null && depth >= 3 && !in_check && has_non_pawn_material(ctx) && static_eval >= beta;
+
+  if (nmp) {
+    int nmp_score = null_move_search(ctx, depth, ply, beta);
+    
+    if (nmp_score != -1)
+      return nmp_score; // beta
   }
 
   MoveList movelist = generate_pseudo_legal_moves(ctx);
@@ -146,7 +159,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta) {
 
     legal_moves++;
 
-    int score = -negamax(ctx, depth-1, ply+1, -beta, -alpha);
+    int score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
 
     unmake_move(ctx, &history);
 
@@ -294,6 +307,26 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   return alpha;
 }
 
+int null_move_search(SF_Context *ctx, unsigned int depth, int ply, int beta) {
+  int R = 2; // depth reduction
+  
+  MoveHistory null_history;
+  make_null_move(ctx, &null_history);
+
+  // zero-window search: only check out if score is greater than beta
+  int null_score = -negamax(ctx, depth-1-R, ply+1, -beta, -beta+1, !ALLOW_NULL);
+
+  unmake_null_move(ctx, &null_history);
+
+  if (*ctx->should_stop) return 0;
+
+  if (null_score >= beta) {
+    return beta; // pruning succeeds
+  }
+
+  return -1;
+}
+
 
 static int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks) {
   if (move == best_so_far)
@@ -427,5 +460,11 @@ static inline bool giving_check(Move move, PieceType attacker, const CheckMasks 
     case W_QUEEN:  case B_QUEEN:  return ((masks->bishop | masks->rook) & to_bit) != 0;
     default: return false;
   }
+}
+
+static inline bool has_non_pawn_material(const SF_Context *ctx) {
+  Turn us = ctx->search_color;
+  const BitboardSet *bbs = &ctx->bitboard_set;
+  return (bbs->knights[us] | bbs->bishops[us] | bbs->rooks[us] | bbs->queens[us]) != 0;
 }
 
