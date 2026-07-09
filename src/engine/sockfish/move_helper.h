@@ -8,6 +8,9 @@ typedef struct {
   Square captured_square;
   PieceType captured_piece;
   Move move;
+  int prev_mg_score[2];
+  int prev_eg_score[2];
+  int prev_game_phase;
   uint8_t prev_castling;
 } MoveHistory;
 
@@ -20,10 +23,3 @@ void unmake_null_move(SF_Context *ctx, const MoveHistory *history);
 
 PieceType get_piece_type(const BitboardSet *bbs, Square sq);
 
-/*
-
-MoveList sf_generate_moves(SF_Context *ctx); // movegen.h
-
-=> 'move_helper.h' enables the definition of this function in 'movegen.c'
-
-*/
