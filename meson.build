@@ -29,6 +29,7 @@ sources = files(
   'src/ui/info.c',
   'src/engine/engine.c',
   'src/engine/bitboard_maker.c',
+  'src/engine/sockfish/sockfish.c',
   'src/engine/sockfish/bitboard.c',
   'src/engine/sockfish/search.c',
   'src/engine/sockfish/movegen.c',
