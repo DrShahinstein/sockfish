@@ -22,10 +22,10 @@ static inline bool is_repetition(const SF_Context *ctx);
 static inline int score_to_tt(int score, int ply);
 static inline int score_from_tt(int score, int ply);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
+static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 
-static int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks);
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 static CheckMasks generate_check_masks(const SF_Context *ctx);
 
@@ -348,8 +348,7 @@ int null_move_search(SF_Context *ctx, unsigned int depth, int ply, int beta) {
   return -1;
 }
 
-
-static int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks) {
+int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks) {
   if (move == best_so_far)
     return INF;
 
@@ -382,6 +381,7 @@ static int score_move(const SF_Context *ctx, Move move, Move best_so_far, const 
 
   return score;
 }
+
 
 /* Move the highest scored move to the top of the move list */
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores) {
@@ -480,6 +480,19 @@ static inline bool giving_check(Move move, PieceType attacker, const CheckMasks 
     case W_ROOK:   case B_ROOK:   return  (masks->rook   & to_bit) != 0;
     case W_QUEEN:  case B_QUEEN:  return ((masks->bishop | masks->rook) & to_bit) != 0;
     default: return false;
+  }
+}
+
+/* Helps score_move() function */
+static inline int piece_value(PieceType p) {
+  switch (p) {
+    case W_PAWN:   case B_PAWN:   return 100;
+    case W_KNIGHT: case B_KNIGHT: return 320;
+    case W_BISHOP: case B_BISHOP: return 330;
+    case W_ROOK:   case B_ROOK:   return 500;
+    case W_QUEEN:  case B_QUEEN:  return 900;
+    case W_KING:   case B_KING:   return 20000;
+    default: return -1;
   }
 }
 
