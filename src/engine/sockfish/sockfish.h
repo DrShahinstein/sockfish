@@ -1,13 +1,3 @@
-/*
-
-  * sockfish.h is the main header file for the Sockfish chess engine.
-  * It defines the core data structures and types used throughout the engine. (primarily: SF_Context)
-  * Therefore, it can also be considered as 'sf_types.h'
-  * Any file in the project can include this header to utilize the benefits of the types here. (e.g Move)
-  ! Because it has this kind of a mission, it does not have a corresponding .c file.
-
-*/
-
 #pragma once
 
 #include "bitboard.h"
@@ -69,6 +59,9 @@ typedef struct SF_Context {
   U64 time_limit;
   U64 hash_key;
   U64 pos_history[SF_MAX_HIST];
+  int mg_score[2];                     // [0]=WHITE, [1]=BLACK [mid-game score]
+  int eg_score[2];                     // [0]=WHITE, [1]=BLACK [end-game score]
+  int game_phase;                      // 0-24                 [see evaluation.h]
   int history_count;
   bool *should_stop;
   Turn search_color;
@@ -77,7 +70,9 @@ typedef struct SF_Context {
   uint8_t castling_rights;
 } SF_Context;
 
-/* == ZOBRIST == */
+SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t castling_rights, Square ep_sq); // sockfish.c
+
+/* ==== ZOBRIST (zobrist.c) ==== */
 extern U64 zobrist_pieces[12][64];
 extern U64 zobrist_black_to_move;
 extern U64 zobrist_castling[16];
@@ -86,6 +81,7 @@ extern U64 zobrist_enpassant[8];
 void init_zobrist_keys(void);
 void sf_init_hash_key(SF_Context *ctx);
 /* -end- */
+
 
 /* ===== Move Utilities ===== */
 #define create_move(from, to)             ((from) | ((to) << 6) | MOVE_NORMAL)
@@ -102,6 +98,7 @@ void sf_init_hash_key(SF_Context *ctx);
 #define square_to_col(sq)     (sq % 8)
 #define rowcol_to_sq(row,col) ((7-row) * 8 + col)
 
+/* ==== Other Helpers ==== */
 static inline void sq_to_alg(Square sq, char buf[3]) {
   int row = sq / 8;
   int col = sq % 8;
@@ -110,34 +107,17 @@ static inline void sq_to_alg(Square sq, char buf[3]) {
   buf[2]  = '\0';
 }
 
-/* Context Creator */
-static inline SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t castling_rights, Square ep_sq) {
-  SF_Context ctx;
-  ctx.bitboard_set    = *bitboard_set;
-  ctx.search_color    = search_color;
-  ctx.castling_rights = castling_rights;
-  ctx.enpassant_sq    = ep_sq;
-  ctx.should_stop     = NULL;
-  ctx.nodes           = 0;
-  ctx.start_time      = 0;
-  ctx.time_limit      = 0;
-  ctx.hash_key        = 0;
-  ctx.history_count   = 0;
-  ctx.best            = create_move(0,0);
-
-  sf_init_hash_key(&ctx);
-
-  return ctx;
-}
-
 static inline bool should_stop(const SF_Context *ctx) {
   return ctx->should_stop && *ctx->should_stop;
 }
 
-/* ===== Sockish Functions & Algorithm =====
-*
-* Move     sf_search(const SF_Context *ctx);            // search.c
-* MoveList sf_generate_moves(const SF_Context *ctx);    // movegen.c
-* int      sf_evaluate_position(const SF_Context *ctx); // evaluation.c
-*
-*/
+
+/* ===== Sockish Functions =====
+ *
+ * Move     sf_search(const SF_Context *ctx);            // search.c
+ * MoveList sf_generate_moves(const SF_Context *ctx);    // movegen.c
+ * int      sf_evaluate_position(const SF_Context *ctx); // evaluation.c
+ * void     sf_init_evaluation(SF_Context *ctx);         // evaluation.c
+ * void     sf_init_hash_key(SF_Context *ctx);           // zobrist.c
+ *
+ */
