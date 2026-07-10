@@ -177,7 +177,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
       score = -negamax(ctx, depth-1-r, ply+1, -alpha-1, -alpha, ALLOW_NULL);
       
       // re-search: if the move is surprisingly good, search again at full depth and normal window
-      if (score > alpha && score < beta)
+      if (score > alpha)
         score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
 
     } else {
