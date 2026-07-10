@@ -26,7 +26,6 @@ static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
-static inline void save_history_heuristic(SF_Context *ctx, Move move, int depth);
 
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 static CheckMasks generate_check_masks(const SF_Context *ctx);
@@ -38,8 +37,7 @@ Move sf_search(const SF_Context *ctx) {
   ctx_.start_time = SDL_GetTicks();
   ctx_.time_limit = SEARCH_TIME;
 
-  memset(ctx_.killer_moves,      0, sizeof(ctx_.killer_moves));
-  memset(ctx_.history_heuristic, 0, sizeof(ctx_.history_heuristic));
+  memset(ctx_.killer_moves, 0, sizeof(ctx_.killer_moves));
 
   /* For Safety */
   bool local_stop = false;
@@ -200,10 +198,8 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
       alpha = score;
 
     if (alpha >= beta) {
-      /* These pruning techniques make a hierarchy of quite moves possible */
       if (is_quiet && ply < SF_MAX_PLY) {
         save_killer_move(ctx, move, ply);
-        save_history_heuristic(ctx, move, depth);
       }
       break;
     }
@@ -366,7 +362,6 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
   MoveType type = move_type(move);
   Square from   = move_from(move);
   Square to     = move_to(move);
-  Turn color    = ctx->search_color;
 
   const BitboardSet *bbset = &ctx->bitboard_set;
   PieceType attacker = get_piece_type(bbset, from);
@@ -399,10 +394,6 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
     /* secondary killer move */
     else if (move == ctx->killer_moves[ply][1]) 
       score += 8000;
-
-    /* ordinary quiet move */
-    else if (!capture && !promote && !en_passant)
-      score += ctx->history_heuristic[color][from][to];
   }
 
   return score;
@@ -558,13 +549,5 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
     ctx->killer_moves[ply][1] = ctx->killer_moves[ply][0];
     ctx->killer_moves[ply][0] = move;
   }
-}
-
-static inline void save_history_heuristic(SF_Context *ctx, Move move, int depth) {
-  Square from = move_from(move);
-  Square to   = move_to(move);
-  Turn t      = ctx->search_color;
-
-  ctx->history_heuristic[t][from][to] += depth*depth;
 }
 
