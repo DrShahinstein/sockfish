@@ -36,6 +36,8 @@ Move sf_search(const SF_Context *ctx) {
   ctx_.start_time = SDL_GetTicks();
   ctx_.time_limit = SEARCH_TIME;
 
+  memset(ctx_.killer_moves, 0, sizeof(ctx_.killer_moves));
+
   /* For Safety */
   bool local_stop = false;
   if (ctx_.should_stop == NULL)
@@ -58,7 +60,7 @@ Move sf_search(const SF_Context *ctx) {
 
     int scores[256]; // scores[i] <===> movelist->moves[i]
     for (int i=0; i < movelist.count; ++i) {
-      scores[i] = score_move(&ctx_, movelist.moves[i], best_so_far, &masks);
+      scores[i] = score_move(&ctx_, movelist.moves[i], best_so_far, &masks, ROOT_PLY);
     }
 
     for (int i=0; i < movelist.count; ++i) {
@@ -144,7 +146,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
 
   int scores[256];
   for (int i = 0; i < movelist.count; ++i) {
-    scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks);
+    scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks, ply);
   }
 
   for (int i = 0; i < movelist.count; ++i) {
@@ -194,8 +196,17 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
     if (score > alpha)
       alpha = score;
 
-    if (alpha >= beta)
+    if (alpha >= beta) {
+      bool storable_killer = is_quiet && (ply < SF_MAX_PLY);
+      bool new_primary     = (ctx->killer_moves[ply][0] != move);
+
+      if (storable_killer && new_primary) {
+        ctx->killer_moves[ply][1] = ctx->killer_moves[ply][0];
+        ctx->killer_moves[ply][0] = move;
+      }
+
       break;
+    }
   }
 
   if (legal_moves == 0) {
@@ -272,7 +283,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 
   int scores[256];
   for (int i = 0; i < movelist.count; ++i) {
-    scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks);
+    scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks, ply);
   }
 
   for (int i = 0; i < movelist.count; ++i) {
@@ -348,7 +359,7 @@ int null_move_search(SF_Context *ctx, unsigned int depth, int ply, int beta) {
   return -1;
 }
 
-int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks) {
+int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks, int ply) {
   if (move == best_so_far)
     return INF;
 
@@ -378,6 +389,13 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
     score += 20000;
   if (castle)
     score += 10000;
+
+  if (ply < SF_MAX_PLY) {
+    if (move == ctx->killer_moves[ply][0]) 
+      score += 9000; // 1st killer move
+    else if (move == ctx->killer_moves[ply][1]) 
+      score += 8000; // 2nd killer move
+  }
 
   return score;
 }
