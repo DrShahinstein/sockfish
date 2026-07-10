@@ -51,6 +51,7 @@ typedef enum {
 //         type   promo     to      from
 
 #define SF_MAX_HIST 1024
+#define SF_MAX_PLY 128
 
 typedef struct SF_Context {
   BitboardSet bitboard_set;
@@ -59,6 +60,7 @@ typedef struct SF_Context {
   U64 time_limit;
   U64 hash_key;
   U64 pos_history[SF_MAX_HIST];
+  Move killer_moves[SF_MAX_PLY][2];
   int mg_score[2];                     // [0]=WHITE, [1]=BLACK [mid-game score]
   int eg_score[2];                     // [0]=WHITE, [1]=BLACK [end-game score]
   int game_phase;                      // 0-24                 [see evaluation.h]
