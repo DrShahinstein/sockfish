@@ -1,9 +1,9 @@
-#include "sockfish/search.h"
-#include "sockfish/sockfish.h"
-#include "sockfish/evaluation.h"
-#include "sockfish/move_helper.h"
-#include "sockfish/movegen.h"
-#include "sockfish/transposition_table.h"
+#include "search.h"
+#include "sockfish.h"
+#include "evaluation.h"
+#include "move_helper.h"
+#include "movegen.h"
+#include "transposition_table.h"
 
 #include <SDL3/SDL_timer.h>  /* SDL_GetTicks() */
 #include <SDL3/SDL.h>        // DEBUG
@@ -25,6 +25,8 @@ static inline bool giving_check(Move move, PieceType attacker, const CheckMasks 
 static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
+static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
+static inline void save_history_heuristic(SF_Context *ctx, Move move, int depth);
 
 static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 static CheckMasks generate_check_masks(const SF_Context *ctx);
@@ -36,7 +38,8 @@ Move sf_search(const SF_Context *ctx) {
   ctx_.start_time = SDL_GetTicks();
   ctx_.time_limit = SEARCH_TIME;
 
-  memset(ctx_.killer_moves, 0, sizeof(ctx_.killer_moves));
+  memset(ctx_.killer_moves,      0, sizeof(ctx_.killer_moves));
+  memset(ctx_.history_heuristic, 0, sizeof(ctx_.history_heuristic));
 
   /* For Safety */
   bool local_stop = false;
@@ -197,14 +200,11 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
       alpha = score;
 
     if (alpha >= beta) {
-      bool storable_killer = is_quiet && (ply < SF_MAX_PLY);
-      bool new_primary     = (ctx->killer_moves[ply][0] != move);
-
-      if (storable_killer && new_primary) {
-        ctx->killer_moves[ply][1] = ctx->killer_moves[ply][0];
-        ctx->killer_moves[ply][0] = move;
+      /* These pruning techniques make a hierarchy of quite moves possible */
+      if (is_quiet && ply < SF_MAX_PLY) {
+        save_killer_move(ctx, move, ply);
+        save_history_heuristic(ctx, move, depth);
       }
-
       break;
     }
   }
@@ -366,6 +366,7 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
   MoveType type = move_type(move);
   Square from   = move_from(move);
   Square to     = move_to(move);
+  Turn color    = ctx->search_color;
 
   const BitboardSet *bbset = &ctx->bitboard_set;
   PieceType attacker = get_piece_type(bbset, from);
@@ -391,10 +392,17 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
     score += 10000;
 
   if (ply < SF_MAX_PLY) {
+    /* primary killer move */
     if (move == ctx->killer_moves[ply][0]) 
-      score += 9000; // 1st killer move
+      score += 9000;
+
+    /* secondary killer move */
     else if (move == ctx->killer_moves[ply][1]) 
-      score += 8000; // 2nd killer move
+      score += 8000;
+
+    /* ordinary quiet move */
+    else if (!capture && !promote && !en_passant)
+      score += ctx->history_heuristic[color][from][to];
   }
 
   return score;
@@ -541,5 +549,22 @@ static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, b
   }
   
   return 0; // LMR conditions aren't met so we'll keep going with a full-depth search
+}
+
+static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
+  bool new_primary_killer = (ctx->killer_moves[ply][0] != move);
+
+  if (new_primary_killer) {
+    ctx->killer_moves[ply][1] = ctx->killer_moves[ply][0];
+    ctx->killer_moves[ply][0] = move;
+  }
+}
+
+static inline void save_history_heuristic(SF_Context *ctx, Move move, int depth) {
+  Square from = move_from(move);
+  Square to   = move_to(move);
+  Turn t      = ctx->search_color;
+
+  ctx->history_heuristic[t][from][to] += depth*depth;
 }
 
