@@ -18,7 +18,8 @@ static const int ROOT_PLY=0;
 static const int ALLOW_NULL=true;
 
 static inline bool check_time(SF_Context *ctx);
-static inline bool is_repetition(const SF_Context *ctx);
+static inline bool threefold_repetition(const SF_Context *ctx);
+static inline bool fifty_move_draw(const SF_Context *ctx);
 static inline int score_to_tt(int score, int ply);
 static inline int score_from_tt(int score, int ply);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
@@ -111,8 +112,8 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
     return quiescence_search(ctx, ply, alpha, beta);
   }
 
-  if (is_repetition(ctx)) {
-    return 0; // threefold repetition draw
+  if (threefold_repetition(ctx) || fifty_move_draw(ctx)) {
+    return 0;
   }
 
   if (ctx->history_count >= SF_MAX_HIST)
@@ -231,9 +232,8 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
 int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   ctx->nodes++;
 
-  if (check_time(ctx)) return 0;
-
-  if (is_repetition(ctx)) return 0;
+  if (check_time(ctx))
+    return 0;
 
   if (ctx->history_count >= SF_MAX_HIST)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
@@ -453,11 +453,18 @@ static inline bool check_time(SF_Context *ctx) {
   return false;
 }
 
-static inline bool is_repetition(const SF_Context *ctx) {
-  for (int i = ctx->history_count - 4; i >= 0; i -= 2)
+static inline bool threefold_repetition(const SF_Context *ctx) {
+  int limit = ctx->history_count - ctx->halfmove_clock;
+  if (limit < 0) limit = 0;
+
+  for (int i = ctx->history_count - 4; i >= limit; i -= 2)
     if (ctx->pos_history[i] == ctx->hash_key)
-      return true; 
+      return true;
   return false;
+}
+
+static inline bool fifty_move_draw(const SF_Context *ctx) {
+  return ctx->halfmove_clock >= 100;
 }
 
 /*
