@@ -2,6 +2,11 @@
 #include "bitboard.h"
 #include "movegen.h"
 
+
+#define PENALTY_SEMI_OPEN_FILE 15
+#define PENALTY_OPEN_FILE 30
+
+
 void sf_init_evaluation(SF_Context *ctx) {
   ctx->mg_score[WHITE] = 0;
   ctx->mg_score[BLACK] = 0;
@@ -35,9 +40,18 @@ void sf_init_evaluation(SF_Context *ctx) {
   }
 }
 
+
 int sf_evaluate_position(const SF_Context *ctx) {
-  int mg_score = ctx->mg_score[WHITE] - ctx->mg_score[BLACK];
-  int eg_score = ctx->eg_score[WHITE] - ctx->eg_score[BLACK];
+  int mg_white = ctx->mg_score[WHITE];
+  int mg_black = ctx->mg_score[BLACK];
+  int eg_white = ctx->eg_score[WHITE];
+  int eg_black = ctx->eg_score[BLACK];
+
+  mg_white -= evaluate_king_safety(&ctx->bitboard_set, WHITE);
+  mg_black -= evaluate_king_safety(&ctx->bitboard_set, BLACK);
+
+  int mg_score = mg_white - mg_black;
+  int eg_score = eg_white - eg_black;
 
   int phase = ctx->game_phase;
   if (phase > 24) phase = 24;
@@ -46,5 +60,33 @@ int sf_evaluate_position(const SF_Context *ctx) {
   int eval = (mg_score * phase + eg_score * (24 - phase)) / 24;
 
   return eval * calc_color_offset(ctx->search_color);
+}
+
+
+int evaluate_king_safety(const BitboardSet *bbs, Turn color) {
+  if (bbs->kings[color] == 0) return 0;
+
+  int penalty    = 0;
+  Square king_sq = GET_LSB(bbs->kings[color]);
+  int king_file  = square_to_col(king_sq);
+  Turn opponent  = !color;
+  U64 my_pawns   = bbs->pawns[color];
+  U64 opp_pawns  = bbs->pawns[opponent];
+
+  int start_file = (king_file > 0) ? king_file - 1 : 0;
+  int end_file   = (king_file < 7) ? king_file + 1 : 7;
+
+  for (int f = start_file; f <= end_file; ++f) {
+    U64 file_mask = FILE_MASKS[f];
+
+    if (!(my_pawns & file_mask)) {
+      if (!(opp_pawns & file_mask))
+        penalty += PENALTY_OPEN_FILE;      
+      else
+        penalty += PENALTY_SEMI_OPEN_FILE; 
+    }
+  }
+
+  return penalty;
 }
 
