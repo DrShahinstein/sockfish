@@ -9,6 +9,7 @@ U64 passed_pawn_masks[2][64];
 /* Procedural Functions: Called once and used for clarity */
 static inline void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black);
 static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
+static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
 
 
 void sf_init_eval_masks(void) {
@@ -84,6 +85,7 @@ int sf_evaluate_position(const SF_Context *ctx) {
 
   king_safety(ctx, &mg_white, &mg_black);
   pawn_structure(ctx, &mg_white, &mg_black, &eg_white, &eg_black);
+  bishop_pair(ctx, &mg_white, &mg_black, &eg_white, &eg_black);
 
   int mg_score = mg_white - mg_black;
   int eg_score = eg_white - eg_black;
@@ -186,5 +188,19 @@ static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_
 
   *mg_white += w_mg_pawns; *eg_white += w_eg_pawns;
   *mg_black += b_mg_pawns; *eg_black += b_eg_pawns;
+}
+
+static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
+  const BitboardSet *bbs = &ctx->bitboard_set;
+
+  if (COUNT_BITS(bbs->bishops[WHITE]) >= 2) {
+    *mg_white += BONUS_BISHOP_PAIR_MG;
+    *eg_white += BONUS_BISHOP_PAIR_EG;
+  }
+  
+  if (COUNT_BITS(bbs->bishops[BLACK]) >= 2) {
+    *mg_black += BONUS_BISHOP_PAIR_MG;
+    *eg_black += BONUS_BISHOP_PAIR_EG;
+  }
 }
 
