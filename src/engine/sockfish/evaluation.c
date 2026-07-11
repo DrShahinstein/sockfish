@@ -10,6 +10,7 @@ U64 passed_pawn_masks[2][64];
 static inline void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black);
 static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
 static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
+static inline void rooks(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
 
 
 void sf_init_eval_masks(void) {
@@ -86,6 +87,7 @@ int sf_evaluate_position(const SF_Context *ctx) {
   king_safety(ctx, &mg_white, &mg_black);
   pawn_structure(ctx, &mg_white, &mg_black, &eg_white, &eg_black);
   bishop_pair(ctx, &mg_white, &mg_black, &eg_white, &eg_black);
+  rooks(ctx, &mg_white, &mg_black, &eg_white, &eg_black);
 
   int mg_score = mg_white - mg_black;
   int eg_score = eg_white - eg_black;
@@ -201,6 +203,50 @@ static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_bla
   if (COUNT_BITS(bbs->bishops[BLACK]) >= 2) {
     *mg_black += BONUS_BISHOP_PAIR_MG;
     *eg_black += BONUS_BISHOP_PAIR_EG;
+  }
+}
+
+static inline void rooks(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
+  const BitboardSet *bbs = &ctx->bitboard_set;
+
+  for (int color = WHITE; color <= BLACK; ++color) {
+    U64 rooks     = bbs->rooks[color];
+    U64 my_pawns  = bbs->pawns[color];
+    U64 opp_pawns = bbs->pawns[!color];
+    
+    int mg = 0, eg = 0;
+    
+    while (rooks) {
+      Square sq = POP_LSB(&rooks);
+      int rank  = sq / 8;
+      int file  = sq % 8;
+      
+      U64 file_mask = FILE_MASKS[file];
+      
+      if (!(my_pawns & file_mask)) {
+        if (!(opp_pawns & file_mask)) {
+          mg += BONUS_ROOK_OPEN_MG;
+          eg += BONUS_ROOK_OPEN_EG;
+        } 
+        else {
+          mg += BONUS_ROOK_SEMI_OPEN_MG;
+          eg += BONUS_ROOK_SEMI_OPEN_EG;
+        }
+      }
+      
+      int relative_rank = (color == WHITE) ? rank : (7 - rank);
+      
+      if (relative_rank == 6) {
+        mg += BONUS_ROOK_ON_7TH_MG;
+        eg += BONUS_ROOK_ON_7TH_EG;
+      }
+    }
+    
+    if (color == WHITE) {
+      *mg_white += mg; *eg_white += eg;
+    } else {
+      *mg_black += mg; *eg_black += eg;
+    }
   }
 }
 
