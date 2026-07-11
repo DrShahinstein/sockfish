@@ -106,18 +106,17 @@ Move sf_search(const SF_Context *ctx) {
 int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, bool allow_null) {
   ctx->nodes++;
 
-  if (check_time(ctx)) return 0;
-
-  if (depth == 0) {
-    return quiescence_search(ctx, ply, alpha, beta);
-  }
-
-  if (threefold_repetition(ctx) || fifty_move_draw(ctx)) {
-    return 0;
-  }
-
   if (ctx->history_count >= SF_MAX_HIST)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
+
+  if (check_time(ctx))
+    return 0;
+
+  if (threefold_repetition(ctx) || fifty_move_draw(ctx))
+    return 0;
+
+  if (depth == 0)
+    return quiescence_search(ctx, ply, alpha, beta);
 
   int original_alpha = alpha;
   int tt_score = 0;
