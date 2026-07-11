@@ -172,18 +172,31 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
  
     int score;
 
-    int r = get_lmr_reduction(depth, legal_moves, is_quiet, gives_check, in_check);
-    if (r > 0) {
-      // reduced depth search with a zero-window (testing if it beats alpha)
-      score = -negamax(ctx, depth-1-r, ply+1, -alpha-1, -alpha, ALLOW_NULL);
-      
-      // re-search: if the move is surprisingly good, search again at full depth and normal window
-      if (score > alpha)
-        score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
-
-    } else {
-      // normal search same as before (no reduction)
+    /* First move: Make a full-window search */
+    if (legal_moves == 1) {
       score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
+    } 
+
+    /* Next moves: Reductional approach */
+    else {
+      int r = get_lmr_reduction(depth, legal_moves, is_quiet, gives_check, in_check);
+      
+      /* Quick zero-window search at reduced depth */
+      score = -negamax(ctx, depth-1-r, ply+1, -alpha-1, -alpha, ALLOW_NULL);
+
+      /* If that search can surpass alpha, then the move is exceptionally good */
+      if (score > alpha) {
+
+        /* Run the same zero-window search without depth reduction */
+        if (r > 0) {
+          score = -negamax(ctx, depth-1, ply+1, -alpha-1, -alpha, ALLOW_NULL);
+        }
+        
+        /* Still can surpass alpha? Stop being stubborn and make a full-window search */
+        if (score > alpha && score < beta) {
+          score = -negamax(ctx, depth-1, ply+1, -beta, -alpha, ALLOW_NULL);
+        }
+      }
     }
 
     unmake_move(ctx, &history);
