@@ -304,10 +304,28 @@ static void update_en_passant(SF_Context *ctx, Move move, PieceType moving_piece
     int to_rank   = to   / 8;
 
     bool double_pawn_push = abs(from_rank - to_rank) == 2;
+
     if (double_pawn_push) {
-      ctx->enpassant_sq = (from + to) / 2;
-    } else ctx->enpassant_sq = NO_ENPASSANT;
+      Turn us           = ctx->search_color;
+      Turn them         = !us;
+      U64 enemy_pawns   = ctx->bitboard_set.pawns[them];
+      U64 adjacent_mask = 0;
+      int file          = to % 8;
+      
+      if (file > 0) adjacent_mask |= (1ULL << (to - 1));
+      if (file < 7) adjacent_mask |= (1ULL << (to + 1));
+
+      if (enemy_pawns & adjacent_mask) {
+        ctx->enpassant_sq = (from + to) / 2;
+      } else {
+        ctx->enpassant_sq = NO_ENPASSANT;
+      }
+
+    } else {
+      ctx->enpassant_sq = NO_ENPASSANT;
+    }
   } 
+
   else {
     ctx->enpassant_sq = NO_ENPASSANT;
   }
