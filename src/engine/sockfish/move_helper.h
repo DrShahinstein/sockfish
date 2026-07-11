@@ -11,6 +11,7 @@ typedef struct {
   int prev_mg_score[2];
   int prev_eg_score[2];
   int prev_game_phase;
+  int prev_halfmove_clock;
   uint8_t prev_castling;
 } MoveHistory;
 
