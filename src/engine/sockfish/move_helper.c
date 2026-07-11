@@ -25,6 +25,9 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   history->prev_eg_score[WHITE] = ctx->eg_score[WHITE];
   history->prev_eg_score[BLACK] = ctx->eg_score[BLACK];
   history->prev_game_phase      = ctx->game_phase;
+  history->prev_halfmove_clock  = ctx->halfmove_clock;
+
+  ctx->halfmove_clock++;
 
   Square from            = move_from(move);
   Square to              = move_to(move);
@@ -38,6 +41,10 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     history->captured_square = to + ep_offset;
   }
   history->captured_piece = get_piece_type(&ctx->bitboard_set, history->captured_square);
+
+  if (moving_piece == W_PAWN || moving_piece == B_PAWN || history->captured_piece != NO_PIECE) {
+    ctx->halfmove_clock = 0;
+  }
 
   update_incremental_eval(ctx, move, moving_piece, history->captured_piece, history->captured_square);
   move_pieces_on_board(ctx, move, moving_piece, history->captured_piece, history->captured_square);
@@ -59,6 +66,7 @@ void unmake_move(SF_Context *ctx, const MoveHistory *history) {
   ctx->game_phase       = history->prev_game_phase;
   ctx->castling_rights  = history->prev_castling;
   ctx->enpassant_sq     = history->prev_ep_sq;
+  ctx->halfmove_clock   = history->prev_halfmove_clock;
   ctx->search_color     = !ctx->search_color;
 
   Move move              = history->move;
@@ -111,6 +119,9 @@ void make_null_move(SF_Context *ctx, MoveHistory *history) {
   history->prev_eg_score[WHITE] = ctx->eg_score[WHITE];
   history->prev_eg_score[BLACK] = ctx->eg_score[BLACK];
   history->prev_game_phase      = ctx->game_phase;
+  history->prev_halfmove_clock  = ctx->halfmove_clock;
+
+  ctx->halfmove_clock++;
 
   if ((int)ctx->enpassant_sq != NO_ENPASSANT) {
     ctx->hash_key     ^= zobrist_enpassant[ctx->enpassant_sq % 8];
@@ -132,6 +143,7 @@ void unmake_null_move(SF_Context *ctx, const MoveHistory *history) {
   ctx->eg_score[WHITE]  = history->prev_eg_score[WHITE];
   ctx->eg_score[BLACK]  = history->prev_eg_score[BLACK];
   ctx->game_phase       = history->prev_game_phase;
+  ctx->halfmove_clock   = history->prev_halfmove_clock;
 }
 
 PieceType get_piece_type(const BitboardSet *bbs, Square sq) {
