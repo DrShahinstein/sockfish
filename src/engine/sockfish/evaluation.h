@@ -15,6 +15,20 @@
 #define PHASE_QUEEN  4
 #define TOTAL_PHASE 24
 
+static const U64 FILE_MASKS[8] = {
+  0x0101010101010101ULL, // A-File
+  0x0202020202020202ULL, // B-File
+  0x0404040404040404ULL, // C-File
+  0x0808080808080808ULL, // D-File
+  0x1010101010101010ULL, // E-File
+  0x2020202020202020ULL, // F-File
+  0x4040404040404040ULL, // G-File
+  0x8080808080808080ULL  // H-File
+};
+
+static const int MG_MATERIAL[6] = {82, 337, 365, 477, 1025, 0};
+static const int EG_MATERIAL[6] = {94, 281, 297, 512,  936, 0};
+
 typedef enum {
   PST_PAWN,
   PST_KNIGHT,
@@ -24,11 +38,9 @@ typedef enum {
   PST_KING,
 } PestoIdx;
 
-static const int MG_MATERIAL[6] = {82, 337, 365, 477, 1025, 0};
-static const int EG_MATERIAL[6] = {94, 281, 297, 512,  936, 0};
-
 void sf_init_evaluation(SF_Context *ctx);
 int sf_evaluate_position(const SF_Context *ctx);
+int evaluate_king_safety(const BitboardSet *bbs, Turn color);
 
 
 /* 
