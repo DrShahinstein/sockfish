@@ -15,6 +15,11 @@
 #define PHASE_QUEEN  4
 #define TOTAL_PHASE 24
 
+#define PENALTY_SEMI_OPEN_FILE 15
+#define PENALTY_OPEN_FILE 30
+#define PENALTY_DOUBLED_PAWN  10
+#define PENALTY_ISOLATED_PAWN 15
+
 static const U64 FILE_MASKS[8] = {
   0x0101010101010101ULL, // A-File
   0x0202020202020202ULL, // B-File
@@ -29,6 +34,9 @@ static const U64 FILE_MASKS[8] = {
 static const int MG_MATERIAL[6] = {82, 337, 365, 477, 1025, 0};
 static const int EG_MATERIAL[6] = {94, 281, 297, 512,  936, 0};
 
+static const int PASSED_PAWN_BONUS_MG[8] = {0, 0, 10, 30,  50,  75, 100, 0};
+static const int PASSED_PAWN_BONUS_EG[8] = {0, 0, 20, 50,  80, 120, 170, 0};
+
 typedef enum {
   PST_PAWN,
   PST_KNIGHT,
@@ -38,9 +46,13 @@ typedef enum {
   PST_KING,
 } PestoIdx;
 
+extern U64 passed_pawn_masks[2][64];
+
+void sf_init_eval_masks(void);
 void sf_init_evaluation(SF_Context *ctx);
 int sf_evaluate_position(const SF_Context *ctx);
 int evaluate_king_safety(const BitboardSet *bbs, Turn color);
+void evaluate_pawns(const BitboardSet *bbs, Turn color, int *mg_bonus, int *eg_bonus);
 
 
 /* 
