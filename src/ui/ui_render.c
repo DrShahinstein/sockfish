@@ -99,16 +99,21 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
 
     if (thinking) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
     else {
-      char from_alg[3], to_alg[3];
+      char from_alg[3]  = {0};
+      char to_alg[3]    = {0};
+      char promo_alg[3] = {0};
 
-      Square from = move_from(best);
-      Square to   = move_to(best);
+      Square from  = move_from(best);
+      Square to    = move_to(best);
+      bool promote = move_type(best) == MOVE_PROMOTION;
 
       sq_to_alg(from, from_alg);
       sq_to_alg(to,   to_alg);
 
+      if (promote) promo_to_alg(best, promo_alg);
+
       char move_as_str[32];
-      SDL_snprintf(move_as_str, sizeof(move_as_str), "Best Move => %s%s", from_alg, to_alg);
+      SDL_snprintf(move_as_str, sizeof(move_as_str), "Best Move => %s%s%s", from_alg, to_alg, promo_alg);
 
       draw_text(r, ui->fonts.roboto15, move_as_str, FWHITE, x, y);
     }
