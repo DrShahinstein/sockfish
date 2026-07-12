@@ -1,15 +1,15 @@
-#include "sockfish/move_helper.h"
-#include "sockfish/movegen.h"
-#include "sockfish/evaluation.h" // for PeSTO tables and etc.
+#include "move_helper.h"
+#include "movegen.h"
+#include "evaluation.h" // for PeSTO tables and etc.
 #include <stdlib.h>
 #include <string.h>
 
 /* Internal Helpers */
-static inline void remove_piece(BitboardSet *bbs, Square sq, PieceType piece);
-static inline void place_piece(BitboardSet *bbs, Square sq, PieceType piece);
-static inline PieceType get_promotion_piece(Move move, Turn color);
+static void remove_piece(BitboardSet *bbs, Square sq, PieceType piece);
+static void place_piece(BitboardSet *bbs, Square sq, PieceType piece);
+static PieceType get_promotion_piece(Move move, Turn color);
 
-/* Procedurally Refactored Funcs */
+/* Procedurally Refactored Functions */
 static void update_incremental_eval(SF_Context *ctx, Move move, PieceType moving_piece, PieceType captured_piece, Square captured_square);
 static void move_pieces_on_board(SF_Context *ctx, Move move, PieceType moving_piece, PieceType captured_piece, Square captured_square);
 static void update_castling_rights(SF_Context *ctx, Square from, PieceType moving_piece, PieceType captured_piece, Square captured_square);
