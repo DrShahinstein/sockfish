@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sockfish/sockfish.h"
+#include "sockfish.h"
 
 typedef struct {
   U64 pawn;

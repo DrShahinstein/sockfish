@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sockfish/sockfish.h"
+#include "sockfish.h"
 
 #define calc_color_offset(t) ((t) == WHITE ? 1 : -1)
 #define flip(s) ((s) ^ 56)

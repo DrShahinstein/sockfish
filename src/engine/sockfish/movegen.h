@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sockfish/sockfish.h"
+#include "sockfish.h"
 
 typedef struct {
   Move moves[256]; // max possible moves in a chess position is =218

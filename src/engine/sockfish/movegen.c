@@ -1,5 +1,5 @@
-#include "sockfish/movegen.h"
-#include "sockfish/move_helper.h"
+#include "movegen.h"
+#include "move_helper.h"
 #include <stdlib.h>
 #include <string.h>
 
