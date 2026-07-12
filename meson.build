@@ -37,6 +37,7 @@ sources = files(
   'src/engine/sockfish/evaluation.c',
   'src/engine/sockfish/zobrist.c',
   'src/engine/sockfish/transposition_table.c',
+  'src/engine/sockfish/platform.c',
 )
 
 executable('sockfish',
