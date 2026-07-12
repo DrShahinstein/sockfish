@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform.h"
 #include "bitboard.h"
 #include <stdbool.h>
 #include <stdlib.h>
