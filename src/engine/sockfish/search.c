@@ -4,9 +4,7 @@
 #include "move_helper.h"
 #include "movegen.h"
 #include "transposition_table.h"
-
-#include <SDL3/SDL_timer.h>  /* SDL_GetTicks() */
-#include <SDL3/SDL.h>        // DEBUG
+#include <string.h>
 
 #define INF 9999999
 #define MATE_SCORE 9000000
@@ -35,7 +33,7 @@ static CheckMasks generate_check_masks(const SF_Context *ctx);
 Move sf_search(const SF_Context *ctx) {
   SF_Context ctx_ = *ctx;
   ctx_.nodes      = 0;
-  ctx_.start_time = SDL_GetTicks();
+  ctx_.start_time = get_time_ms();
   ctx_.time_limit = SEARCH_TIME;
 
   memset(ctx_.killer_moves, 0, sizeof(ctx_.killer_moves));
@@ -456,7 +454,7 @@ static inline bool check_time(SF_Context *ctx) {
   if (ctx->should_stop && *ctx->should_stop) return true;
 
   if ((ctx->nodes & 2047) == 0) { 
-    if (SDL_GetTicks() - ctx->start_time >= ctx->time_limit) {
+    if (get_time_ms() - ctx->start_time >= ctx->time_limit) {
       if (ctx->should_stop) *ctx->should_stop = true;
       return true;
     }
