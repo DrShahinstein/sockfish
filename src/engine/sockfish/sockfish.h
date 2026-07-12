@@ -111,6 +111,25 @@ static inline void sq_to_alg(Square sq, char buf[3]) {
   buf[2]  = '\0';
 }
 
+static inline void promo_to_alg(Move mv, char buf[3]) {
+  if ((move_type(mv)) != MOVE_PROMOTION) {
+    buf[0] = '\0';
+    return;
+  }
+
+  buf[0] = '=';
+
+  switch (move_promotion(mv)) {
+    case PROMOTE_QUEEN:  buf[1] = 'Q'; break;
+    case PROMOTE_KNIGHT: buf[1] = 'N'; break;
+    case PROMOTE_ROOK:   buf[1] = 'R'; break;
+    case PROMOTE_BISHOP: buf[1] = 'B'; break;
+    default:             buf[1] = '?'; break; // should not happen
+  }
+
+  buf[2] = '\0';
+}
+
 static inline bool should_stop(const SF_Context *ctx) {
   return ctx->should_stop && *ctx->should_stop;
 }
