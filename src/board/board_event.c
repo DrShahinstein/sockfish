@@ -1,5 +1,4 @@
 #include "board.h"
-#include "window.h"
 #include "cursor.h"            /* get_mouse_pos */
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
 #include <SDL3/SDL.h>
