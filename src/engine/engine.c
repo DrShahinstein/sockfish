@@ -2,22 +2,12 @@
 #include "board.h"
 #include "sockfish/sockfish.h"
 #include "sockfish/search.h"
-#include "sockfish/movegen.h"
 #include "sockfish/transposition_table.h"
 #include <SDL3/SDL.h>
 
 static int engine_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
-  /* init precomputed attack tables for sockfish's move generation logic */
-  init_attack_tables();
-
-  /* init magic bitboards for sliding pieces in move generation logic */
-  init_magic_bitboards();
-
-  /* init 32MB transposition table (≈2.000.000 positions) */
-  tt_init(32);
-
   engine->mtx              = SDL_CreateMutex();
   engine->cond             = SDL_CreateCondition();
   engine->last_pos_hash    = 0;
@@ -132,8 +122,5 @@ void engine_destroy(EngineWrapper *engine) {
   engine->thr  = NULL;
   engine->mtx  = NULL;
   engine->cond = NULL;
-
-  cleanup_magic_bitboards();
-
-  tt_free();
 }
+
