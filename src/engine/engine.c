@@ -55,6 +55,9 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
     ctx.pos_history[i] = board->hash_history[i];
   }
 
+  /* TODO: Default thinking time for now */
+  ctx.time_limit = 3000;
+
   engine->ctx             = ctx;
   engine->ctx.should_stop = &engine->abort_search;
   engine->abort_search    = false;
