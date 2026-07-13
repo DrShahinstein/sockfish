@@ -13,18 +13,24 @@
 static const float SCALE_FACTOR=1.0f;
 
 void sdl(void) {
-  uint64_t prev          = SDL_GetPerformanceCounter();
-  double freq            = (double)SDL_GetPerformanceFrequency();
-  const double target_ms = 1000.0 / 60.0; // 60 FPS
-
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   init_cursors();
 
+  SDL_Window   *window   = NULL;
+  SDL_Renderer *renderer = NULL;
+  UI_State      ui       = {0};
+  EngineWrapper engine   = {0};
+  BoardState    board    = {0};
+
+  uint64_t prev               = SDL_GetPerformanceCounter();
+  double freq                 = (double)SDL_GetPerformanceFrequency();
+  const double target_ms      = 1000.0 / 60.0; // 60 FPS
   SDL_DisplayID display_id    = SDL_GetPrimaryDisplay();
   const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(display_id);
 
   float scale = SCALE_FACTOR;
+
   if (mode) {
     int display_width = mode->w;
 
@@ -40,30 +46,30 @@ void sdl(void) {
   int w_width  = (int)(W_WIDTH  * scale);
   int w_height = (int)(W_HEIGHT * scale);
 
-  SDL_Window *window = SDL_CreateWindow(W_TITLE, w_width, w_height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
+  window = SDL_CreateWindow(W_TITLE, w_width, w_height, SDL_WINDOW_HIGH_PIXEL_DENSITY);
   if (window == NULL) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create window: %s\n", SDL_GetError());
     goto quit;
   }
 
-  SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
+  renderer = SDL_CreateRenderer(window, NULL);
   if (renderer == NULL) {
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not create renderer: %s\n", SDL_GetError());
     goto quit;
   }
+
   g_renderer = renderer;
 
   SDL_SetRenderLogicalPresentation(renderer, W_WIDTH, W_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
-  UI_State      ui={0};
-  EngineWrapper engine={0};
-  BoardState    board={0};
-
-  board_init(&board);      /**/    render_board_init(renderer);
   engine_init(&engine);
-  ui_init(&ui);            /**/    ui_render_init(renderer);
+  board_init(&board);
+  render_board_init(renderer);
+  ui_init(&ui);
+  ui_render_init(renderer);
 
   bool running = true;
+
   while (running) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
