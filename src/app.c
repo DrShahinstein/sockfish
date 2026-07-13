@@ -19,7 +19,6 @@ void sdl(void) {
   SDL_Init(SDL_INIT_VIDEO);
   TTF_Init();
   init_cursors();
-  init_zobrist_keys();
 
   SDL_DisplayID display_id    = SDL_GetPrimaryDisplay();
   const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(display_id);
