@@ -23,8 +23,6 @@ void engine_request_tt_clear(EngineWrapper *engine);
 void engine_abort_search(EngineWrapper *engine);
 void engine_destroy(EngineWrapper *engine);
 
-BitboardSet make_bitboards_from_charboard(const char board[8][8]); // bitboard_maker.c
-
 /*
 
   EngineWrapper: A wrapper for the chess engine context and threading.
