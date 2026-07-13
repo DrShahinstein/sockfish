@@ -32,3 +32,4 @@ static inline int POP_LSB(U64 *bb) {
 }
 
 void print_bitboard(Bitboard bb);
+BitboardSet make_bitboards_from_charboard(const char board[8][8]);
