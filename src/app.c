@@ -6,7 +6,6 @@
 #include "board_render.h"
 #include "engine.h"
 #include "sockfish/transposition_table.h"
-#include "sockfish/uci.h"
 #include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -102,6 +101,7 @@ quit:
 }
 
 void uci(void) {
-  uci_loop();
-}
 
+;
+  
+}
