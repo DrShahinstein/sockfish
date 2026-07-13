@@ -10,7 +10,6 @@
 #define MATE_SCORE 9000000
 #define MATE_BOUND 8000000
 #define MAX_DEPTH 40
-#define SEARCH_TIME 3000  /* ms */
 
 static const int ROOT_PLY=0;
 static const int ALLOW_NULL=true;
@@ -34,7 +33,6 @@ Move sf_search(const SF_Context *ctx) {
   SF_Context ctx_ = *ctx;
   ctx_.nodes      = 0;
   ctx_.start_time = get_time_ms();
-  ctx_.time_limit = SEARCH_TIME;
 
   memset(ctx_.killer_moves, 0, sizeof(ctx_.killer_moves));
 
