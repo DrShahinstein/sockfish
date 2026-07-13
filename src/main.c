@@ -2,6 +2,7 @@
 #include "sockfish/transposition_table.h"
 
 int main(int argc, char *argv[]) {
+  init_zobrist_keys();    // init zobrist hashing
   init_attack_tables();   // init precomputed attack tables for sockfish's move generation logic
   init_magic_bitboards(); // init magic bitboards for sliding pieces in move generation logic
   tt_init(32);            // init 32MB transposition table (≈2.000.000 positions)
@@ -21,3 +22,4 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
