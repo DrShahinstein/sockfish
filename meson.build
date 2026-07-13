@@ -29,7 +29,6 @@ sources = files(
   'src/ui/cursor.c',
   'src/ui/info.c',
   'src/engine/engine.c',
-  'src/engine/bitboard_maker.c',
   'src/engine/sockfish/sockfish.c',
   'src/engine/sockfish/bitboard.c',
   'src/engine/sockfish/search.c',
@@ -39,6 +38,7 @@ sources = files(
   'src/engine/sockfish/zobrist.c',
   'src/engine/sockfish/transposition_table.c',
   'src/engine/sockfish/platform.c',
+  'src/engine/sockfish/uci.c',
 )
 
 executable('sockfish',
