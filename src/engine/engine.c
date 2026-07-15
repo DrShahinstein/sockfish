@@ -3,15 +3,20 @@
 #include "sockfish/sockfish.h"
 #include "sockfish/search.h"
 #include "sockfish/transposition_table.h"
+#include "sockfish/config.h"
 #include <SDL3/SDL.h>
 
 static int engine_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
+  config_load(SOCKFISH_INI, &engine->active_config);
+
   engine->mtx              = SDL_CreateMutex();
   engine->cond             = SDL_CreateCondition();
   engine->last_pos_hash    = 0;
   engine->ctx              = create_sf_ctx(&(BitboardSet){0}, WHITE, CASTLE_ALL, NO_ENPASSANT);
+  engine->pending_config   = engine->active_config;
+  engine->config_changed   = false;
   engine->should_stop      = false;
   engine->abort_search     = false;
   engine->pending_tt_clear = false;
@@ -19,14 +24,27 @@ void engine_init(EngineWrapper *engine) {
   engine->thr              = SDL_CreateThread(engine_thread, "EngineThread", engine);
 }
 
+void engine_update_config(EngineWrapper *engine, const SF_Config *new_config) {
+  SDL_LockMutex(engine->mtx);
+  
+  engine->pending_config = *new_config;
+  engine->config_changed = true;
+
+  if (engine->thr_working) {
+    engine->abort_search = true;
+  }
+  
+  SDL_UnlockMutex(engine->mtx);
+}
+
 void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   if (board->promo.active) return;
 
   SDL_LockMutex(engine->mtx);
 
-  uint64_t hash_now    = board->position_hash;
-  uint64_t hash_before = engine->last_pos_hash;
-  bool same            = hash_now == hash_before;
+  U64 hash_now    = board->position_hash;
+  U64 hash_before = engine->last_pos_hash;
+  bool same       = hash_now == hash_before;
 
   if (same) {
     SDL_UnlockMutex(engine->mtx);
@@ -54,9 +72,6 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   for (int i=0; i < board->undo_count; ++i) {
     ctx.pos_history[i] = board->hash_history[i];
   }
-
-  /* TODO: Default thinking time for now */
-  ctx.time_limit = 3000;
 
   engine->ctx             = ctx;
   engine->ctx.should_stop = &engine->abort_search;
@@ -97,7 +112,19 @@ static int engine_thread(void *data) {
       break;
     }
 
+    if (engine->config_changed) {
+      if (engine->active_config.tt_size_mb != engine->pending_config.tt_size_mb) {
+        tt_free();
+        tt_init(engine->pending_config.tt_size_mb);
+      }
+      
+      engine->active_config  = engine->pending_config;
+      engine->config_changed = false;
+    }
+
     SF_Context ctx = engine->ctx;
+    ctx.time_limit = engine->active_config.move_time_ms;
+
     SDL_UnlockMutex(engine->mtx);
 
     Move best = sf_search(&ctx);
