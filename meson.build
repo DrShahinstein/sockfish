@@ -39,6 +39,7 @@ sources = files(
   'src/engine/sockfish/transposition_table.c',
   'src/engine/sockfish/platform.c',
   'src/engine/sockfish/uci.c',
+  'src/engine/sockfish/config.c',
 )
 
 executable('sockfish',
