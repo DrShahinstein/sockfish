@@ -10,7 +10,10 @@ typedef struct EngineWrapper {
   SDL_Thread *thr;
   SDL_Condition *cond;
   SF_Context ctx;
-  uint64_t last_pos_hash;
+  SF_Config active_config;
+  SF_Config pending_config;
+  U64 last_pos_hash;
+  bool config_changed;
   bool thr_working;
   bool should_stop;
   bool abort_search;
@@ -21,6 +24,7 @@ void engine_init(EngineWrapper *engine);
 void engine_req_search(EngineWrapper *engine, const BoardState *board);
 void engine_request_tt_clear(EngineWrapper *engine);
 void engine_abort_search(EngineWrapper *engine);
+void engine_update_config(EngineWrapper *engine, const SF_Config *new_config);
 void engine_destroy(EngineWrapper *engine);
 
 /*
