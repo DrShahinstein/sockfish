@@ -12,7 +12,7 @@
 #include <SDL3_ttf/SDL_ttf.h>
 
 static const float SCALE_FACTOR=1.0f;
-static const int CONFIG_CHECK_INTERVAL_MS=1000;
+static const U64 CONFIG_CHECK_INTERVAL_MS=1000;
 
 static void check_config(AppState *app);
 
