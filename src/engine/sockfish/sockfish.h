@@ -74,6 +74,12 @@ typedef struct SF_Context {
   uint8_t castling_rights;
 } SF_Context;
 
+typedef struct {
+  int tt_size_mb;
+  int threads;
+  int move_time_ms;
+} SF_Config;
+
 SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t castling_rights, Square ep_sq); // sockfish.c
 
 /* ==== ZOBRIST (zobrist.c) ==== */
