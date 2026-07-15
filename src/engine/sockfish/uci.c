@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define IS_TOKEN_END(ch) \
+  ((ch) == '\n' || (ch) == '\r' || (ch) == ' ' || (ch) == '\t' || (ch) == '\0')
+
 static Move uci_parse_move(SF_Context *ctx, const char *move_str);
 static void uci_parse_fen(const char *fen, SF_Context *ctx);
 
@@ -29,7 +32,7 @@ void uci_loop(void) {
   uci_parse_fen(START_FEN, &uci_ctx);
 
   while (fgets(line, sizeof(line), stdin)) {
-    if (strncmp(line, "uci", 3) == 0 && line[3] != 'o') {
+    if (strncmp(line, "uci", 3) == 0 && IS_TOKEN_END(line[3])) {
       printf("id name Sockfish\n");
       printf("id author DrShahinstein\n");
       printf("option name Hash type spin default %d min 1 max 1024\n",   uci_config.tt_size_mb);
