@@ -70,6 +70,7 @@ void uci_loop(void) {
     else if (strncmp(line, "ucinewgame", 10) == 0) {
       tt_clear();
       uci_ctx.history_count = 0;
+      memset(uci_ctx.killer_moves, 0, sizeof(uci_ctx.killer_moves));
     }
     
     else if (strncmp(line, "position", 8) == 0) {
