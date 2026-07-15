@@ -10,6 +10,7 @@ static int engine_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
   config_load(SOCKFISH_INI, &engine->active_config);
+  tt_init(engine->active_config.tt_size_mb); // init transposition table with configured MB
 
   engine->mtx              = SDL_CreateMutex();
   engine->cond             = SDL_CreateCondition();
