@@ -5,22 +5,15 @@
 #include "movegen.h"
 #include "transposition_table.h"
 #include "search.h"
+#include "config.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static Move uci_parse_move(SF_Context *ctx, const char *move_str);
 static void uci_parse_fen(const char *fen, SF_Context *ctx);
 
-static const char START_BOARD[8][8] = {
-  {'r','n','b','q','k','b','n','r'},
-  {'p','p','p','p','p','p','p','p'},
-  { 0,  0,  0,  0,  0,  0,  0,  0 },
-  { 0,  0,  0,  0,  0,  0,  0,  0 },
-  { 0,  0,  0,  0,  0,  0,  0,  0 },
-  { 0,  0,  0,  0,  0,  0,  0,  0 },
-  {'P','P','P','P','P','P','P','P'},
-  {'R','N','B','Q','K','B','N','R'}
-};
+static const char *START_FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 void uci_loop(void) {
   char line[2048];
@@ -28,18 +21,50 @@ void uci_loop(void) {
   setbuf(stdin,  NULL);
   setbuf(stdout, NULL);
 
-  BitboardSet bbset  = make_bitboards_from_charboard(START_BOARD);
-  SF_Context uci_ctx = create_sf_ctx(&bbset, WHITE, CASTLE_ALL, NO_ENPASSANT);
+  SF_Config uci_config;
+  config_init_default(&uci_config);
+  tt_init(uci_config.tt_size_mb);
+
+  SF_Context uci_ctx;
+  uci_parse_fen(START_FEN, &uci_ctx);
 
   while (fgets(line, sizeof(line), stdin)) {
     if (strncmp(line, "uci", 3) == 0 && line[3] != 'o') {
       printf("id name Sockfish\n");
       printf("id author DrShahinstein\n");
+      printf("option name Hash type spin default %d min 1 max 1024\n",   uci_config.tt_size_mb);
+      printf("option name Threads type spin default %d min 1 max 128\n", uci_config.threads);
       printf("uciok\n");
     }
     
     else if (strncmp(line, "isready", 7) == 0) {
       printf("readyok\n");
+    }
+
+    else if (strncmp(line, "setoption", 9) == 0) {
+      char *name_ptr = strstr(line, "name ");
+      char *val_ptr  = strstr(line, "value ");
+      
+      if (name_ptr && val_ptr) {
+        name_ptr += 5;
+        val_ptr  += 6;
+        
+        if (strncmp(name_ptr, "Hash", 4) == 0) {
+          int new_hash = atoi(val_ptr);
+          if (new_hash > 0 && new_hash != uci_config.tt_size_mb) {
+            uci_config.tt_size_mb = new_hash;
+            tt_free();
+            tt_init(uci_config.tt_size_mb);
+          }
+        }
+
+        else if (strncmp(name_ptr, "Threads", 7) == 0) {
+          int new_threads = atoi(val_ptr);
+          if (new_threads > 0) {
+            uci_config.threads = new_threads;
+          }
+        }
+      }
     }
     
     else if (strncmp(line, "ucinewgame", 10) == 0) {
@@ -49,8 +74,7 @@ void uci_loop(void) {
     
     else if (strncmp(line, "position", 8) == 0) {
       if (strstr(line, "startpos")) {
-        bbset   = make_bitboards_from_charboard(START_BOARD);
-        uci_ctx = create_sf_ctx(&bbset, WHITE, CASTLE_ALL, NO_ENPASSANT);
+        uci_parse_fen(START_FEN, &uci_ctx);
       }
 
       else if (strstr(line, "fen ")) {
@@ -75,7 +99,7 @@ void uci_loop(void) {
     }
     
     else if (strncmp(line, "go", 2) == 0) {
-      int wtime = 0, btime = 0, movetime = 0;
+      int wtime = 0, btime = 0, winc = 0, binc = 0, movetime = 0;
       
       if (strstr(line, "movetime")) {
         sscanf(strstr(line, "movetime") + 8, "%d", &movetime);
@@ -83,9 +107,13 @@ void uci_loop(void) {
       } else {
         if (strstr(line, "wtime")) sscanf(strstr(line, "wtime") + 5, "%d", &wtime);
         if (strstr(line, "btime")) sscanf(strstr(line, "btime") + 5, "%d", &btime);
+        if (strstr(line, "winc"))  sscanf(strstr(line, "winc")  + 5, "%d", &winc);
+        if (strstr(line, "binc"))  sscanf(strstr(line, "binc")  + 5, "%d", &binc);
         
-        int time_left      = (uci_ctx.search_color == WHITE) ? wtime : btime;
-        uci_ctx.time_limit = time_left / 30;
+        int time_left = (uci_ctx.search_color == WHITE) ? wtime : btime;
+        int inc       = (uci_ctx.search_color == WHITE) ? winc  : binc;
+        
+        uci_ctx.time_limit = (time_left / 40) + (inc / 2);
         if (uci_ctx.time_limit < 100) uci_ctx.time_limit = 100;
       }
       
@@ -109,6 +137,10 @@ void uci_loop(void) {
       } else {
         printf("bestmove %s%s\n", from_alg, to_alg);
       }
+    }
+
+    else if (strncmp(line, "d", 1) == 0 && line[1] == '\n') {
+      print_bitboard(uci_ctx.bitboard_set.occupied);
     }
     
     else if (strncmp(line, "quit", 4) == 0) {
