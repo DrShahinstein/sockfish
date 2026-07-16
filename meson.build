@@ -8,6 +8,7 @@ project('sockfish', 'c', version : '0.1.0',
 sdl3_dep       = dependency('sdl3')
 sdl3_image_dep = dependency('sdl3-image')
 sdl3_ttf_dep   = dependency('sdl3-ttf')
+thread_dep     = dependency('threads')
 
 inc      = include_directories('include', 'src/engine/')
 sdl3_inc = include_directories(sdl3_dep.get_variable(pkgconfig: 'includedir'))
@@ -40,11 +41,13 @@ sources = files(
   'src/engine/sockfish/platform.c',
   'src/engine/sockfish/uci.c',
   'src/engine/sockfish/config.c',
+  'src/engine/sockfish/thread.c',
 )
 
 executable('sockfish',
   sources,
   include_directories : [inc, sdl3_inc],
-  dependencies : [sdl3_dep, sdl3_image_dep, sdl3_ttf_dep],
-  install : true
+  dependencies : [sdl3_dep, sdl3_image_dep, sdl3_ttf_dep, thread_dep],
+  install : true,
 )
+
