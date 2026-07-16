@@ -65,8 +65,9 @@ typedef struct SF_Context {
   int mg_score[2];                     // [0]=WHITE, [1]=BLACK [mid-game score]
   int eg_score[2];                     // [0]=WHITE, [1]=BLACK [end-game score]
   int game_phase;                      // 0-24                 [see evaluation.h]
-  int history_count;
   int halfmove_clock;                  // helps tracking 50-move-draw
+  int history_count;
+  int threads;
   bool *should_stop;
   Turn search_color;
   Square enpassant_sq;
