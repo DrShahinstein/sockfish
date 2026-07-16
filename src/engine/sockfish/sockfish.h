@@ -68,7 +68,7 @@ typedef struct SF_Context {
   int halfmove_clock;                  // helps tracking 50-move-draw
   int history_count;
   int threads;
-  bool *should_stop;
+  volatile bool *should_stop;
   Turn search_color;
   Square enpassant_sq;
   Move best;
