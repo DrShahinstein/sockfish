@@ -44,15 +44,23 @@ void tt_record(U64 hash_key, int depth, int score, TT_Flag flag, Move best_move)
   int index = hash_key % tt_num_entries;
   TT_Entry *entry = &tt_table[index];
 
-  if (entry->hash_key == hash_key || depth >= entry->depth) {
-    entry->hash_key = hash_key;
-    entry->score    = score;
-    entry->flag     = flag;
-    entry->depth    = depth;
+  U64 current_checksum = entry->hash_key ^ entry->score ^ entry->flag ^ entry->depth ^ entry->best_move;
+  bool same_position    = (current_checksum == hash_key);
 
-    if (best_move != 0 || entry->hash_key != hash_key) {
+  if (same_position || depth >= entry->depth) {
+    entry->score = score;
+    entry->flag  = flag;
+    entry->depth = depth;
+
+    if (best_move != 0 || !same_position) {
       entry->best_move = best_move;
     }
+
+    #if defined(__GNUC__) || defined(__clang__)
+    __asm__ __volatile__("" ::: "memory");
+    #endif
+
+    entry->hash_key = hash_key ^ entry->score ^ entry->flag ^ entry->depth ^ entry->best_move;
   }
 }
 
@@ -67,23 +75,25 @@ bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, M
   int index = hash_key % tt_num_entries;
   TT_Entry *entry = &tt_table[index];
 
-  if (entry->hash_key == hash_key) {
-    *best_move = entry->best_move;
+  U64 dns_key  = entry->hash_key;
+  int score    = entry->score;
+  uint8_t flag = entry->flag;
+  uint8_t d    = entry->depth;
+  Move m       = entry->best_move;
 
-    if (entry->depth >= depth) {
-      int score = entry->score;
+  if ((dns_key ^ score ^ flag ^ d ^ m) == hash_key) {
+    *best_move = m;
 
-      if (entry->flag == TT_EXACT) {
+    if (d >= depth) {
+      if (flag == TT_EXACT) {
         *return_score = score;
         return true;
       }
-
-      if (entry->flag == TT_ALPHA && score <= alpha) {
+      if (flag == TT_ALPHA && score <= alpha) {
         *return_score = alpha;
         return true;
       }
-
-      if (entry->flag == TT_BETA && score >= beta) {
+      if (flag == TT_BETA && score >= beta) {
         *return_score = beta;
         return true;
       }
@@ -92,3 +102,4 @@ bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, M
 
   return false; 
 }
+
