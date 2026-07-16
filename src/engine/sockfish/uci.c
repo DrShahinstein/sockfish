@@ -13,10 +13,25 @@
 #define IS_TOKEN_END(ch) \
   ((ch) == '\n' || (ch) == '\r' || (ch) == ' ' || (ch) == '\t' || (ch) == '\0')
 
+static const char *START_FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 static Move uci_parse_move(SF_Context *ctx, const char *move_str);
 static void uci_parse_fen(const char *fen, SF_Context *ctx);
 
-static const char *START_FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+static inline void init_uci_config(SF_Config *cfg) {
+  /* Default values for options */
+  cfg->tt_size_mb = 16;
+  cfg->threads    = 1;
+}
+
+static void apply_default_options(SF_Context *ctx, SF_Config *uci_cfg) {
+  /* option name Hash */
+  int megabytes = uci_cfg->tt_size_mb;
+  tt_init(megabytes);
+
+  /* option name Threads */
+  ctx->threads = uci_cfg->threads;
+}
 
 void uci_loop(void) {
   char line[2048];
@@ -25,10 +40,10 @@ void uci_loop(void) {
   setbuf(stdout, NULL);
 
   SF_Config uci_config;
-  config_init_default(&uci_config);
-  tt_init(uci_config.tt_size_mb);
+  init_uci_config(&uci_config);
 
   SF_Context uci_ctx;
+  apply_default_options(&uci_ctx, &uci_config);
   uci_parse_fen(START_FEN, &uci_ctx);
 
   while (fgets(line, sizeof(line), stdin)) {
@@ -120,6 +135,8 @@ void uci_loop(void) {
         uci_ctx.time_limit = (time_left / 40) + (inc / 2);
         if (uci_ctx.time_limit < 100) uci_ctx.time_limit = 100;
       }
+
+      uci_ctx.threads = uci_config.threads;
       
       Move best = sf_search(&uci_ctx);
       
