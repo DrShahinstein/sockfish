@@ -4,30 +4,17 @@
 #include "move_helper.h"
 #include "movegen.h"
 #include "transposition_table.h"
+#include "thread.h"
 #include <string.h>
+#include <pthread.h>
 
-#define INF 9999999
-#define MATE_SCORE 9000000
-#define MATE_BOUND 8000000
-#define MAX_DEPTH 40
-
-static const int ROOT_PLY=0;
-static const int ALLOW_NULL=true;
-
-static inline bool check_time(SF_Context *ctx);
 static inline bool threefold_repetition(const SF_Context *ctx);
 static inline bool fifty_move_draw(const SF_Context *ctx);
-static inline int score_to_tt(int score, int ply);
-static inline int score_from_tt(int score, int ply);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
 static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
-
-static void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
-static CheckMasks generate_check_masks(const SF_Context *ctx);
-
 
 Move sf_search(const SF_Context *ctx) {
   SF_Context ctx_ = *ctx;
@@ -41,8 +28,28 @@ Move sf_search(const SF_Context *ctx) {
   if (ctx_.should_stop == NULL)
     ctx_.should_stop = &local_stop;
 
+  int num_threads = ctx_.threads;
+  if (num_threads < 1) num_threads = 1;
+
+  pthread_t *threads            = NULL;
+  HelperThreadData *thread_data = NULL;
+  int helper_count              = num_threads - 1;
+
+  if (helper_count > 0) {
+    threads     = (pthread_t*)malloc(helper_count * sizeof(pthread_t));
+    thread_data = (HelperThreadData*)malloc(helper_count * sizeof(HelperThreadData));
+
+    for (int i = 0; i < helper_count; ++i) {
+      thread_data[i].ctx = ctx_;
+      thread_data[i].ctx.should_stop = ctx_.should_stop;
+      thread_data[i].thread_id = i + 1; // main-thread's ID=0, helper-threads=>1,2...
+      pthread_create(&threads[i], NULL, helper_search_thread, &thread_data[i]);
+    }
+  }
+
   Move best_move = create_move(A1,A1);
 
+  /* Main Thread Search Loop */
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
     if (check_time(&ctx_)) break;
     
@@ -95,6 +102,21 @@ Move sf_search(const SF_Context *ctx) {
 
     best_move = best_so_far;
   }
+
+  /* Shutdown Helper Threads */
+  if (helper_count > 0) {
+    *ctx_.should_stop = true;
+
+    for (int i = 0; i < helper_count; ++i) {
+      pthread_join(threads[i], NULL);
+      ctx_.nodes += thread_data[i].ctx.nodes;
+    }
+
+    free(threads);
+    free(thread_data);
+  }
+
+  ((SF_Context*)ctx)->nodes = ctx_.nodes;
 
   return best_move;
 }
@@ -407,9 +429,8 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
   return score;
 }
 
-
 /* Move the highest scored move to the top of the move list */
-static void bump_highest_scored_move(int i, MoveList *movelist, int *scores) {
+void bump_highest_scored_move(int i, MoveList *movelist, int *scores) {
   int best_i = i;
   
   for (int j = i+1; j < movelist->count; ++j)
@@ -427,7 +448,7 @@ static void bump_highest_scored_move(int i, MoveList *movelist, int *scores) {
   scores[best_i] = tmp_s;
 }
 
-static CheckMasks generate_check_masks(const SF_Context *ctx) {
+CheckMasks generate_check_masks(const SF_Context *ctx) {
   CheckMasks masks = {0, 0, 0, 0};
   
   Turn us   = ctx->search_color;
@@ -447,8 +468,7 @@ static CheckMasks generate_check_masks(const SF_Context *ctx) {
   return masks;
 }
 
-
-static inline bool check_time(SF_Context *ctx) {
+bool check_time(SF_Context *ctx) {
   if (ctx->should_stop && *ctx->should_stop) return true;
 
   if ((ctx->nodes & 2047) == 0) { 
@@ -460,6 +480,25 @@ static inline bool check_time(SF_Context *ctx) {
 
   return false;
 }
+
+/*
+ * TT Mate Adjustments
+ * When writing or reading a mate score into the transposition table,
+ * We consider the score's distance (ply) from the root node.
+ * This way we get quicker mates.
+ */
+int score_to_tt(int score, int ply) {
+  if (score > MATE_BOUND)  return score + ply;
+  if (score < -MATE_BOUND) return score - ply;
+  return score;
+}
+int score_from_tt(int score, int ply) {
+  if (score > MATE_BOUND)  return score - ply;
+  if (score < -MATE_BOUND) return score + ply;
+  return score;
+}
+
+
 
 static inline bool threefold_repetition(const SF_Context *ctx) {
   int limit = ctx->history_count - ctx->halfmove_clock;
@@ -473,23 +512,6 @@ static inline bool threefold_repetition(const SF_Context *ctx) {
 
 static inline bool fifty_move_draw(const SF_Context *ctx) {
   return ctx->halfmove_clock >= 100;
-}
-
-/*
- * TT Mate Adjustments
- * When writing or reading a mate score into the transposition table,
- * We consider the score's distance (ply) from the root node.
- * This way we get quicker mates.
- */
-static inline int score_to_tt(int score, int ply) {
-  if (score > MATE_BOUND)  return score + ply;
-  if (score < -MATE_BOUND) return score - ply;
-  return score;
-}
-static inline int score_from_tt(int score, int ply) {
-  if (score > MATE_BOUND)  return score - ply;
-  if (score < -MATE_BOUND) return score + ply;
-  return score;
 }
 
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
