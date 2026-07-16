@@ -10,6 +10,12 @@ void tt_init(int size_mb) {
     tt_free();
   }
 
+  if (size_mb <= 0) {
+    tt_num_entries = 0;
+    tt_table = NULL;
+    return;
+  }
+
   size_t bytes   = (size_t)size_mb * 1024 * 1024;
   tt_num_entries = bytes / sizeof(TT_Entry);
 
