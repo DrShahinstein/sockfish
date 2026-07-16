@@ -125,6 +125,7 @@ static int engine_thread(void *data) {
 
     SF_Context ctx = engine->ctx;
     ctx.time_limit = engine->active_config.move_time_ms;
+    ctx.threads    = engine->active_config.threads;
 
     SDL_UnlockMutex(engine->mtx);
 
