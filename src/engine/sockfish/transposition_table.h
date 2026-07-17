@@ -25,3 +25,5 @@ void tt_free(void);
 
 bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, Move *best_move);
 void tt_record(U64 hash_key, int depth, int score, TT_Flag flag, Move best_move);
+int tt_get_hashfull(void);
+
