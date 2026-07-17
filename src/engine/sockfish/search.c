@@ -649,6 +649,8 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
 
 
 
+
+
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth) {
   U64 current_time = get_time_ms();
   U64 elapsed      = current_time - ctx->start_time;
@@ -669,10 +671,14 @@ static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_
   Move pv_line[MAX_DEPTH];
   int pv_length = extract_pv(ctx, pv_line, depth);
 
-  printf("info depth %d score %s time %llu nodes %llu nps %llu pv", depth, score_str,
-      (long long unsigned int) elapsed,
-      (long long unsigned int) total_nodes,
-      (long long unsigned int) nps);
+  int hashfull = tt_get_hashfull();
+
+  printf("info depth %d score %s time %llu nodes %llu nps %llu hashfull %d pv", depth, score_str,
+      (unsigned long long) elapsed,
+      (unsigned long long) total_nodes,
+      (unsigned long long) nps,
+      hashfull
+  );
 
   for (int i=0; i < pv_length; ++i) {
     char move_buf[6];
