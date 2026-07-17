@@ -44,10 +44,12 @@ sources = files(
   'src/engine/sockfish/thread.c',
 )
 
+is_debugging = get_option('buildtype') == 'debug'
+
 executable('sockfish',
   sources,
   include_directories : [inc, sdl3_inc],
   dependencies : [sdl3_dep, sdl3_image_dep, sdl3_ttf_dep, thread_dep],
+  win_subsystem : is_debugging ? 'console' : 'windows',
   install : true,
 )
-
