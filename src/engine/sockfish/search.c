@@ -16,6 +16,8 @@ static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
 
+static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
+
 Move sf_search(const SF_Context *ctx) {
   SF_Context ctx_ = *ctx;
   ctx_.nodes      = 0;
@@ -103,33 +105,7 @@ Move sf_search(const SF_Context *ctx) {
     best_move = best_so_far;
 
     if (ctx_.allow_uci_info) {
-      U64 current_time = get_time_ms();
-      U64 elapsed      = current_time - ctx_.start_time;
-      if (elapsed == 0) elapsed = 1;
-
-      U64 total_nodes = ctx_.nodes;
-      if (helper_count > 0) {
-        for (int i = 0; i < helper_count; ++i) {
-          total_nodes += thread_data[i].ctx.nodes;
-        }
-      }
-
-      U64 nps = (total_nodes * 1000) / elapsed;
-
-      char score_str[32];
-      format_score(max_score_so_far, score_str);
-
-      Move pv_line[MAX_DEPTH];
-      int pv_length = extract_pv(&ctx_, pv_line, depth);
-
-      printf("info depth %d score %s time %lu nodes %lu nps %lu pv", depth, score_str, elapsed, total_nodes, nps);
-      for (int i = 0; i < pv_length; ++i) {
-        char move_buf[6];
-        move_to_uci_string(pv_line[i], move_buf);
-        printf(" %s", move_buf);
-      }
-      printf("\n");
-      fflush(stdout);
+      send_uci_info(&ctx_, thread_data, max_score_so_far, helper_count, depth);
     }
   }
 
@@ -667,5 +643,43 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
     ctx->killer_moves[ply][1] = ctx->killer_moves[ply][0];
     ctx->killer_moves[ply][0] = move;
   }
+}
+
+
+
+
+
+static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth) {
+  U64 current_time = get_time_ms();
+  U64 elapsed      = current_time - ctx->start_time;
+  if (elapsed == 0) elapsed = 1;
+
+  U64 total_nodes = ctx->nodes;
+  if (helper_count > 0) {
+    for (int i = 0; i < helper_count; ++i) {
+      total_nodes += thread_data[i].ctx.nodes;
+    }
+  }
+
+  U64 nps = (total_nodes * 1000) / elapsed;
+
+  char score_str[32];
+  format_score(max_score_so_far, score_str);
+
+  Move pv_line[MAX_DEPTH];
+  int pv_length = extract_pv(ctx, pv_line, depth);
+
+  printf("info depth %d score %s time %llu nodes %llu nps %llu pv", depth, score_str,
+      (long long unsigned int) elapsed,
+      (long long unsigned int) total_nodes,
+      (long long unsigned int) nps);
+
+  for (int i=0; i < pv_length; ++i) {
+    char move_buf[6];
+    move_to_uci_string(pv_line[i], move_buf);
+    printf(" %s", move_buf);
+  }
+  printf("\n");
+  fflush(stdout);
 }
 
