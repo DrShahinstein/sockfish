@@ -2,6 +2,7 @@
 
 #include "platform.h"
 #include "bitboard.h"
+#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -69,6 +70,7 @@ typedef struct SF_Context {
   int history_count;
   int threads;
   volatile bool *should_stop;
+  bool allow_uci_info;
   Turn search_color;
   Square enpassant_sq;
   Move best;
@@ -135,6 +137,25 @@ static inline void promo_to_alg(Move mv, char buf[3]) {
   }
 
   buf[2] = '\0';
+}
+
+static inline void move_to_uci_string(Move mv, char *buf) {
+  char from_alg[3], to_alg[3];
+  sq_to_alg(move_from(mv), from_alg);
+  sq_to_alg(move_to(mv),   to_alg);
+
+  if (move_type(mv) == MOVE_PROMOTION) {
+    char promo = 'q';
+    switch (move_promotion(mv)) {
+      case PROMOTE_ROOK:   promo = 'r'; break;
+      case PROMOTE_BISHOP: promo = 'b'; break;
+      case PROMOTE_KNIGHT: promo = 'n'; break;
+      default:             promo = 'q'; break;
+    }
+    snprintf(buf, 6, "%s%s%c", from_alg, to_alg, promo);
+  } else {
+    snprintf(buf, 6, "%s%s", from_alg, to_alg);
+  }
 }
 
 static inline bool should_stop(const SF_Context *ctx) {
