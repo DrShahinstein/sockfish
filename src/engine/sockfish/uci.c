@@ -47,6 +47,7 @@ void uci_loop(void) {
   init_uci_config(&uci_config);
 
   SF_Context uci_ctx;
+  memset(&uci_ctx, 0, sizeof(SF_Context));
   apply_default_options(&uci_ctx, &uci_config);
   uci_parse_fen(START_FEN, &uci_ctx);
 
