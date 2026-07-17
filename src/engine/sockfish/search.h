@@ -27,6 +27,8 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
 bool check_time(SF_Context *ctx);
 void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 CheckMasks generate_check_masks(const SF_Context *ctx);
+int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len);
 int score_to_tt(int score, int ply);
 int score_from_tt(int score, int ply);
+void format_score(int score, char *buf);
 
