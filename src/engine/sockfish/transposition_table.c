@@ -109,3 +109,19 @@ bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, M
   return false; 
 }
 
+/* Takes sample from the first 1000 elements of TT and returns the fullness rate (as X per thousand) */
+int tt_get_hashfull(void) {
+  if (tt_table == NULL || tt_num_entries == 0) return 0;
+  
+  int max_samples = (tt_num_entries < 1000) ? tt_num_entries : 1000;
+  int used = 0;
+  
+  for (int i=0; i < max_samples; ++i) {
+    if (tt_table[i].depth != 0 || tt_table[i].hash_key != 0) {
+      used++;
+    }
+  }
+  
+  return (used * 1000) / max_samples;
+}
+
