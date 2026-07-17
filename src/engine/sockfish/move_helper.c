@@ -9,7 +9,7 @@ static void remove_piece(BitboardSet *bbs, Square sq, PieceType piece);
 static void place_piece(BitboardSet *bbs, Square sq, PieceType piece);
 static PieceType get_promotion_piece(Move move, Turn color);
 
-/* Procedurally Refactored Functions */
+/* Move Execution Substeps (Extracted for Clarity) */
 static void update_incremental_eval(SF_Context *ctx, Move move, PieceType moving_piece, PieceType captured_piece, Square captured_square);
 static void move_pieces_on_board(SF_Context *ctx, Move move, PieceType moving_piece, PieceType captured_piece, Square captured_square);
 static void update_castling_rights(SF_Context *ctx, Square from, PieceType moving_piece, PieceType captured_piece, Square captured_square);
