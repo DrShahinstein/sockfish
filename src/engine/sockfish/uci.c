@@ -31,6 +31,9 @@ static void apply_default_options(SF_Context *ctx, SF_Config *uci_cfg) {
 
   /* option name Threads */
   ctx->threads = uci_cfg->threads;
+
+  /*- extras/3rd -*/
+  ctx->allow_uci_info = true;
 }
 
 void uci_loop(void) {
@@ -43,8 +46,8 @@ void uci_loop(void) {
   init_uci_config(&uci_config);
 
   SF_Context uci_ctx;
-  apply_default_options(&uci_ctx, &uci_config);
   uci_parse_fen(START_FEN, &uci_ctx);
+  apply_default_options(&uci_ctx, &uci_config);
 
   while (fgets(line, sizeof(line), stdin)) {
     if (strncmp(line, "uci", 3) == 0 && IS_TOKEN_END(line[3])) {
@@ -173,7 +176,7 @@ void uci_loop(void) {
 static Move uci_parse_move(SF_Context *ctx, const char *move_str) {
   MoveList list = sf_generate_moves(ctx);
   
-  for (int i = 0; i < list.count; i++) {
+  for (int i = 0; i < list.count; ++i) {
     Move m = list.moves[i];
     char buf[6];
     
