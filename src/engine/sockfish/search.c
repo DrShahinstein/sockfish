@@ -101,6 +101,36 @@ Move sf_search(const SF_Context *ctx) {
     tt_record(ctx_.hash_key, depth, tt_record_score, TT_EXACT, best_so_far);
 
     best_move = best_so_far;
+
+    if (ctx_.allow_uci_info) {
+      U64 current_time = get_time_ms();
+      U64 elapsed      = current_time - ctx_.start_time;
+      if (elapsed == 0) elapsed = 1;
+
+      U64 total_nodes = ctx_.nodes;
+      if (helper_count > 0) {
+        for (int i = 0; i < helper_count; ++i) {
+          total_nodes += thread_data[i].ctx.nodes;
+        }
+      }
+
+      U64 nps = (total_nodes * 1000) / elapsed;
+
+      char score_str[32];
+      format_score(max_score_so_far, score_str);
+
+      Move pv_line[MAX_DEPTH];
+      int pv_length = extract_pv(&ctx_, pv_line, depth);
+
+      printf("info depth %d score %s time %lu nodes %lu nps %lu pv", depth, score_str, elapsed, total_nodes, nps);
+      for (int i = 0; i < pv_length; ++i) {
+        char move_buf[6];
+        move_to_uci_string(pv_line[i], move_buf);
+        printf(" %s", move_buf);
+      }
+      printf("\n");
+      fflush(stdout);
+    }
   }
 
   /* Shutdown Helper Threads */
@@ -497,6 +527,57 @@ int score_from_tt(int score, int ply) {
   if (score < -MATE_BOUND) return score + ply;
   return score;
 }
+
+/* Helps converting score to UCI format (centipawn | mate-in-x) */
+void format_score(int score, char *buf) {
+  if (score > MATE_BOUND) {
+    int moves_to_mate = (MATE_SCORE - score + 1) / 2;
+    sprintf(buf, "mate %d", moves_to_mate);
+  } else if (score < -MATE_BOUND) {
+    int moves_to_mate = (-MATE_SCORE - score - 1) / 2;
+    sprintf(buf, "mate %d", moves_to_mate);
+  } else {
+    sprintf(buf, "cp %d", score);
+  }
+}
+
+/* Extracts principal variation (PV) by reading transposition table */
+int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
+  int count = 0;
+  SF_Context temp_ctx = *ctx;
+
+  while (count < max_len) {
+    int tt_score;
+    Move tt_move = 0;
+    
+    tt_probe(temp_ctx.hash_key, 0, -INF, INF, &tt_score, &tt_move);
+
+    if (tt_move == 0)
+      break;
+
+    bool valid = false;
+    MoveList list = generate_pseudo_legal_moves(&temp_ctx);
+    for (int i = 0; i < list.count; ++i) {
+      if (list.moves[i] == tt_move) {
+        valid = true;
+        break;
+      }
+    }
+    
+    if (!valid)
+      break;
+
+    pv_line[count++] = tt_move;
+
+    MoveHistory hist;
+    make_move(&temp_ctx, tt_move, &hist);
+  }
+
+  return count;
+}
+
+
+
 
 
 
