@@ -9,6 +9,7 @@ SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t c
   ctx.castling_rights = castling_rights;
   ctx.enpassant_sq    = ep_sq;
   ctx.should_stop     = NULL;
+  ctx.allow_uci_info  = false;
   ctx.nodes           = 0;
   ctx.start_time      = 0;
   ctx.time_limit      = 0;
