@@ -6,7 +6,7 @@
 U64 passed_pawn_masks[2][64];
 
 
-/* Procedural Functions: Called once and used for clarity */
+/* Extracted Functions: Called once and used for clarity */
 static inline void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black);
 static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
 static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
@@ -19,7 +19,7 @@ void sf_init_eval_masks(void) {
     int c = sq % 8;
 
     U64 w_mask = 0;
-    for (int i = r + 1; i < 8; ++i) {
+    for (int i = r+1; i < 8; ++i) {
       w_mask |= (1ULL << (i * 8 + c));
       if (c > 0) w_mask |= (1ULL << (i * 8 + c - 1));
       if (c < 7) w_mask |= (1ULL << (i * 8 + c + 1));
@@ -27,7 +27,7 @@ void sf_init_eval_masks(void) {
     passed_pawn_masks[WHITE][sq] = w_mask;
 
     U64 b_mask = 0;
-    for (int i = r - 1; i >= 0; --i) {
+    for (int i = r-1; i >= 0; --i) {
       b_mask |= (1ULL << (i * 8 + c));
       if (c > 0) b_mask |= (1ULL << (i * 8 + c - 1));
       if (c < 7) b_mask |= (1ULL << (i * 8 + c + 1));
