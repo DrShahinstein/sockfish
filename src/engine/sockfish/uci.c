@@ -1,5 +1,6 @@
 #include "uci.h"
 #include "sockfish.h"
+#include "evaluation.h"
 #include "bitboard.h"
 #include "move_helper.h"
 #include "movegen.h"
@@ -33,7 +34,7 @@ static void apply_default_options(SF_Context *ctx, SF_Config *uci_cfg) {
   ctx->threads = uci_cfg->threads;
 
   /*- extras/3rd -*/
-  ctx->allow_uci_info = true;
+  ctx->allow_uci_info=true;
 }
 
 void uci_loop(void) {
@@ -46,8 +47,8 @@ void uci_loop(void) {
   init_uci_config(&uci_config);
 
   SF_Context uci_ctx;
-  uci_parse_fen(START_FEN, &uci_ctx);
   apply_default_options(&uci_ctx, &uci_config);
+  uci_parse_fen(START_FEN, &uci_ctx);
 
   while (fgets(line, sizeof(line), stdin)) {
     if (strncmp(line, "uci", 3) == 0 && IS_TOKEN_END(line[3])) {
@@ -248,6 +249,15 @@ static void uci_parse_fen(const char *fen, SF_Context *ctx) {
   }
 
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8])board_char);
-  *ctx = create_sf_ctx(&bbset, turn, castling, ep_sq);
+
+  ctx->bitboard_set    = bbset;
+  ctx->search_color    = turn;
+  ctx->castling_rights = castling;
+  ctx->enpassant_sq    = ep_sq;
+  ctx->halfmove_clock  = 0;
+  ctx->history_count   = 0;
+  
+  sf_init_hash_key(ctx);
+  sf_init_evaluation(ctx);
 }
 
