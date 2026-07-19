@@ -13,8 +13,7 @@ thread_dep     = dependency('threads')
 inc      = include_directories('include', 'src/engine/')
 sdl3_inc = include_directories(sdl3_dep.get_variable(pkgconfig: 'includedir'))
 
-sources = files(
-  'src/main.c',
+common_sources = files(
   'src/app.c',
   'src/board/board.c',
   'src/board/board_event.c',
@@ -44,12 +43,27 @@ sources = files(
   'src/engine/sockfish/thread.c',
 )
 
+sockfish_lib = static_library('sockfish',
+  common_sources,
+  include_directories : [inc, sdl3_inc],
+  dependencies : [sdl3_dep, sdl3_image_dep, sdl3_ttf_dep, thread_dep]
+)
+
 is_debugging = get_option('buildtype') == 'debug'
 
-executable('sockfish',
-  sources,
+executable('sockfish-sdl',
+  sources: 'src/main_sdl.c',
+  link_with : sockfish_lib,
   include_directories : [inc, sdl3_inc],
-  dependencies : [sdl3_dep, sdl3_image_dep, sdl3_ttf_dep, thread_dep],
   win_subsystem : is_debugging ? 'console' : 'windows',
   install : true,
 )
+
+executable('sockfish-uci',
+  sources: 'src/main_uci.c',
+  link_with : sockfish_lib,
+  include_directories : [inc, sdl3_inc],
+  win_subsystem : 'console',
+  install : true,
+)
+
