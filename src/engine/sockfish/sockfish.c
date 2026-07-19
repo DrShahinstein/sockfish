@@ -13,6 +13,9 @@ SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t c
   ctx.nodes           = 0;
   ctx.start_time      = 0;
   ctx.time_limit      = 0;
+  ctx.depth_limit     = 0;
+  ctx.nodes_limit     = 0;
+  ctx.infinite        = false;
   ctx.hash_key        = 0;
   ctx.history_count   = 0;
   ctx.halfmove_clock  = 0;
