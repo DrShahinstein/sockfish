@@ -60,6 +60,7 @@ typedef struct SF_Context {
   U64 nodes;
   U64 start_time;
   U64 time_limit;
+  U64 nodes_limit;
   U64 hash_key;
   U64 pos_history[SF_MAX_HIST];
   Move killer_moves[SF_MAX_PLY][2];
@@ -69,8 +70,10 @@ typedef struct SF_Context {
   int halfmove_clock;                  // helps tracking 50-move-draw
   int history_count;
   int threads;
+  int depth_limit;
   volatile bool *should_stop;
   bool allow_uci_info;
+  bool infinite;
   Turn search_color;
   Square enpassant_sq;
   Move best;
@@ -160,6 +163,10 @@ static inline void move_to_uci_string(Move mv, char *buf) {
 
 static inline bool should_stop(const SF_Context *ctx) {
   return ctx->should_stop && *ctx->should_stop;
+}
+
+static inline bool is_depth_limit_exceeded(const SF_Context *ctx, int curr_depth) {
+  return ctx->depth_limit > 0 && curr_depth > ctx->depth_limit;
 }
 
 
