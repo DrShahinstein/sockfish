@@ -18,6 +18,7 @@ static const char *START_FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq
 
 static Move uci_parse_move(SF_Context *ctx, const char *move_str);
 static void uci_parse_fen(const char *fen, SF_Context *ctx);
+static void print_best(Move best);
 
 static inline void init_uci_config(SF_Config *cfg) {
   /* Default values for options */
@@ -123,55 +124,84 @@ void uci_loop(void) {
     }
     
     else if (strncmp(line, "go", 2) == 0) {
-      int wtime = 0, btime = 0, winc = 0, binc = 0, movetime = 0;
-      
+      int wtime=0, btime=0, winc=0, binc=0, movetime=0;
+
+      uci_ctx.time_limit  = 0;
+      uci_ctx.depth_limit = 0;
+      uci_ctx.nodes_limit = 0;
+      uci_ctx.infinite    = false;
+
+      if (strstr(line, "infinite")) {
+        uci_ctx.infinite = true;
+      } 
+
+      if (strstr(line, "depth")) {
+        sscanf(strstr(line, "depth") + 6, "%d", &uci_ctx.depth_limit);
+      } 
+
+      if (strstr(line, "nodes")) {
+        sscanf(strstr(line, "nodes") + 6, "%llu",
+            (long long unsigned int*) &uci_ctx.nodes_limit);
+      } 
+
       if (strstr(line, "movetime")) {
-        sscanf(strstr(line, "movetime") + 8, "%d", &movetime);
+        sscanf(strstr(line, "movetime") + 9, "%d", &movetime);
         uci_ctx.time_limit = movetime;
-      } else {
+      }
+
+      else if (!uci_ctx.infinite && !uci_ctx.depth_limit && !uci_ctx.nodes_limit) {
         if (strstr(line, "wtime")) sscanf(strstr(line, "wtime") + 5, "%d", &wtime);
         if (strstr(line, "btime")) sscanf(strstr(line, "btime") + 5, "%d", &btime);
         if (strstr(line, "winc"))  sscanf(strstr(line, "winc")  + 5, "%d", &winc);
         if (strstr(line, "binc"))  sscanf(strstr(line, "binc")  + 5, "%d", &binc);
-        
+
         int time_left = (uci_ctx.search_color == WHITE) ? wtime : btime;
         int inc       = (uci_ctx.search_color == WHITE) ? winc  : binc;
-        
-        uci_ctx.time_limit = (time_left / 40) + (inc / 2);
-        if (uci_ctx.time_limit < 100) uci_ctx.time_limit = 100;
+
+        uci_ctx.time_limit = (time_left / 30) + (inc / 2);
+
+        if (uci_ctx.time_limit < 50)
+          uci_ctx.time_limit = 50;
       }
 
       uci_ctx.threads = uci_config.threads;
-      
+
       Move best = sf_search(&uci_ctx);
-      
-      char from_alg[3], to_alg[3];
-      sq_to_alg(move_from(best), from_alg);
-      sq_to_alg(move_to(best),   to_alg);
-      
-      if (move_type(best) == MOVE_PROMOTION) {
-        char promo = 'q';
 
-        switch (move_promotion(best)) {
-          case PROMOTE_ROOK:   promo = 'r'; break;
-          case PROMOTE_BISHOP: promo = 'b'; break;
-          case PROMOTE_KNIGHT: promo = 'n'; break;
-          default:             promo = 'q'; break;
-        }
-
-        printf("bestmove %s%s%c\n", from_alg, to_alg, promo);
-      } else {
-        printf("bestmove %s%s\n", from_alg, to_alg);
-      }
+      print_best(best);
     }
 
     else if (strncmp(line, "d", 1) == 0 && line[1] == '\n') {
       print_bitboard(uci_ctx.bitboard_set.occupied);
     }
+
+    else if (strncmp(line, "stop", 4) == 0) {
+      if (uci_ctx.should_stop) *uci_ctx.should_stop=true;
+    }
     
     else if (strncmp(line, "quit", 4) == 0) {
       break;
     }
+  }
+}
+
+static void print_best(Move best) {
+  char from_alg[3], to_alg[3];
+
+  sq_to_alg(move_from(best), from_alg);
+  sq_to_alg(move_to(best),   to_alg);
+
+  if (move_type(best) == MOVE_PROMOTION) {
+    char promo = 'q';
+    switch (move_promotion(best)) {
+      case PROMOTE_ROOK:   promo = 'r'; break;
+      case PROMOTE_BISHOP: promo = 'b'; break;
+      case PROMOTE_KNIGHT: promo = 'n'; break;
+      default:             promo = 'q'; break;
+    }
+    printf("bestmove %s%s%c\n", from_alg, to_alg, promo);
+  } else {
+    printf("bestmove %s%s\n", from_alg, to_alg);
   }
 }
 
@@ -234,7 +264,7 @@ static void uci_parse_fen(const char *fen, SF_Context *ctx) {
 
   if (count >= 3) {
     if (strcmp(castling_str, "-") != 0) {
-      for (const char *p = castling_str; *p; p++) {
+      for (const char *p = castling_str; *p; ++p) {
         if (*p == 'K') castling |= CASTLE_WK;
         if (*p == 'Q') castling |= CASTLE_WQ;
         if (*p == 'k') castling |= CASTLE_BK;
