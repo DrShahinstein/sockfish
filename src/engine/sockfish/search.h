@@ -24,7 +24,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta);
 int null_move_search(SF_Context *ctx, unsigned int depth, int ply, int beta);
 int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks, int ply);
 
-bool check_time(SF_Context *ctx);
+bool check_stop_conditions(SF_Context *ctx);
 void bump_highest_scored_move(int i, MoveList *movelist, int *scores);
 CheckMasks generate_check_masks(const SF_Context *ctx);
 int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len);
