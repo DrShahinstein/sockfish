@@ -18,7 +18,8 @@ void *helper_search_thread(void *arg) {
   Move best_move = create_move(A1,A1);
 
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
-    if (check_time(&ctx_)) break;
+    if (is_depth_limit_exceeded(&ctx_, depth)) break;
+    if (check_stop_conditions(&ctx_)) break;
 
     int search_depth = depth + depth_offset;
     if (search_depth > MAX_DEPTH) search_depth = MAX_DEPTH;

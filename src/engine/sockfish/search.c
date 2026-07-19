@@ -53,7 +53,8 @@ Move sf_search(const SF_Context *ctx) {
 
   /* Main Thread Search Loop */
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
-    if (check_time(&ctx_)) break;
+    if (is_depth_limit_exceeded(&ctx_, depth)) break;
+    if (check_stop_conditions(&ctx_)) break;
     
     int alpha            = -INF;
     int beta             = +INF;
@@ -133,7 +134,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
   if (ctx->history_count >= SF_MAX_HIST)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
-  if (check_time(ctx))
+  if (check_stop_conditions(ctx))
     return 0;
 
   if (threefold_repetition(ctx) || fifty_move_draw(ctx))
@@ -268,7 +269,7 @@ int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, b
 int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   ctx->nodes++;
 
-  if (check_time(ctx))
+  if (check_stop_conditions(ctx))
     return 0;
 
   if (ctx->history_count >= SF_MAX_HIST)
@@ -474,13 +475,21 @@ CheckMasks generate_check_masks(const SF_Context *ctx) {
   return masks;
 }
 
-bool check_time(SF_Context *ctx) {
-  if (ctx->should_stop && *ctx->should_stop) return true;
+bool check_stop_conditions(SF_Context *ctx) {
+  if (should_stop(ctx))
+    return true;
 
   if ((ctx->nodes & 2047) == 0) { 
-    if (get_time_ms() - ctx->start_time >= ctx->time_limit) {
+    if (ctx->nodes_limit > 0 && ctx->nodes >= ctx->nodes_limit) {
       if (ctx->should_stop) *ctx->should_stop = true;
       return true;
+    }
+
+    if (!ctx->infinite && ctx->time_limit > 0) {
+      if (get_time_ms() - ctx->start_time >= ctx->time_limit) {
+        if (ctx->should_stop) *ctx->should_stop = true;
+        return true;
+      }
     }
   }
 
