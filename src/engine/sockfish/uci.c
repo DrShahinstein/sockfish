@@ -62,7 +62,7 @@ static void apply_default_options(SF_Context *ctx, SF_Config *uci_cfg) {
 }
 
 void uci_loop(void) {
-  char line[2048];
+  char line[8192];
 
   setbuf(stdin,  NULL);
   setbuf(stdout, NULL);
