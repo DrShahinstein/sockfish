@@ -15,6 +15,7 @@ static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
+static inline void save_history_heuristic(SF_Context *ctx, Move m, int depth);
 
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
 
@@ -237,23 +238,11 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
       alpha = score;
 
     if (alpha >= beta) {
-      if (is_quiet && ply < SF_MAX_PLY) {
-        save_killer_move(ctx, move, ply);
-      }
-
       if (is_quiet) {
-        int bonus     = depth * depth;
-        int *hist_ptr = &ctx->history_heuristic[ctx->search_color][move_from(move)][move_to(move)];
-        *hist_ptr     += bonus;
-        
-        if (*hist_ptr > 7500) {
-          for (int c = 0; c < 2; ++c)
-            for (int f = 0; f < 64; ++f)
-              for (int t = 0; t < 64; ++t)
-                ctx->history_heuristic[c][f][t] /= 2;
-        }
+        if (ply < SF_MAX_PLY)
+          save_killer_move(ctx, move, ply);
+        save_history_heuristic(ctx, move, depth);
       }
-
       break;
     }
   }
@@ -424,6 +413,7 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
   bool promote    = type == MOVE_PROMOTION;
   bool castle     = type == MOVE_CASTLING;
   bool en_passant = type == MOVE_EN_PASSANT;
+  bool quiet      = type == MOVE_NORMAL && victim == NO_PIECE;
 
   int score = 0;
 
@@ -446,10 +436,15 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
     /* secondary killer move */
     else if (move == ctx->killer_moves[ply][1]) 
       score += 8000;
-  }
 
-  else if (score == 0)
-    score += ctx->history_heuristic[ctx->search_color][from][to];
+    /* history heuristic */
+    else if (quiet) {
+      Turn c = ctx->search_color;
+      int n  = ctx->history_heuristic[c][from][to];
+      if (n > 1000) n=1000;
+      score += n;
+    }
+  }
 
   return score;
 }
@@ -672,7 +667,12 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
   }
 }
 
-
+static inline void save_history_heuristic(SF_Context *ctx, Move m, int depth) {
+  Turn c  = ctx->search_color;
+  Move fr = move_from(m);
+  Move to = move_to(m);
+  ctx->history_heuristic[c][fr][to] += depth*depth;
+}
 
 
 
