@@ -23,7 +23,8 @@ Move sf_search(const SF_Context *ctx) {
   ctx_.nodes      = 0;
   ctx_.start_time = get_time_ms();
 
-  memset(ctx_.killer_moves, 0, sizeof(ctx_.killer_moves));
+  memset(ctx_.killer_moves,      0, sizeof(ctx_.killer_moves));
+  memset(ctx_.history_heuristic, 0, sizeof(ctx_.history_heuristic));
 
   /* For Safety */
   bool local_stop = false;
@@ -239,6 +240,20 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
       if (is_quiet && ply < SF_MAX_PLY) {
         save_killer_move(ctx, move, ply);
       }
+
+      if (is_quiet) {
+        int bonus     = depth * depth;
+        int *hist_ptr = &ctx->history_heuristic[ctx->search_color][move_from(move)][move_to(move)];
+        *hist_ptr     += bonus;
+        
+        if (*hist_ptr > 7500) {
+          for (int c = 0; c < 2; ++c)
+            for (int f = 0; f < 64; ++f)
+              for (int t = 0; t < 64; ++t)
+                ctx->history_heuristic[c][f][t] /= 2;
+        }
+      }
+
       break;
     }
   }
@@ -432,6 +447,9 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
     else if (move == ctx->killer_moves[ply][1]) 
       score += 8000;
   }
+
+  else if (score == 0)
+    score += ctx->history_heuristic[ctx->search_color][from][to];
 
   return score;
 }
