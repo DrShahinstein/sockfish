@@ -128,7 +128,7 @@ Move sf_search(const SF_Context *ctx) {
   return best_move;
 }
 
-int negamax(SF_Context *ctx, unsigned int depth, int ply, int alpha, int beta, bool allow_null) {
+int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow_null) {
   ctx->nodes++;
 
   if (ctx->history_count >= SF_MAX_HIST)
@@ -372,7 +372,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   return alpha;
 }
 
-int null_move_search(SF_Context *ctx, unsigned int depth, int ply, int beta) {
+int null_move_search(SF_Context *ctx, int depth, int ply, int beta) {
   int R = 2; // depth reduction
   
   MoveHistory null_history;
