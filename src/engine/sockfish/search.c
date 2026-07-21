@@ -6,6 +6,7 @@
 #include "transposition_table.h"
 #include "thread.h"
 #include <string.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 static inline bool threefold_repetition(const SF_Context *ctx);
@@ -15,7 +16,8 @@ static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
-static inline void save_history_heuristic(SF_Context *ctx, Move m, int depth);
+static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth);
+static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta);
 
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
 
@@ -66,7 +68,7 @@ Move sf_search(const SF_Context *ctx) {
     MoveList movelist = generate_pseudo_legal_moves(&ctx_);
     if (movelist.count == 0) break;
 
-    CheckMasks masks = generate_check_masks(ctx);
+    CheckMasks masks = generate_check_masks(&ctx_);
 
     int scores[256]; // scores[i] <===> movelist->moves[i]
     for (int i=0; i < movelist.count; ++i) {
@@ -173,9 +175,12 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   CheckMasks masks = generate_check_masks(ctx);
 
   int scores[256];
-  for (int i = 0; i < movelist.count; ++i) {
+  for (int i=0; i < movelist.count; ++i) {
     scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks, ply);
   }
+
+  Move quiets[256];
+  int quiets_count=0;
 
   for (int i = 0; i < movelist.count; ++i) {
     bump_highest_scored_move(i, &movelist, scores);
@@ -239,12 +244,16 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
 
     if (alpha >= beta) {
       if (is_quiet) {
-        if (ply < SF_MAX_PLY)
+        if (ply < SF_MAX_PLY) {
           save_killer_move(ctx, move, ply);
-        save_history_heuristic(ctx, move, depth);
+        }
+        update_history_heuristic(ctx, move, quiets, quiets_count, depth);
       }
       break;
     }
+
+    if (is_quiet && quiets_count < 256)
+      quiets[quiets_count++] = move;
   }
 
   if (legal_moves == 0) {
@@ -428,22 +437,26 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
   if (castle)
     score += 10000;
 
+  bool killer_scored=false;
+
   if (ply < SF_MAX_PLY) {
     /* primary killer move */
-    if (move == ctx->killer_moves[ply][0]) 
-      score += 9000;
+    if (move == ctx->killer_moves[ply][0]) {
+      score += 10000;
+      killer_scored=true;
+    }
 
     /* secondary killer move */
-    else if (move == ctx->killer_moves[ply][1]) 
-      score += 8000;
-
-    /* history heuristic */
-    else if (quiet) {
-      Turn c = ctx->search_color;
-      int n  = ctx->history_heuristic[c][from][to];
-      if (n > 1000) n=1000;
-      score += n;
+    else if (move == ctx->killer_moves[ply][1]) {
+      score += 9000;
+      killer_scored=true;
     }
+  }
+
+  /* history heuristic with quiet moves */
+  if (quiet && !killer_scored) {
+    Turn c = ctx->search_color;
+    score += ctx->history_heuristic[c][from][to];
   }
 
   return score;
@@ -667,12 +680,48 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
   }
 }
 
-static inline void save_history_heuristic(SF_Context *ctx, Move m, int depth) {
-  Turn c  = ctx->search_color;
-  Move fr = move_from(m);
-  Move to = move_to(m);
-  ctx->history_heuristic[c][fr][to] += depth*depth;
+/*
+ * Applies a signed change to the history heuristic entry of a single move.
+ *
+ * A positive delta rewards the move, while a negative delta penalizes it.
+ * The gravity formula gradually slows updates as the entry approaches its
+ * limit, preventing history heuristic values from growing without bounds.
+ *
+ * HH_LIMIT:     absolute bound for each history heuristic entry.
+ * HH_DELTA_MAX: maximum absolute adjustment applied per update.
+ */
+static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta) {
+  Turn c      = ctx->search_color;
+  Square from = move_from(move);
+  Square to   = move_to(move);
+  int *entry  = &ctx->history_heuristic[c][from][to];
+
+  delta = clamp_int(delta, -HH_DELTA_MAX, HH_DELTA_MAX);
+
+  *entry += delta - (*entry * abs(delta)) / HH_LIMIT;
+  *entry = clamp_int(*entry, -HH_LIMIT, HH_LIMIT);
 }
+
+/*
+ * Updates the history heuristic after a quiet move produces a beta-cutoff.
+ *
+ * The cutoff move is rewarded according to the current search depth.
+ * Quiet moves searched earlier at the same node are penalized because they
+ * failed to produce the cutoff before the successful move was found.
+ */
+static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth) {
+  int bonus = clamp_int(depth*depth, 0, HH_DELTA_MAX);
+  adjust_hh_entry(ctx, cutoff_move, bonus);
+
+  int malus = bonus / 2;
+  for (int i = 0; i < failed_quiet_count; ++i) {
+    adjust_hh_entry(ctx, failed_quiet_moves[i], -malus);
+  }
+}
+
+
+
+
 
 
 
