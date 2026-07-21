@@ -10,6 +10,8 @@
 
 static const int ROOT_PLY=0;
 static const int ALLOW_NULL=true;
+static const int HH_LIMIT=8192;
+static const int HH_DELTA_MAX=1024;
 
 typedef struct {
   U64 pawn;
@@ -31,4 +33,10 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len);
 int score_to_tt(int score, int ply);
 int score_from_tt(int score, int ply);
 void format_score(int score, char *buf);
+
+static inline int clamp_int(int value, int min, int max) {
+  if (value < min) return min;
+  if (value > max) return max;
+  return value;
+}
 
