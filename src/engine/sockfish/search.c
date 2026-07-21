@@ -70,7 +70,7 @@ Move sf_search(const SF_Context *ctx) {
 
     CheckMasks masks = generate_check_masks(&ctx_);
 
-    int scores[256]; // scores[i] <===> movelist->moves[i]
+    int scores[MOVELIST_CAPACITY]; // scores[i] <===> movelist->moves[i]
     for (int i=0; i < movelist.count; ++i) {
       scores[i] = score_move(&ctx_, movelist.moves[i], best_so_far, &masks, ROOT_PLY);
     }
@@ -174,12 +174,12 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
 
   CheckMasks masks = generate_check_masks(ctx);
 
-  int scores[256];
+  int scores[MOVELIST_CAPACITY];
   for (int i=0; i < movelist.count; ++i) {
     scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks, ply);
   }
 
-  Move quiets[256];
+  Move quiets[MOVELIST_CAPACITY];
   int quiets_count=0;
 
   for (int i = 0; i < movelist.count; ++i) {
@@ -252,7 +252,7 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
       break;
     }
 
-    if (is_quiet && quiets_count < 256)
+    if (is_quiet && quiets_count < MOVELIST_CAPACITY)
       quiets[quiets_count++] = move;
   }
 
@@ -327,7 +327,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 
   CheckMasks masks = generate_check_masks(ctx);
 
-  int scores[256];
+  int scores[MOVELIST_CAPACITY];
   for (int i = 0; i < movelist.count; ++i) {
     scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks, ply);
   }
