@@ -146,7 +146,8 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
 static void handle_ucinewgame(SF_Context *ctx) {
   tt_clear();
   ctx->history_count = 0;
-  memset(ctx->killer_moves, 0, sizeof(ctx->killer_moves));
+  memset(ctx->killer_moves,      0, sizeof(ctx->killer_moves));
+  memset(ctx->history_heuristic, 0, sizeof(ctx->history_heuristic));
 }
 
 static void handle_position(const char *line, SF_Context *ctx) {

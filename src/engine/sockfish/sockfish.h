@@ -64,6 +64,7 @@ typedef struct SF_Context {
   U64 hash_key;
   U64 pos_history[SF_MAX_HIST];
   Move killer_moves[SF_MAX_PLY][2];
+  int history_heuristic[2][64][64];
   int mg_score[2];                     // [0]=WHITE, [1]=BLACK [mid-game score]
   int eg_score[2];                     // [0]=WHITE, [1]=BLACK [end-game score]
   int game_phase;                      // 0-24                 [see evaluation.h]

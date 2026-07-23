@@ -2,8 +2,10 @@
 
 #include "sockfish.h"
 
+#define MOVELIST_CAPACITY 256
+
 typedef struct {
-  Move moves[256]; // max possible moves in a chess position is =218
+  Move moves[MOVELIST_CAPACITY]; // max possible moves in a chess position is =218
   int count;
 } MoveList;
 
