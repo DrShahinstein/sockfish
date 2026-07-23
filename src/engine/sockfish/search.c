@@ -681,14 +681,14 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
 }
 
 /*
- * Applies a signed change to the history heuristic entry of a single move.
+ * Adjust History Heuristic Entry
  *
- * A positive delta rewards the move, while a negative delta penalizes it.
- * The gravity formula gradually slows updates as the entry approaches its
- * limit, preventing history heuristic values from growing without bounds.
+ * Updates a move's history score safely.
+ * Positive delta rewards the move, negative penalizes it.
  *
- * HH_LIMIT:     absolute bound for each history heuristic entry.
- * HH_DELTA_MAX: maximum absolute adjustment applied per update.
+ * Uses a "gravity" effect so updates shrink as the score nears HH_LIMIT.
+ * - HH_LIMIT: The absolute ceiling/floor for a move's score (+/-).
+ * - HH_DELTA_MAX: The biggest bonus or penalty allowed in a single step.
  */
 static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta) {
   Turn c      = ctx->search_color;
@@ -703,11 +703,9 @@ static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta) {
 }
 
 /*
- * Updates the history heuristic after a quiet move produces a beta-cutoff.
- *
- * The cutoff move is rewarded according to the current search depth.
- * Quiet moves searched earlier at the same node are penalized because they
- * failed to produce the cutoff before the successful move was found.
+ * Called when a quiet move successfully causes a beta-cutoff.
+ * Rewards the winning move based on depth (capped at HH_DELTA_MAX),
+ * and penalizes all the quiet moves we tried before it that failed.
  */
 static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth) {
   int bonus = clamp_int(depth*depth, 0, HH_DELTA_MAX);
