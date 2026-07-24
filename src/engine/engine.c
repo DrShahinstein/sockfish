@@ -6,7 +6,7 @@
 #include "sockfish/config.h"
 #include <SDL3/SDL.h>
 
-static int engine_thread(void *data);
+static int search_thread(void *data);
 
 void engine_init(EngineWrapper *engine) {
   config_load(SOCKFISH_INI, &engine->active_config);
@@ -22,7 +22,7 @@ void engine_init(EngineWrapper *engine) {
   engine->abort_search     = false;
   engine->pending_tt_clear = false;
   engine->thr_working      = false;
-  engine->thr              = SDL_CreateThread(engine_thread, "EngineThread", engine);
+  engine->thr              = SDL_CreateThread(search_thread, "SearchThread", engine);
 }
 
 void engine_update_config(EngineWrapper *engine, const SF_Config *new_config) {
@@ -69,10 +69,11 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
   SF_Context ctx    = create_sf_ctx(&bbset, board->turn, board->castling, en_passant);
 
   /* Make position history for Sockfish by transferring the one that BoardState already has  */
-  ctx.history_count = board->undo_count;
-  for (int i=0; i < board->undo_count; ++i) {
+  ctx.history_count = board->undo_count+1;
+  for (int i=0; i < ctx.history_count; ++i) {
     ctx.pos_history[i] = board->hash_history[i];
   }
+  ctx.halfmove_clock = get_halfmove_clock(board);
 
   engine->ctx             = ctx;
   engine->ctx.should_stop = &engine->abort_search;
@@ -97,7 +98,7 @@ void engine_abort_search(EngineWrapper *engine) {
   SDL_UnlockMutex(engine->mtx);
 }
 
-static int engine_thread(void *data) {
+static int search_thread(void *data) {
   EngineWrapper *engine = data;
   if (engine == NULL) return -1;
 
