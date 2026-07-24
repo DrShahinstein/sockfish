@@ -145,7 +145,9 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
 
 static void handle_ucinewgame(SF_Context *ctx) {
   tt_clear();
-  ctx->history_count = 0;
+  ctx->history_count  = 1;
+  ctx->pos_history[0] = ctx->hash_key;
+  ctx->in_null_search = false;
   memset(ctx->killer_moves,      0, sizeof(ctx->killer_moves));
   memset(ctx->history_heuristic, 0, sizeof(ctx->history_heuristic));
 }
@@ -245,9 +247,11 @@ static void uci_parse_fen(const char *fen, SF_Context *ctx) {
   Turn turn             = WHITE;
   uint8_t castling      = 0;
   Square ep_sq          = NO_ENPASSANT;
+  int halfmove_clock    = 0;
 
   char placement[256], active[2], castling_str[16], ep_str[3];
-  int count = sscanf(fen, "%255s %1s %15s %2s", placement, active, castling_str, ep_str);
+  int count = sscanf(fen, "%255s %1s %15s %2s %d",
+      placement, active, castling_str, ep_str, &halfmove_clock);
 
   if (count < 1) return;
 
@@ -289,11 +293,14 @@ static void uci_parse_fen(const char *fen, SF_Context *ctx) {
   ctx->search_color    = turn;
   ctx->castling_rights = castling;
   ctx->enpassant_sq    = ep_sq;
-  ctx->halfmove_clock  = 0;
+  ctx->halfmove_clock  = (count >= 5 && halfmove_clock > 0) ? halfmove_clock : 0;
   ctx->history_count   = 0;
+  ctx->in_null_search  = false;
 
   sf_init_hash_key(ctx);
   sf_init_evaluation(ctx);
+
+  ctx->pos_history[ctx->history_count++] = ctx->hash_key;
 }
 
 /* ==================== Async Logic ==================== */
@@ -342,4 +349,3 @@ static void async_search_shutdown(void) {
     async_search.thread_valid = false;
   }
 }
-
