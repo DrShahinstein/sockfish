@@ -12,6 +12,7 @@ typedef struct {
   int prev_eg_score[2];
   int prev_game_phase;
   int prev_halfmove_clock;
+  bool prev_in_null_search;
   uint8_t prev_castling;
 } MoveHistory;
 
@@ -23,4 +24,3 @@ void make_null_move(SF_Context *ctx, MoveHistory *history);
 void unmake_null_move(SF_Context *ctx, const MoveHistory *history);
 
 PieceType get_piece_type(const BitboardSet *bbs, Square sq);
-
