@@ -67,7 +67,7 @@ void board_update_position_hash(BoardState *board) {
   
   board->position_hash = temp_ctx.hash_key;
 
-  if (board->undo_count >= 0 && board->undo_count < MAX_HISTORY) {
+  if (board->undo_count >= 0 && board->undo_count <= MAX_HISTORY) {
     board->hash_history[board->undo_count] = board->position_hash;
   }
 }
@@ -435,6 +435,24 @@ void board_redo(BoardState *board) {
   board->should_update_valid_moves = true;
   board_update_position_hash(board);
 }
+
+int get_halfmove_clock(const BoardState *board) {
+  int count=0;
+
+  for (int i = board->undo_count-1; i >= 0; --i) {
+    const BoardMoveHistory *move = &board->history[i];
+    bool pawn_move = move->moving_piece == 'P' || move->moving_piece == 'p';
+
+    if (pawn_move || move->captured_piece != 0)
+      break;
+
+    ++count;
+  }
+
+  return count;
+}
+
+
 
 static uint8_t parse_castling(const char *str) {
   uint8_t rights = 0;
