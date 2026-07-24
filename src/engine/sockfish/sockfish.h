@@ -4,6 +4,7 @@
 #include "bitboard.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 
 typedef enum {
@@ -72,7 +73,7 @@ typedef struct SF_Context {
   int history_count;
   int threads;
   int depth_limit;
-  volatile bool *should_stop;
+  atomic_bool *should_stop;
   bool allow_uci_info;
   bool infinite;
   bool in_null_search;                 // null subtrees do not use game-rule draws
@@ -164,7 +165,11 @@ static inline void move_to_uci_string(Move mv, char *buf) {
 }
 
 static inline bool should_stop(const SF_Context *ctx) {
-  return ctx->should_stop && *ctx->should_stop;
+  return ctx->should_stop && atomic_load_explicit(ctx->should_stop, memory_order_relaxed);
+}
+
+static inline void request_search_stop(const SF_Context *ctx) {
+  if (ctx->should_stop) atomic_store_explicit(ctx->should_stop, true, memory_order_relaxed);
 }
 
 static inline bool is_depth_limit_exceeded(const SF_Context *ctx, int curr_depth) {
