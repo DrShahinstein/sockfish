@@ -131,6 +131,7 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
   if (strncmp(name_ptr, "Hash", 4) == 0) {
     int new_hash = atoi(val_ptr);
     if (new_hash > 0 && new_hash != cfg->tt_size_mb) {
+      async_search_shutdown();
       cfg->tt_size_mb = new_hash;
       tt_free();
       tt_init(cfg->tt_size_mb);
@@ -144,6 +145,7 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
 }
 
 static void handle_ucinewgame(SF_Context *ctx) {
+  async_search_shutdown();
   tt_clear();
   ctx->history_count  = 1;
   ctx->pos_history[0] = ctx->hash_key;
@@ -330,16 +332,16 @@ static void async_search_start(const SF_Context *base_ctx, int threads) {
 
   async_search.ctx             = *base_ctx;
   async_search.ctx.threads     = threads;
-  async_search.stop_flag       = false;
   async_search.ctx.should_stop = &async_search.stop_flag;
-
+  atomic_store_explicit(&async_search.stop_flag, false, memory_order_relaxed);
   atomic_store(&async_search.running, true);
+
   pthread_create(&async_search.thread, NULL, async_search_thread_main, NULL);
   async_search.thread_valid = true;
 }
 
 static void async_search_request_stop(void) {
-  async_search.stop_flag = true;
+  atomic_store_explicit(&async_search.stop_flag, true, memory_order_relaxed);
 }
 
 static void async_search_shutdown(void) {
