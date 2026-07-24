@@ -54,7 +54,7 @@ void *helper_search_thread(void *arg) {
 
       unmake_move(&ctx_, &history);
 
-      if (*ctx_.should_stop) break;
+      if (should_stop(&ctx_)) break;
 
       if (score > max_score_so_far) {
         max_score_so_far = score;
@@ -66,7 +66,7 @@ void *helper_search_thread(void *arg) {
       }
     }
 
-    if (*ctx_.should_stop) break;
+    if (should_stop(&ctx_)) break;
 
     int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
     tt_record(ctx_.hash_key, search_depth, tt_record_score, TT_EXACT, best_so_far);
@@ -74,8 +74,7 @@ void *helper_search_thread(void *arg) {
     best_move = best_so_far;
   }
 
-  data->ctx.nodes = ctx_.nodes;
+  atomic_store_explicit(&data->nodes, ctx_.nodes, memory_order_relaxed);
   
   return NULL;
 }
-
