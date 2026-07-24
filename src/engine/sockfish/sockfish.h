@@ -62,7 +62,7 @@ typedef struct SF_Context {
   U64 time_limit;
   U64 nodes_limit;
   U64 hash_key;
-  U64 pos_history[SF_MAX_HIST];
+  U64 pos_history[SF_MAX_HIST];        // includes current position at 'history_count-1'
   Move killer_moves[SF_MAX_PLY][2];
   int history_heuristic[2][64][64];
   int mg_score[2];                     // [0]=WHITE, [1]=BLACK [mid-game score]
@@ -75,6 +75,7 @@ typedef struct SF_Context {
   volatile bool *should_stop;
   bool allow_uci_info;
   bool infinite;
+  bool in_null_search;                 // null subtrees do not use game-rule draws
   Turn search_color;
   Square enpassant_sq;
   Move best;
