@@ -85,7 +85,7 @@ typedef struct {
 
 typedef struct BoardState {
   uint64_t position_hash;
-  uint64_t hash_history[MAX_HISTORY];
+  uint64_t hash_history[MAX_HISTORY+1];
   char board[8][8];
   Turn turn;
   uint8_t castling;
@@ -110,6 +110,7 @@ void board_undo(BoardState *board);
 void board_redo(BoardState *board);
 void load_fen(const char *fen, BoardState *board);
 void load_pgn(const char *pgn, BoardState *board);
+int get_halfmove_clock(const BoardState *board);
 
 // parse_pgn_move.c
 void parse_pgn_move(const char *pgnmove, SF_Context *sf_ctx, char (*last_pos)[8], char *promote, int *fr, int *fc, int *tr, int *tc);
