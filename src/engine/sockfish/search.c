@@ -593,17 +593,21 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
 
 static inline bool threefold_repetition(const SF_Context *ctx) {
-  int limit = ctx->history_count - ctx->halfmove_clock;
+  if (ctx->history_count <= 0 || ctx->pos_history[ctx->history_count-1] != ctx->hash_key || ctx->in_null_search)
+    return false;
+
+  int limit = (ctx->history_count-1) - ctx->halfmove_clock;
   if (limit < 0) limit = 0;
 
-  for (int i = ctx->history_count - 4; i >= limit; i -= 2)
-    if (ctx->pos_history[i] == ctx->hash_key)
+  int repetitions = 0;
+  for (int i = ctx->history_count-1; i >= limit; i -= 2)
+    if (ctx->pos_history[i] == ctx->hash_key && ++repetitions >= 3)
       return true;
   return false;
 }
 
 static inline bool fifty_move_draw(const SF_Context *ctx) {
-  return ctx->halfmove_clock >= 100;
+  return ctx->halfmove_clock >= 100 && !ctx->in_null_search;
 }
 
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
