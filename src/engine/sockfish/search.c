@@ -30,7 +30,7 @@ Move sf_search(const SF_Context *ctx) {
   memset(ctx_.history_heuristic, 0, sizeof(ctx_.history_heuristic));
 
   /* For Safety */
-  bool local_stop = false;
+  atomic_bool local_stop = false;
   if (ctx_.should_stop == NULL)
     ctx_.should_stop = &local_stop;
 
@@ -49,6 +49,7 @@ Move sf_search(const SF_Context *ctx) {
       thread_data[i].ctx = ctx_;
       thread_data[i].ctx.should_stop = ctx_.should_stop;
       thread_data[i].thread_id = i + 1; // main-thread's ID=0, helper-threads=>1,2...
+      atomic_init(&thread_data[i].nodes, 0);
       pthread_create(&threads[i], NULL, helper_search_thread, &thread_data[i]);
     }
   }
@@ -90,7 +91,7 @@ Move sf_search(const SF_Context *ctx) {
 
       unmake_move(&ctx_, &history);
 
-      if (*ctx_.should_stop) break;
+      if (should_stop(&ctx_)) break;
 
       if (score > max_score_so_far) {
         max_score_so_far = score;
@@ -102,7 +103,7 @@ Move sf_search(const SF_Context *ctx) {
       }
     }
 
-    if (*ctx_.should_stop) break;
+    if (should_stop(&ctx_)) break;
 
     int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
     tt_record(ctx_.hash_key, depth, tt_record_score, TT_EXACT, best_so_far);
@@ -116,11 +117,11 @@ Move sf_search(const SF_Context *ctx) {
 
   /* Shutdown Helper Threads */
   if (helper_count > 0) {
-    *ctx_.should_stop = true;
+    request_search_stop(&ctx_);
 
     for (int i = 0; i < helper_count; ++i) {
       pthread_join(threads[i], NULL);
-      ctx_.nodes += thread_data[i].ctx.nodes;
+      ctx_.nodes += atomic_load_explicit(&thread_data[i].nodes, memory_order_relaxed);
     }
 
     free(threads);
@@ -232,7 +233,7 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
 
     unmake_move(ctx, &history);
 
-    if (*ctx->should_stop) return 0;
+    if (should_stop(ctx)) return 0;
 
     if (score > max_score) {
       max_score = score;
@@ -349,7 +350,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 
     unmake_move(ctx, &history);
 
-    if (*ctx->should_stop) return 0;
+    if (should_stop(ctx)) return 0;
 
     if (score > max_score) {
       max_score = score;
@@ -396,7 +397,7 @@ int null_move_search(SF_Context *ctx, int depth, int ply, int beta) {
 
   unmake_null_move(ctx, &null_history);
 
-  if (*ctx->should_stop) return 0;
+  if (should_stop(ctx)) return 0;
 
   if (null_score >= beta) {
     return beta; // pruning succeeds
@@ -507,13 +508,13 @@ bool check_stop_conditions(SF_Context *ctx) {
 
   if ((ctx->nodes & 2047) == 0) { 
     if (ctx->nodes_limit > 0 && ctx->nodes >= ctx->nodes_limit) {
-      if (ctx->should_stop) *ctx->should_stop = true;
+      request_search_stop(ctx);
       return true;
     }
 
     if (!ctx->infinite && ctx->time_limit > 0) {
       if (get_time_ms() - ctx->start_time >= ctx->time_limit) {
-        if (ctx->should_stop) *ctx->should_stop = true;
+        request_search_stop(ctx);
         return true;
       }
     }
@@ -737,7 +738,7 @@ static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_
   U64 total_nodes = ctx->nodes;
   if (helper_count > 0) {
     for (int i = 0; i < helper_count; ++i) {
-      total_nodes += thread_data[i].ctx.nodes;
+      total_nodes += atomic_load_explicit(&thread_data[i].nodes, memory_order_relaxed);
     }
   }
 
@@ -766,4 +767,3 @@ static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_
   printf("\n");
   fflush(stdout);
 }
-
