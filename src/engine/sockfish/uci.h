@@ -8,9 +8,8 @@ typedef struct {
   pthread_t thread;
   bool thread_valid;
   atomic_bool running;
-  volatile bool stop_flag;
+  atomic_bool stop_flag;
   SF_Context ctx;
 } AsyncSearch;
 
 void uci_loop(void);
-
