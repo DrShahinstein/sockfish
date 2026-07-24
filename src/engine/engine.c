@@ -12,6 +12,8 @@ void engine_init(EngineWrapper *engine) {
   config_load(SOCKFISH_INI, &engine->active_config);
   tt_init(engine->active_config.tt_size_mb); // init transposition table with configured MB
 
+  atomic_init(&engine->abort_search, false);
+
   engine->mtx              = SDL_CreateMutex();
   engine->cond             = SDL_CreateCondition();
   engine->last_pos_hash    = 0;
@@ -19,7 +21,6 @@ void engine_init(EngineWrapper *engine) {
   engine->pending_config   = engine->active_config;
   engine->config_changed   = false;
   engine->should_stop      = false;
-  engine->abort_search     = false;
   engine->pending_tt_clear = false;
   engine->thr_working      = false;
   engine->thr              = SDL_CreateThread(search_thread, "SearchThread", engine);
@@ -156,4 +157,3 @@ void engine_destroy(EngineWrapper *engine) {
   engine->mtx  = NULL;
   engine->cond = NULL;
 }
-
