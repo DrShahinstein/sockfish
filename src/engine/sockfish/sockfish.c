@@ -16,6 +16,7 @@ SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t c
   ctx.depth_limit     = 0;
   ctx.nodes_limit     = 0;
   ctx.infinite        = false;
+  ctx.in_null_search  = false;
   ctx.hash_key        = 0;
   ctx.history_count   = 0;
   ctx.halfmove_clock  = 0;
@@ -28,6 +29,7 @@ SF_Context create_sf_ctx(BitboardSet *bitboard_set, Turn search_color, uint8_t c
   sf_init_hash_key(&ctx);
   sf_init_evaluation(&ctx);
 
+  ctx.pos_history[ctx.history_count++] = ctx.hash_key;
+
   return ctx;
 }
-
