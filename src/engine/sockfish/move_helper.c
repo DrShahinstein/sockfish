@@ -120,30 +120,29 @@ void make_null_move(SF_Context *ctx, MoveHistory *history) {
   history->prev_eg_score[BLACK] = ctx->eg_score[BLACK];
   history->prev_game_phase      = ctx->game_phase;
   history->prev_halfmove_clock  = ctx->halfmove_clock;
-
-  ctx->halfmove_clock++;
+  history->prev_in_null_search  = ctx->in_null_search;
 
   if ((int)ctx->enpassant_sq != NO_ENPASSANT) {
     ctx->hash_key     ^= zobrist_enpassant[ctx->enpassant_sq % 8];
     ctx->enpassant_sq  = NO_ENPASSANT;
   }
 
-  ctx->hash_key                         ^= zobrist_black_to_move;
-  ctx->search_color                      = !ctx->search_color;
-  ctx->pos_history[ctx->history_count++] = ctx->hash_key;
+  ctx->hash_key      ^= zobrist_black_to_move;
+  ctx->search_color   = !ctx->search_color;
+  ctx->in_null_search = true;
 }
 
 void unmake_null_move(SF_Context *ctx, const MoveHistory *history) {
-  ctx->hash_key         = history->prev_hash;
-  ctx->enpassant_sq     = history->prev_ep_sq;
-  ctx->search_color     = !ctx->search_color;
-  ctx->history_count   -= 1;
-  ctx->mg_score[WHITE]  = history->prev_mg_score[WHITE];
-  ctx->mg_score[BLACK]  = history->prev_mg_score[BLACK];
-  ctx->eg_score[WHITE]  = history->prev_eg_score[WHITE];
-  ctx->eg_score[BLACK]  = history->prev_eg_score[BLACK];
-  ctx->game_phase       = history->prev_game_phase;
-  ctx->halfmove_clock   = history->prev_halfmove_clock;
+  ctx->hash_key        = history->prev_hash;
+  ctx->enpassant_sq    = history->prev_ep_sq;
+  ctx->search_color    = !ctx->search_color;
+  ctx->mg_score[WHITE] = history->prev_mg_score[WHITE];
+  ctx->mg_score[BLACK] = history->prev_mg_score[BLACK];
+  ctx->eg_score[WHITE] = history->prev_eg_score[WHITE];
+  ctx->eg_score[BLACK] = history->prev_eg_score[BLACK];
+  ctx->game_phase      = history->prev_game_phase;
+  ctx->halfmove_clock  = history->prev_halfmove_clock;
+  ctx->in_null_search  = history->prev_in_null_search;
 }
 
 PieceType get_piece_type(const BitboardSet *bbs, Square sq) {
