@@ -16,7 +16,7 @@ typedef struct EngineWrapper {
   bool config_changed;
   bool thr_working;
   bool should_stop;
-  bool abort_search;
+  atomic_bool abort_search;
   bool pending_tt_clear;
 } EngineWrapper;
 
