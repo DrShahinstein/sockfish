@@ -10,7 +10,7 @@
 #include <pthread.h>
 
 static inline bool threefold_repetition(const SF_Context *ctx);
-static inline bool fifty_move_draw(const SF_Context *ctx);
+static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
 static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
@@ -146,8 +146,12 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   if (check_stop_conditions(ctx))
     return 0;
 
-  if (threefold_repetition(ctx) || fifty_move_draw(ctx))
+  if (threefold_repetition(ctx))
     return 0;
+
+  int draw_or_mate;
+  if (fifty_move_draw(ctx, ply, &draw_or_mate))
+    return draw_or_mate;
 
   if (depth <= 0)
     return quiescence_search(ctx, ply, alpha, beta);
@@ -297,8 +301,12 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   if (ply >= SF_MAX_PLY)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
-  if (threefold_repetition(ctx) || fifty_move_draw(ctx))
+  if (threefold_repetition(ctx))
     return 0;
+
+  int draw_or_mate;
+  if (fifty_move_draw(ctx, ply, &draw_or_mate))
+    return draw_or_mate;
 
   int original_alpha = alpha;
   int tt_score = 0;
@@ -645,8 +653,20 @@ static inline bool threefold_repetition(const SF_Context *ctx) {
   return false;
 }
 
-static inline bool fifty_move_draw(const SF_Context *ctx) {
-  return ctx->halfmove_clock >= 100 && !ctx->in_null_search;
+static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate) {
+  if (ctx->in_null_search ||
+      ctx->halfmove_clock < FIFTY_MOVE_RULE_PLY_LIMIT) {
+    return false;
+  }
+
+  /* Checkmate overrides the fifty-move rule */
+  bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
+  if (in_check && !position_has_legal_move(ctx))
+    *draw_or_mate = -MATE_SCORE + ply;
+  else
+    *draw_or_mate = 0;
+
+  return true;
 }
 
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
