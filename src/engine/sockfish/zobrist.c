@@ -1,4 +1,5 @@
 #include "sockfish.h"
+#include "move_helper.h"  // has_legal_en_passant_capture()
 
 U64 zobrist_pieces[12][64];
 U64 zobrist_black_to_move;
@@ -33,6 +34,10 @@ void init_zobrist_keys(void) {
 
 void sf_init_hash_key(SF_Context *ctx) {
   U64 hash = 0;
+
+  if ((int)ctx->enpassant_sq != NO_ENPASSANT && !has_legal_en_passant_capture(ctx)) {
+    ctx->enpassant_sq = NO_ENPASSANT;
+  }
   
   for (int color = WHITE; color <= BLACK; ++color) {
     for (int pt = 0; pt < 6; ++pt) {
