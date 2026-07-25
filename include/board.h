@@ -25,6 +25,7 @@ typedef struct {
   uint8_t castling;
   int ep_row;
   int ep_col;
+  int halfmove_clock;
   Turn turn;
 } BoardMoveHistory;
 
@@ -90,6 +91,7 @@ typedef struct BoardState {
   Turn turn;
   uint8_t castling;
   int ep_row, ep_col;
+  int halfmove_clock;
   bool flipped;
   MoveList valid_moves; bool should_update_valid_moves;
   SelectedPiece selected_piece;

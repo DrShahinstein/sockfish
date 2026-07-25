@@ -24,6 +24,7 @@ void board_init(BoardState *board) {
   board->turn                        = WHITE;
   board->ep_row                      = NO_ENPASSANT;
   board->ep_col                      = NO_ENPASSANT;
+  board->halfmove_clock              = 0;
   board->flipped                     = false;
   board->drag.active                 = false;
   board->drag.to_row                 = -1;
@@ -113,17 +114,18 @@ void board_update_king_in_check(BoardState *b) {
 void load_fen(const char *fen, BoardState *board) {
   SDL_memset(board->board,   0, sizeof(board->board));
   SDL_memset(board->history, 0, sizeof(board->history));
-  board->turn          = WHITE;
-  board->castling      = 0;
-  board->ep_row        = NO_ENPASSANT;
-  board->ep_col        = NO_ENPASSANT;
-  board->promo.active  = false;
-  board->undo_count    = 0;
-  board->redo_count    = 0;
-  board->king.in_check = false;
-  board->king.color    = 0;
-  board->king.row      = -1;
-  board->king.col      = -1;
+  board->turn           = WHITE;
+  board->castling       = 0;
+  board->ep_row         = NO_ENPASSANT;
+  board->ep_col         = NO_ENPASSANT;
+  board->halfmove_clock = 0;
+  board->promo.active   = false;
+  board->undo_count     = 0;
+  board->redo_count     = 0;
+  board->king.in_check  = false;
+  board->king.color     = 0;
+  board->king.row       = -1;
+  board->king.col       = -1;
 
   char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
   int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
@@ -141,6 +143,14 @@ void load_fen(const char *fen, BoardState *board) {
   } else {
     board->ep_row = NO_ENPASSANT;
     board->ep_col = NO_ENPASSANT;
+  }
+
+  if (count >= 5) {
+    char *end = NULL;
+    long long parsed_halfmove = SDL_strtoll(halfmove, &end, 10);
+    if (end != halfmove && *end == '\0' && parsed_halfmove >= 0) {
+      board->halfmove_clock = parsed_halfmove > FIFTY_MOVE_RULE_PLY_LIMIT ? FIFTY_MOVE_RULE_PLY_LIMIT : (int)parsed_halfmove;
+    }
   }
 
   if (active[0] == 'w' || active[0] == 'W')
@@ -291,7 +301,11 @@ void load_pgn(const char *pgn, BoardState *board) {
       /* Save Before Applying */
       board_save_history(&tmp_b, fr, fc, tr, tc, tmp_b.redo_count);
 
-      char moved_piece = tmp_b.board[fr][fc];
+      char moved_piece              = tmp_b.board[fr][fc];
+      const BoardMoveHistory *saved = &tmp_b.history[tmp_b.redo_count];
+      bool irreversible             = moved_piece == 'P' || moved_piece == 'p' || saved->captured_piece != 0;
+      tmp_b.halfmove_clock          = next_halfmove_clock(tmp_b.halfmove_clock, irreversible);
+
       Turn t           = tmp_b.turn;
       bool is_castling = (moved_piece == 'K' || moved_piece == 'k') && SDL_abs(fc - tc) == 2;
 
@@ -333,6 +347,7 @@ void board_save_history(BoardState *board, int from_row, int from_col, int to_ro
   h->castling         = board->castling;
   h->ep_row           = board->ep_row;
   h->ep_col           = board->ep_col;
+  h->halfmove_clock   = board->halfmove_clock;
   h->turn             = board->turn;
   h->promoted_piece   = 0;
 
@@ -360,6 +375,7 @@ void board_undo(BoardState *board) {
   board->castling                                = h->castling;
   board->ep_row                                  = h->ep_row;
   board->ep_col                                  = h->ep_col;
+  board->halfmove_clock                          = h->halfmove_clock;
   board->board[h->from_row][h->from_col]         = h->moving_piece;
   board->board[h->captured_row][h->captured_col] = h->captured_piece;
   board->selected_piece.active                   = false;
@@ -407,6 +423,9 @@ void board_redo(BoardState *board) {
   board->turn                            = (h->turn == WHITE) ? BLACK : WHITE;
   board->selected_piece.active           = false;
 
+  bool irreversible = moving_piece == 'P' || moving_piece == 'p' || h->captured_piece != 0;
+  board->halfmove_clock = next_halfmove_clock(h->halfmove_clock, irreversible);
+
   Move move = create_move(rowcol_to_sq(h->from_row, h->from_col), rowcol_to_sq(h->to_row, h->to_col));
   update_castling_rights(board, moving_piece, h->captured_piece, move);
 
@@ -447,20 +466,9 @@ void board_redo(BoardState *board) {
 }
 
 int get_halfmove_clock(const BoardState *board) {
-  int count=0;
-
-  for (int i = board->undo_count-1; i >= 0; --i) {
-    const BoardMoveHistory *move = &board->history[i];
-    bool pawn_move = move->moving_piece == 'P' || move->moving_piece == 'p';
-
-    if (pawn_move || move->captured_piece != 0)
-      break;
-
-    ++count;
-  }
-
-  return count;
+  return board->halfmove_clock;
 }
+
 
 
 

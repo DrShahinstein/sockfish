@@ -209,6 +209,10 @@ static void piece_movements(BoardState *board, float mx, float my) {
     board_save_history(board, fr, fc, tr, tc, board->undo_count);
     board->undo_count += 1;
 
+    const BoardMoveHistory *saved = &board->history[board->undo_count - 1];
+    bool irreversible             = moving_piece == 'P' || moving_piece == 'p' || saved->captured_piece != 0;
+    board->halfmove_clock         = next_halfmove_clock(board->halfmove_clock, irreversible);
+
     if (is_castling_move(board, move)) {
       perform_castling(board, move);
 
