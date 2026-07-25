@@ -26,7 +26,8 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   history->prev_eg_score[BLACK] = ctx->eg_score[BLACK];
   history->prev_game_phase      = ctx->game_phase;
   history->prev_halfmove_clock  = ctx->halfmove_clock;
-
+  history->prev_history_count   = ctx->history_count;
+  history->prev_history_head    = ctx->history_head;
 
   Square from            = move_from(move);
   Square to              = move_to(move);
@@ -61,21 +62,34 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
     }
   }
 
-  ctx->pos_history[ctx->history_count++] = ctx->hash_key;
+  int next_history_head = (ctx->history_count > 0) ? (ctx->history_head + 1) % SF_MAX_HIST : 0;
+
+  if (ctx->history_count == SF_MAX_HIST)
+    history->overwritten_history_hash = ctx->pos_history[next_history_head];
+
+  ctx->history_head                   = next_history_head;
+  ctx->pos_history[ctx->history_head] = ctx->hash_key;
+
+  if (ctx->history_count < SF_MAX_HIST)
+    ctx->history_count++;
 }
 
 void unmake_move(SF_Context *ctx, const MoveHistory *history) {
-  ctx->hash_key         = history->prev_hash;
-  ctx->history_count   -= 1;
-  ctx->mg_score[WHITE]  = history->prev_mg_score[WHITE];
-  ctx->mg_score[BLACK]  = history->prev_mg_score[BLACK];
-  ctx->eg_score[WHITE]  = history->prev_eg_score[WHITE];
-  ctx->eg_score[BLACK]  = history->prev_eg_score[BLACK];
-  ctx->game_phase       = history->prev_game_phase;
-  ctx->castling_rights  = history->prev_castling;
-  ctx->enpassant_sq     = history->prev_ep_sq;
-  ctx->halfmove_clock   = history->prev_halfmove_clock;
-  ctx->search_color     = !ctx->search_color;
+  if (history->prev_history_count == SF_MAX_HIST)
+    ctx->pos_history[ctx->history_head] = history->overwritten_history_hash;
+
+  ctx->hash_key        = history->prev_hash;
+  ctx->history_count   = history->prev_history_count;
+  ctx->history_head    = history->prev_history_head;
+  ctx->mg_score[WHITE] = history->prev_mg_score[WHITE];
+  ctx->mg_score[BLACK] = history->prev_mg_score[BLACK];
+  ctx->eg_score[WHITE] = history->prev_eg_score[WHITE];
+  ctx->eg_score[BLACK] = history->prev_eg_score[BLACK];
+  ctx->game_phase      = history->prev_game_phase;
+  ctx->castling_rights = history->prev_castling;
+  ctx->enpassant_sq    = history->prev_ep_sq;
+  ctx->halfmove_clock  = history->prev_halfmove_clock;
+  ctx->search_color    = !ctx->search_color;
 
   Move move              = history->move;
   Square from            = move_from(move);

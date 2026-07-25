@@ -71,6 +71,7 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
 
   /* Make position history for Sockfish by transferring the one that BoardState already has  */
   ctx.history_count = board->undo_count+1;
+  ctx.history_head  = ctx.history_count-1;
   for (int i=0; i < ctx.history_count; ++i) {
     ctx.pos_history[i] = board->hash_history[i];
   }

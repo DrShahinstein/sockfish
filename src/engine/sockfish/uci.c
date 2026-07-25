@@ -148,7 +148,8 @@ static void handle_ucinewgame(SF_Context *ctx) {
   async_search_shutdown();
   tt_clear();
   ctx->history_count  = 1;
-  ctx->pos_history[0] = ctx->hash_key;
+  ctx->history_head   = 0;
+  ctx->pos_history[ctx->history_head] = ctx->hash_key;
   ctx->in_null_search = false;
   ctx->nmp_min_ply    = 0;
   memset(ctx->killer_moves,      0, sizeof(ctx->killer_moves));
@@ -297,14 +298,15 @@ static void uci_parse_fen(const char *fen, SF_Context *ctx) {
   ctx->castling_rights = castling;
   ctx->enpassant_sq    = ep_sq;
   ctx->halfmove_clock  = (count >= 5 && halfmove_clock > 0) ? halfmove_clock : 0;
-  ctx->history_count   = 0;
+  ctx->history_count   = 1;
+  ctx->history_head    = 0;
   ctx->in_null_search  = false;
   ctx->nmp_min_ply     = 0;
 
   sf_init_hash_key(ctx);
   sf_init_evaluation(ctx);
 
-  ctx->pos_history[ctx->history_count++] = ctx->hash_key;
+  ctx->pos_history[ctx->history_head] = ctx->hash_key;
 }
 
 /* ==================== Async Logic ==================== */

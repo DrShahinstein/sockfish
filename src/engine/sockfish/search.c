@@ -138,7 +138,7 @@ Move sf_search(const SF_Context *ctx) {
 int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow_null) {
   ctx->nodes++;
 
-  if (ctx->history_count >= SF_MAX_HIST)
+  if (ply >= SF_MAX_PLY)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
   if (check_stop_conditions(ctx))
@@ -292,7 +292,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   if (check_stop_conditions(ctx))
     return 0;
 
-  if (ctx->history_count >= SF_MAX_HIST)
+  if (ply >= SF_MAX_PLY)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
   if (threefold_repetition(ctx) || fifty_move_draw(ctx))
@@ -617,16 +617,25 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
 
 static inline bool threefold_repetition(const SF_Context *ctx) {
-  if (ctx->history_count <= 0 || ctx->pos_history[ctx->history_count-1] != ctx->hash_key || ctx->in_null_search)
+  if (ctx->history_count <= 0 || ctx->pos_history[ctx->history_head] != ctx->hash_key || ctx->in_null_search)
     return false;
 
-  int limit = (ctx->history_count-1) - ctx->halfmove_clock;
-  if (limit < 0) limit = 0;
+  int reversible_plies = ctx->halfmove_clock;
+  int available_plies  = ctx->history_count - 1;
+
+  if (reversible_plies > available_plies)
+    reversible_plies = available_plies;
 
   int repetitions = 0;
-  for (int i = ctx->history_count-1; i >= limit; i -= 2)
-    if (ctx->pos_history[i] == ctx->hash_key && ++repetitions >= 3)
+  for (int distance = 0; distance <= reversible_plies; distance += 2) {
+    int history_index = ctx->history_head - distance;
+    if (history_index < 0)
+      history_index += SF_MAX_HIST;
+
+    if (ctx->pos_history[history_index] == ctx->hash_key && ++repetitions >= 3)
       return true;
+  }
+
   return false;
 }
 

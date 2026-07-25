@@ -4,6 +4,7 @@
 
 typedef struct {
   U64 prev_hash;
+  U64 overwritten_history_hash;
   Square prev_ep_sq;
   Square captured_square;
   PieceType captured_piece;
@@ -12,6 +13,8 @@ typedef struct {
   int prev_eg_score[2];
   int prev_game_phase;
   int prev_halfmove_clock;
+  int prev_history_count;
+  int prev_history_head;
   bool prev_in_null_search;
   uint8_t prev_castling;
 } MoveHistory;
