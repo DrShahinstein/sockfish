@@ -11,7 +11,7 @@ static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
 static void adjust_promoting_pawn(BoardState *tmp_b, char promote, Turn T, int tr, int tc);
 static void adjust_castling_rook(BoardState *tmp_b, int king_to_col, int row);
-static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc);
+static void adjust_castling_flags(uint8_t *c, char moved, int fr, int fc, char captured, int tr, int tc);
 static void adjust_enpassant(int *ep_row, int *ep_col, char p, int fr, int fc, int tr);
 
 void board_init(BoardState *board) {
@@ -322,7 +322,7 @@ void load_pgn(const char *pgn, BoardState *board) {
         adjust_castling_rook(&tmp_b, tc, tr);
 
       adjust_enpassant(&tmp_b.ep_row, &tmp_b.ep_col, moved_piece, fr, fc, tr);
-      adjust_castling_flags(&tmp_b.castling, moved_piece, fr, fc);
+      adjust_castling_flags(&tmp_b.castling, moved_piece, fr, fc, saved->captured_piece, tr, tc);
     }
   }
 
@@ -506,19 +506,29 @@ static bool validate_castling(const char *str) {
   return true;
 }
 
-static void adjust_castling_flags(uint8_t *c, char p, int fr, int fc) {
+static void adjust_castling_flags(uint8_t *c, char moved, int fr, int fc, char captured, int tr, int tc) {
   /* on KING */
-  if (p == 'K') *c &= ~(CASTLE_WK | CASTLE_WQ);
-  if (p == 'k') *c &= ~(CASTLE_BK | CASTLE_BQ);
+  if (moved == 'K') *c &= ~(CASTLE_WK | CASTLE_WQ);
+  if (moved == 'k') *c &= ~(CASTLE_BK | CASTLE_BQ);
 
   /* on ROOK */
-  if (p == 'R') {
+  if (moved == 'R') {
     if (fr == 7 && fc == 0) *c &= ~CASTLE_WQ; // a1 rook
     if (fr == 7 && fc == 7) *c &= ~CASTLE_WK; // h1 rook
   }
-  if (p == 'r') {
+  if (moved == 'r') {
     if (fr == 0 && fc == 0) *c &= ~CASTLE_BQ; // a8 rook
     if (fr == 0 && fc == 7) *c &= ~CASTLE_BK; // h8 rook
+  }
+
+  /* on captured home rook */
+  if (captured == 'R') {
+    if (tr == 7 && tc == 0) *c &= ~CASTLE_WQ;
+    if (tr == 7 && tc == 7) *c &= ~CASTLE_WK;
+  }
+  if (captured == 'r') {
+    if (tr == 0 && tc == 0) *c &= ~CASTLE_BQ;
+    if (tr == 0 && tc == 7) *c &= ~CASTLE_BK;
   }
 }
 
