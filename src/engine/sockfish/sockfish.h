@@ -38,6 +38,8 @@ typedef enum {
 
 /* == 16bit Move == */
 typedef uint16_t Move;
+#define MOVE_NONE ((Move)0)
+
 typedef enum {
   MOVE_NORMAL     = 0,
   MOVE_PROMOTION  = 1 << 14,

@@ -15,7 +15,13 @@ void *helper_search_thread(void *arg) {
 
   int depth_offset = (thread_id + 1) / 2; // Lazy SMP asymmetry
 
-  Move best_move = create_move(A1,A1);
+  MoveList root_moves = sf_generate_moves(&ctx_);
+  if (root_moves.count == 0) {
+    atomic_store_explicit(&data->nodes, 0, memory_order_relaxed);
+    return NULL;
+  }
+
+  Move best_move = root_moves.moves[0];
 
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
     if (is_depth_limit_exceeded(&ctx_, depth)) break;
@@ -29,8 +35,7 @@ void *helper_search_thread(void *arg) {
     int max_score_so_far = -INF;
     Move best_so_far     = best_move;
 
-    MoveList movelist = generate_pseudo_legal_moves(&ctx_);
-    if (movelist.count == 0) break;
+    MoveList movelist = root_moves;
 
     CheckMasks masks = generate_check_masks(&ctx_);
 
@@ -44,11 +49,6 @@ void *helper_search_thread(void *arg) {
 
       MoveHistory history;
       make_move(&ctx_, movelist.moves[i], &history);
-
-      if (king_in_check(&ctx_.bitboard_set, !ctx_.search_color)) {
-        unmake_move(&ctx_, &history);
-        continue;
-      }
 
       int score = -negamax(&ctx_, search_depth-1, ROOT_PLY+1, -beta, -alpha, ALLOW_NULL);
 
