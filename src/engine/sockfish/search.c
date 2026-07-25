@@ -14,6 +14,7 @@ static inline bool fifty_move_draw(const SF_Context *ctx);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
 static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
+static inline int get_null_move_reduction(int depth, int static_eval, int beta);
 static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
 static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
 static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth);
@@ -23,8 +24,9 @@ static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_
 
 Move sf_search(const SF_Context *ctx) {
   SF_Context ctx_ = *ctx;
-  ctx_.nodes      = 0;
-  ctx_.start_time = get_time_ms();
+  ctx_.nodes       = 0;
+  ctx_.start_time  = get_time_ms();
+  ctx_.nmp_min_ply = 0;
 
   memset(ctx_.killer_moves,      0, sizeof(ctx_.killer_moves));
   memset(ctx_.history_heuristic, 0, sizeof(ctx_.history_heuristic));
@@ -158,13 +160,17 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
 
   int static_eval = sf_evaluate_position(ctx);
   bool in_check   = king_in_check(&ctx->bitboard_set, ctx->search_color);
-  bool nmp        = allow_null && depth >= 3 && !in_check && has_non_pawn_material(ctx) && static_eval >= beta;
+  bool nmp        = allow_null && ply >= ctx->nmp_min_ply &&
+                    depth >= 3 && !in_check &&
+                    beta > -MATE_BOUND && beta < MATE_BOUND &&
+                    has_non_pawn_material(ctx) && static_eval >= beta;
 
   if (nmp) {
-    int nmp_score = null_move_search(ctx, depth, ply, beta);
-    
-    if (nmp_score != -1)
-      return nmp_score; // beta
+    if (null_move_search(ctx, depth, ply, beta, static_eval))
+      return beta;
+
+    if (should_stop(ctx))
+      return 0;
   }
 
   MoveList movelist = generate_pseudo_legal_moves(ctx);
@@ -389,24 +395,38 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   return alpha;
 }
 
-int null_move_search(SF_Context *ctx, int depth, int ply, int beta) {
-  int R = 2; // depth reduction
+bool null_move_search(SF_Context *ctx, int depth, int ply, int beta, int static_eval) {
+  int reduction = get_null_move_reduction(depth, static_eval, beta);
   
   MoveHistory null_history;
   make_null_move(ctx, &null_history);
 
-  // zero-window search: only check out if score is greater than beta
-  int null_score = -negamax(ctx, depth-1-R, ply+1, -beta, -beta+1, !ALLOW_NULL);
+  /* A null move only needs a zero-window search to prove a beta cutoff. */
+  int null_score = -negamax(ctx, depth-1-reduction, ply+1, -beta, -beta+1, false);
 
   unmake_null_move(ctx, &null_history);
 
-  if (should_stop(ctx)) return 0;
+  if (should_stop(ctx) || null_score < beta)
+    return false;
 
-  if (null_score >= beta) {
-    return beta; // pruning succeeds
-  }
+  /*
+   * At shallow depths the null result is sufficiently cheap and reliable.
+   * At deeper nodes, verify the cutoff from the real position with null-move
+   * pruning disabled at this node. This protects zugzwang-like positions
+   * where passing can look better than every legal move.
+   */
+  if (depth < 10 || ctx->nmp_min_ply != 0)
+    return true;
 
-  return -1;
+  int verification_depth   = depth - reduction;
+  int previous_nmp_min_ply = ctx->nmp_min_ply;
+  int verification_span    = clamp_int((3 * verification_depth) / 4, 1, verification_depth);
+  ctx->nmp_min_ply = ply + verification_span;
+
+  int verification_score = negamax(ctx, verification_depth, ply, beta-1, beta, false);
+  ctx->nmp_min_ply = previous_nmp_min_ply;
+
+  return !should_stop(ctx) && verification_score >= beta;
 }
 
 int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks, int ply) {
@@ -654,6 +674,19 @@ static inline bool has_non_pawn_material(const SF_Context *ctx) {
   Turn us = ctx->search_color;
   const BitboardSet *bbs = &ctx->bitboard_set;
   return (bbs->knights[us] | bbs->bishops[us] | bbs->rooks[us] | bbs->queens[us]) != 0;
+}
+
+static inline int get_null_move_reduction(int depth, int static_eval, int beta) {
+  int reduction = 2;
+
+  /* Search deeper positions more aggressively. */
+  reduction += depth / 6;
+
+  /* A comfortably fail-high static evaluation makes a larger reduction safer. */
+  int eval_margin = static_eval - beta;
+  reduction += clamp_int(eval_margin / 200, 0, 2);
+
+  return clamp_int(reduction, 2, depth - 1);
 }
 
 /*
