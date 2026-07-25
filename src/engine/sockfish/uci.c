@@ -260,6 +260,11 @@ static void parse_go(const char *line, SF_Context *ctx) {
 }
 
 static void print_best(Move best) {
+  if (best == 0) {
+    printf("bestmove 0000\n");
+    return;
+  }
+
   char buf[6];
   move_to_uci_string(best, buf);
   printf("bestmove %s\n", buf);
