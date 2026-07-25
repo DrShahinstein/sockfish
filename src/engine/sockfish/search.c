@@ -20,6 +20,9 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
 static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth);
 static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta);
 
+static bool movelist_has_legal_move(SF_Context *ctx, const MoveList *movelist);
+static bool position_has_legal_move(SF_Context *ctx);
+static bool stand_pat_is_legal(SF_Context *ctx, const MoveList *noisy_moves);
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
 
 Move sf_search(const SF_Context *ctx) {
@@ -146,7 +149,7 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   if (threefold_repetition(ctx) || fifty_move_draw(ctx))
     return 0;
 
-  if (depth == 0)
+  if (depth <= 0)
     return quiescence_search(ctx, ply, alpha, beta);
 
   int original_alpha = alpha;
@@ -308,6 +311,8 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
   int max_score = -INF; // we'll track the best score to write to TT
 
+  MoveList movelist = in_check ? generate_pseudo_legal_moves(ctx) : generate_noisy_moves(ctx);
+
   if (!in_check) {
     int stand_pat = sf_evaluate_position(ctx);
 
@@ -315,19 +320,15 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
       max_score = stand_pat;
 
     if (stand_pat >= beta) {
+      if (!stand_pat_is_legal(ctx, &movelist))
+        return 0;
+
       tt_record(ctx->hash_key, 0, stand_pat, TT_BETA, 0);
       return beta;
     }
 
     if (stand_pat > alpha)
       alpha = stand_pat; 
-  }
-
-  MoveList movelist;
-  if (in_check) {
-    movelist = generate_pseudo_legal_moves(ctx);
-  } else {
-    movelist = generate_noisy_moves(ctx);
   }
 
   Move best_so_far = tt_move;
@@ -376,8 +377,14 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
     } 
   }
 
-  if (in_check && legal_moves==0) {
-    return -MATE_SCORE + ply;
+  if (legal_moves == 0) {
+    /* Checkmate */
+    if (in_check)
+      return -MATE_SCORE + ply;
+
+    /* Stalemate */
+    if (!position_has_legal_move(ctx))
+      return 0;
   }
 
   TT_Flag flag;
@@ -682,6 +689,31 @@ static inline bool has_non_pawn_material(const SF_Context *ctx) {
   Turn us = ctx->search_color;
   const BitboardSet *bbs = &ctx->bitboard_set;
   return (bbs->knights[us] | bbs->bishops[us] | bbs->rooks[us] | bbs->queens[us]) != 0;
+}
+
+/* Returns as soon as one move in an already-generated candidate list is legal. */
+static bool movelist_has_legal_move(SF_Context *ctx, const MoveList *movelist) {
+  for (int i = 0; i < movelist->count; ++i) {
+    MoveHistory history;
+    make_move(ctx, movelist->moves[i], &history);
+    bool legal = !king_in_check(&ctx->bitboard_set, !ctx->search_color);
+    unmake_move(ctx, &history);
+
+    if (legal)
+      return true;
+  }
+
+  return false;
+}
+
+/* Generates every pseudo-legal move when a subset cannot prove non-terminal state. */
+static bool position_has_legal_move(SF_Context *ctx) {
+  MoveList movelist = generate_pseudo_legal_moves(ctx);
+  return movelist_has_legal_move(ctx, &movelist);
+}
+
+static bool stand_pat_is_legal(SF_Context *ctx, const MoveList *noisy_moves) {
+  return movelist_has_legal_move(ctx, noisy_moves) || position_has_legal_move(ctx);
 }
 
 static inline int get_null_move_reduction(int depth, int static_eval, int beta) {
