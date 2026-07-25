@@ -23,7 +23,7 @@ typedef struct {
 Move sf_search(const SF_Context *ctx);
 int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow_null);
 int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta);
-int null_move_search(SF_Context *ctx, int depth, int ply, int beta);
+bool null_move_search(SF_Context *ctx, int depth, int ply, int beta, int static_eval);
 int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMasks *masks, int ply);
 
 bool check_stop_conditions(SF_Context *ctx);
@@ -39,4 +39,3 @@ static inline int clamp_int(int value, int min, int max) {
   if (value > max) return max;
   return value;
 }
-
