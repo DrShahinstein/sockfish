@@ -289,6 +289,9 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   if (ctx->history_count >= SF_MAX_HIST)
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
+  if (threefold_repetition(ctx) || fifty_move_draw(ctx))
+    return 0;
+
   int original_alpha = alpha;
   int tt_score = 0;
   Move tt_move = 0;
