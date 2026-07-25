@@ -111,7 +111,7 @@ Move sf_search(const SF_Context *ctx) {
     if (should_stop(&ctx_)) break;
 
     int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
-    tt_record(ctx_.hash_key, depth, tt_record_score, TT_EXACT, best_so_far);
+    tt_record(sf_tt_hash_key(&ctx_), depth, tt_record_score, TT_EXACT, best_so_far);
 
     best_move = best_so_far;
 
@@ -286,7 +286,7 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   }
 
   int tt_record_score = score_to_tt(max_score, ply);
-  tt_record(ctx->hash_key, depth, tt_record_score, flag, best_move);
+  tt_record(sf_tt_hash_key(ctx), depth, tt_record_score, flag, best_move);
 
   return max_score;
 }
@@ -330,7 +330,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
       if (!stand_pat_is_legal(ctx, &movelist))
         return 0;
 
-      tt_record(ctx->hash_key, 0, stand_pat, TT_BETA, 0);
+      tt_record(sf_tt_hash_key(ctx), 0, stand_pat, TT_BETA, 0);
       return beta;
     }
 
@@ -375,7 +375,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 
     if (score >= beta) {
       int tt_record_score = score_to_tt(score, ply);
-      tt_record(ctx->hash_key, 0, tt_record_score, TT_BETA, best_move);
+      tt_record(sf_tt_hash_key(ctx), 0, tt_record_score, TT_BETA, best_move);
       return beta;
     }
 
@@ -403,7 +403,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   }
 
   int tt_record_score = score_to_tt(max_score, ply);
-  tt_record(ctx->hash_key, 0, tt_record_score, flag, best_move);
+  tt_record(sf_tt_hash_key(ctx), 0, tt_record_score, flag, best_move);
 
   return alpha;
 }
@@ -596,7 +596,7 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
   while (count < max_len) {
     TT_Data tt_data;
-    if (!tt_probe(temp_ctx.hash_key, &tt_data) || tt_data.best_move == MOVE_NONE) {
+    if (!tt_probe(sf_tt_hash_key(&temp_ctx), &tt_data) || tt_data.best_move == MOVE_NONE) {
       break;
     }
 
@@ -630,7 +630,7 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
 static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, int beta, int *score, Move *best_move) {
   TT_Data data;
-  if (!tt_probe(ctx->hash_key, &data))
+  if (!tt_probe(sf_tt_hash_key(ctx), &data))
     return false;
 
   *best_move = data.best_move;

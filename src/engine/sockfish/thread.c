@@ -69,7 +69,7 @@ void *helper_search_thread(void *arg) {
     if (should_stop(&ctx_)) break;
 
     int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
-    tt_record(ctx_.hash_key, search_depth, tt_record_score, TT_EXACT, best_so_far);
+    tt_record(sf_tt_hash_key(&ctx_), search_depth, tt_record_score, TT_EXACT, best_so_far);
 
     best_move = best_so_far;
   }

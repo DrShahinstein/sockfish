@@ -5,6 +5,8 @@ U64 zobrist_pieces[12][64];
 U64 zobrist_black_to_move;
 U64 zobrist_castling[16];
 U64 zobrist_enpassant[8];
+U64 zobrist_rule50[FIFTY_MOVE_RULE_PLY_LIMIT];
+U64 zobrist_null_search;
 
 static U64 rand64(void) {
   static U64 seed = 0x98f107b4e56feULL;
@@ -30,6 +32,12 @@ void init_zobrist_keys(void) {
   for (int i=0; i < 8; ++i) {
     zobrist_enpassant[i] = rand64();
   }
+
+  for (int i=0; i < FIFTY_MOVE_RULE_PLY_LIMIT; ++i) {
+    zobrist_rule50[i] = rand64();
+  }
+
+  zobrist_null_search = rand64();
 }
 
 void sf_init_hash_key(SF_Context *ctx) {
@@ -85,4 +93,17 @@ void sf_init_hash_key(SF_Context *ctx) {
   }
 
   ctx->hash_key = hash;
+}
+
+U64 sf_tt_hash_key(const SF_Context *ctx) {
+  int rule50 = ctx->halfmove_clock;
+  if (rule50 < 0)  rule50 = 0;
+  if (rule50 >= FIFTY_MOVE_RULE_PLY_LIMIT)
+    rule50 = FIFTY_MOVE_RULE_PLY_LIMIT - 1;
+
+  U64 key = ctx->hash_key ^ zobrist_rule50[rule50];
+  if (ctx->in_null_search)
+    key ^= zobrist_null_search;
+
+  return key;
 }

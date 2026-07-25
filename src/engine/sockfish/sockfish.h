@@ -104,6 +104,7 @@ extern U64 zobrist_enpassant[8];
 
 void init_zobrist_keys(void);
 void sf_init_hash_key(SF_Context *ctx);
+U64 sf_tt_hash_key(const SF_Context *ctx);
 /* -end- */
 
 
