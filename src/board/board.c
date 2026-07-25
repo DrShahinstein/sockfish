@@ -149,12 +149,9 @@ void load_fen(const char *fen, BoardState *board) {
     board->turn = BLACK;
 
   if (count >= 3) {
-    if (!validate_castling(castling)) {
-      SDL_strlcpy(castling, "KQkq", sizeof(castling));
-    }
-    board->castling = parse_castling(castling);
+    board->castling = validate_castling(castling) ? parse_castling(castling) : CASTLE_NONE;
   } else {
-    board->castling = parse_castling("KQkq");
+    board->castling = CASTLE_NONE;
   }
 
   int row = 0, col = 0;
@@ -168,6 +165,19 @@ void load_fen(const char *fen, BoardState *board) {
       if (col < 8) board->board[row][col++] = *p;
     }
   }
+
+  if (board->board[7][4] != 'K')
+    board->castling &= ~(CASTLE_WK | CASTLE_WQ);
+  if (board->board[7][7] != 'R')
+    board->castling &= ~CASTLE_WK;
+  if (board->board[7][0] != 'R')
+    board->castling &= ~CASTLE_WQ;
+  if (board->board[0][4] != 'k')
+    board->castling &= ~(CASTLE_BK | CASTLE_BQ);
+  if (board->board[0][7] != 'r')
+    board->castling &= ~CASTLE_BK;
+  if (board->board[0][0] != 'r')
+    board->castling &= ~CASTLE_BQ;
 
   board->should_update_valid_moves = true;
 
