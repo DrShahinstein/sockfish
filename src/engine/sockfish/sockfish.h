@@ -73,6 +73,7 @@ typedef struct SF_Context {
   int history_count;
   int threads;
   int depth_limit;
+  int nmp_min_ply;                     // nmp => null-move-pruning
   atomic_bool *should_stop;
   bool allow_uci_info;
   bool infinite;
