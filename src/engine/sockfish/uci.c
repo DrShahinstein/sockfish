@@ -18,9 +18,17 @@
 
 static const char *START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+typedef struct {
+  const char *text;
+  size_t length;
+} UciToken;
+
 /* Internal Helpers */
-static void uci_parse_fen(const char *fen, SF_Context *ctx);
-static Move uci_parse_move(SF_Context *ctx, const char *move_str);
+static bool next_token(const char **cursor, UciToken *token);
+static bool token_equals(UciToken token, const char *expected);
+static bool uci_parse_fen(const char *fen, SF_Context *ctx);
+static bool uci_parse_fen_tokens(const UciToken fields[6], SF_Context *ctx);
+static Move uci_parse_move(SF_Context *ctx, UciToken move_token);
 static void print_best(Move best);
 static void parse_go(const char *line, SF_Context *ctx);
 
@@ -73,7 +81,9 @@ void uci_loop(void) {
   SF_Context uci_ctx;
   memset(&uci_ctx, 0, sizeof(SF_Context));
   apply_default_options(&uci_ctx, &uci_config);
-  uci_parse_fen(START_FEN, &uci_ctx);
+
+  if (!uci_parse_fen(START_FEN, &uci_ctx))
+    return;
 
   while (fgets(line, sizeof(line), stdin)) {
     if (strncmp(line, "uci", 3) == 0 && IS_TOKEN_END(line[3])) {
@@ -157,27 +167,51 @@ static void handle_ucinewgame(SF_Context *ctx) {
 }
 
 static void handle_position(const char *line, SF_Context *ctx) {
-  if (strstr(line, "startpos")) {
-    uci_parse_fen(START_FEN, ctx);
-  } else if (strstr(line, "fen ")) {
-    uci_parse_fen(strstr(line, "fen ") + 4, ctx);
-  }
+  const char *cursor = line;
+  UciToken token;
 
-  char *moves_ptr = strstr(line, "moves ");
-  if (!moves_ptr)
+  if (!next_token(&cursor, &token) || !token_equals(token, "position"))
     return;
 
-  moves_ptr += 6;
-  char *move_str = strtok(moves_ptr, " \n");
+  SF_Context candidate = *ctx;
 
-  while (move_str != NULL) {
-    Move m = uci_parse_move(ctx, move_str);
-    if (m != 0) {
-      MoveHistory hist;
-      make_move(ctx, m, &hist);
+  if (!next_token(&cursor, &token))
+    return;
+
+  if (token_equals(token, "startpos")) {
+    if (!uci_parse_fen(START_FEN, &candidate))
+      return;
+  } else if (token_equals(token, "fen")) {
+    UciToken fen_fields[6];
+    for (int i = 0; i < 6; ++i) {
+      if (!next_token(&cursor, &fen_fields[i]))
+        return;
     }
-    move_str = strtok(NULL, " \n");
+
+    if (!uci_parse_fen_tokens(fen_fields, &candidate))
+      return;
+  } else {
+    return;
   }
+
+  if (!next_token(&cursor, &token)) {
+    *ctx = candidate;
+    return;
+  }
+
+  if (!token_equals(token, "moves"))
+    return;
+
+  while (next_token(&cursor, &token)) {
+    Move move = uci_parse_move(&candidate, token);
+    if (move == 0)
+      return;
+
+    MoveHistory history;
+    make_move(&candidate, move, &history);
+  }
+
+  *ctx = candidate;
 }
 
 static void handle_go(const char *line, const SF_Context *uci_ctx, const SF_Config *cfg) {
@@ -231,7 +265,7 @@ static void print_best(Move best) {
   printf("bestmove %s\n", buf);
 }
 
-static Move uci_parse_move(SF_Context *ctx, const char *move_str) {
+static Move uci_parse_move(SF_Context *ctx, UciToken move_token) {
   MoveList list = sf_generate_moves(ctx);
 
   for (int i = 0; i < list.count; ++i) {
@@ -239,74 +273,238 @@ static Move uci_parse_move(SF_Context *ctx, const char *move_str) {
     char buf[6];
     move_to_uci_string(m, buf);
 
-    if (strncmp(move_str, buf, strlen(buf)) == 0)
+    size_t move_length = strlen(buf);
+    if (move_token.length == move_length && memcmp(move_token.text, buf, move_length) == 0) {
       return m;
+    }
   }
 
   return 0;
 }
 
-static void uci_parse_fen(const char *fen, SF_Context *ctx) {
-  char board_char[8][8] = {0};
-  Turn turn             = WHITE;
-  uint8_t castling      = 0;
-  Square ep_sq          = NO_ENPASSANT;
-  int halfmove_clock    = 0;
+static bool next_token(const char **cursor, UciToken *token) {
+  const char *start = *cursor;
+  while (*start != '\0' && IS_TOKEN_END(*start))
+    ++start;
 
-  char placement[256], active[2], castling_str[16], ep_str[3];
-  int count = sscanf(fen, "%255s %1s %15s %2s %d",
-      placement, active, castling_str, ep_str, &halfmove_clock);
+  if (*start == '\0') {
+    *cursor = start;
+    return false;
+  }
 
-  if (count < 1) return;
+  const char *end = start;
+  while (!IS_TOKEN_END(*end))
+    ++end;
 
-  int row = 0, col = 0;
-  for (const char *p = placement; *p && row < 8; ++p) {
-    if (*p >= '1' && *p <= '8') {
-      col += *p - '0';
-    } else if (*p == '/') {
-      row++;
+  token->text   = start;
+  token->length = (size_t)(end - start);
+  *cursor       = end;
+  return true;
+}
+
+static bool token_equals(UciToken token, const char *expected) {
+  size_t expected_length = strlen(expected);
+  return token.length == expected_length && memcmp(token.text, expected, expected_length) == 0;
+}
+
+static bool parse_halfmove_clock(UciToken token, int *halfmove_clock) {
+  if (token.length == 0)
+    return false;
+
+  int parsed = 0;
+  for (size_t i = 0; i < token.length; ++i) {
+    char ch = token.text[i];
+    if (ch < '0' || ch > '9')
+      return false;
+
+    if (parsed < FIFTY_MOVE_RULE_PLY_LIMIT) {
+      parsed = parsed*10 + (ch - '0');
+      if (parsed > FIFTY_MOVE_RULE_PLY_LIMIT)
+        parsed = FIFTY_MOVE_RULE_PLY_LIMIT;
+    }
+  }
+
+  *halfmove_clock = parsed;
+  return true;
+}
+
+static bool valid_fullmove_number(UciToken token) {
+  if (token.length == 0)
+    return false;
+
+  bool positive = false;
+  for (size_t i = 0; i < token.length; ++i) {
+    char ch = token.text[i];
+    if (ch < '0' || ch > '9')
+      return false;
+
+    if (ch != '0')
+      positive = true;
+  }
+
+  return positive;
+}
+
+static bool parse_piece_placement(UciToken placement, char board[8][8]) {
+  int row         = 0;
+  int col         = 0;
+  int white_kings = 0;
+  int black_kings = 0;
+  bool previous_was_digit = false;
+
+  for (size_t i = 0; i < placement.length; ++i) {
+    char ch = placement.text[i];
+
+    if (ch == '/') {
+      if (col != 8 || row >= 7)
+        return false;
+      ++row;
       col = 0;
-    } else {
-      if (col < 8) board_char[row][col++] = *p;
+      previous_was_digit = false;
+      continue;
     }
+
+    if (ch >= '1' && ch <= '8') {
+      if (previous_was_digit) return false;
+      col += ch - '0';
+      if (col > 8) return false;
+      previous_was_digit = true;
+      continue;
+    }
+
+    if (strchr("PNBRQKpnbrqk", ch) == NULL || col >= 8)
+      return false;
+
+    board[row][col++] = ch;
+    previous_was_digit = false;
+    if (ch == 'K')
+      ++white_kings;
+    else if (ch == 'k')
+      ++black_kings;
   }
 
-  if (count >= 2)
-    turn = (active[0] == 'w' || active[0] == 'W') ? WHITE : BLACK;
+  return row == 7 && col == 8 && white_kings == 1 && black_kings == 1;
+}
 
-  if (count >= 3) {
-    if (strcmp(castling_str, "-") != 0) {
-      for (const char *p = castling_str; *p; ++p) {
-        if (*p == 'K') castling |= CASTLE_WK;
-        if (*p == 'Q') castling |= CASTLE_WQ;
-        if (*p == 'k') castling |= CASTLE_BK;
-        if (*p == 'q') castling |= CASTLE_BQ;
-      }
-    }
-  } else castling = CASTLE_ALL;
-
-  if (count >= 4 && strcmp(ep_str, "-") != 0) {
-    int c = ep_str[0] - 'a';
-    int r = 7 - (ep_str[1] - '1');
-    ep_sq = rowcol_to_sq(r, c);
+static bool parse_castling(UciToken token, const BitboardSet *bbset, uint8_t *rights) {
+  if (token_equals(token, "-")) {
+    *rights = CASTLE_NONE;
+    return true;
   }
+
+  static const char order[] = "KQkq";
+  int previous_order        = -1;
+  uint8_t parsed            = CASTLE_NONE;
+
+  if (token.length == 0 || token.length > 4)
+    return false;
+
+  for (size_t i = 0; i < token.length; ++i) {
+    const char *ordered = strchr(order, token.text[i]);
+    if (ordered == NULL)
+      return false;
+
+    int current_order = (int)(ordered - order);
+    if (current_order <= previous_order)
+      return false;
+
+    parsed |= (uint8_t)(1U << current_order);
+    previous_order = current_order;
+  }
+
+  if ((parsed & (CASTLE_WK | CASTLE_WQ)) && get_piece_type(bbset, E1) != W_KING) return false;
+  if ((parsed & CASTLE_WK) && get_piece_type(bbset, H1) != W_ROOK)               return false;
+  if ((parsed & CASTLE_WQ) && get_piece_type(bbset, A1) != W_ROOK)               return false;
+  if ((parsed & (CASTLE_BK | CASTLE_BQ)) && get_piece_type(bbset, E8) != B_KING) return false;
+  if ((parsed & CASTLE_BK) && get_piece_type(bbset, H8) != B_ROOK)               return false;
+  if ((parsed & CASTLE_BQ) && get_piece_type(bbset, A8) != B_ROOK)               return false;
+
+  *rights = parsed;
+
+  return true;
+}
+
+static bool parse_en_passant(UciToken token, Turn turn, Square *ep_sq) {
+  if (token_equals(token, "-")) {
+    *ep_sq = NO_ENPASSANT;
+    return true;
+  }
+
+  char expected_rank = (turn == WHITE) ? '6' : '3';
+  if (token.length != 2   ||
+      token.text[0] < 'a' || token.text[0] > 'h' ||
+      token.text[1] != expected_rank) {
+    return false;
+  }
+
+  int file = token.text[0] - 'a';
+  int rank = token.text[1] - '1';
+
+  *ep_sq = (Square)(rank*8 + file);
+
+  return true;
+}
+
+static bool uci_parse_fen(const char *fen, SF_Context *ctx) {
+  const char *cursor = fen;
+  UciToken fields[6];
+
+  for (int i = 0; i < 6; ++i) {
+    if (!next_token(&cursor, &fields[i]))
+      return false;
+  }
+
+  UciToken extra;
+  if (next_token(&cursor, &extra))
+    return false;
+
+  return uci_parse_fen_tokens(fields, ctx);
+}
+
+static bool uci_parse_fen_tokens(const UciToken fields[6], SF_Context *ctx) {
+  char board_char[8][8] = {0};
+  Turn turn;
+  uint8_t castling;
+  Square ep_sq = NO_ENPASSANT;
+  int halfmove_clock;
+
+  if (!parse_piece_placement(fields[0], board_char))
+    return false;
+  if (token_equals(fields[1], "w"))
+    turn = WHITE;
+  else if (token_equals(fields[1], "b"))
+    turn = BLACK;
+  else
+    return false;
 
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8])board_char);
 
-  ctx->bitboard_set    = bbset;
-  ctx->search_color    = turn;
-  ctx->castling_rights = castling;
-  ctx->enpassant_sq    = ep_sq;
-  ctx->halfmove_clock  = (count >= 5 && halfmove_clock > 0) ? halfmove_clock : 0;
-  ctx->history_count   = 1;
-  ctx->history_head    = 0;
-  ctx->in_null_search  = false;
-  ctx->nmp_min_ply     = 0;
+  if (!parse_castling(fields[2], &bbset, &castling)         ||
+      !parse_en_passant(fields[3], turn, &ep_sq)            ||
+      !parse_halfmove_clock(fields[4], &halfmove_clock)      ||
+      !valid_fullmove_number(fields[5])) {
+    return false;
+  }
 
-  sf_init_hash_key(ctx);
-  sf_init_evaluation(ctx);
+  SF_Context candidate = *ctx;
 
-  ctx->pos_history[ctx->history_head] = ctx->hash_key;
+  candidate.bitboard_set    = bbset;
+  candidate.search_color    = turn;
+  candidate.castling_rights = castling;
+  candidate.enpassant_sq    = ep_sq;
+  candidate.halfmove_clock  = halfmove_clock;
+  candidate.history_count   = 1;
+  candidate.history_head    = 0;
+  candidate.in_null_search  = false;
+  candidate.nmp_min_ply     = 0;
+
+  sf_init_hash_key(&candidate);
+  sf_init_evaluation(&candidate);
+
+  candidate.pos_history[candidate.history_head] = candidate.hash_key;
+  *ctx = candidate;
+
+  return true;
 }
 
 /* ==================== Async Logic ==================== */
