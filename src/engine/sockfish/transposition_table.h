@@ -32,6 +32,13 @@ typedef struct {
 } TT_Entry;
 _Static_assert(sizeof(TT_Entry) == 16, "TT_Entry must be 16 bytes");
 
+typedef struct {
+  int32_t score;
+  Move best_move;
+  uint8_t depth;
+  TT_Flag flag;
+} TT_Data;
+
 extern TT_Entry *tt_table;
 extern int tt_num_entries;
 
@@ -39,7 +46,7 @@ void tt_init(int size_mb);
 void tt_clear(void);
 void tt_free(void);
 
-bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, Move *best_move);
+bool tt_probe(U64 hash_key, TT_Data *data);
 void tt_record(U64 hash_key, int depth, int score, TT_Flag flag, Move best_move);
 int tt_get_hashfull(void);
 

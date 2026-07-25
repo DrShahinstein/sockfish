@@ -10,6 +10,7 @@
 #include <pthread.h>
 
 static inline bool threefold_repetition(const SF_Context *ctx);
+static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, int beta, int *score, Move *best_move);
 static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate);
 static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
 static inline int piece_value(PieceType p);
@@ -160,9 +161,8 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   int tt_score = 0;
   Move tt_move = 0;
 
-  if (tt_probe(ctx->hash_key, depth, alpha, beta, &tt_score, &tt_move)) {
-    return score_from_tt(tt_score, ply);
-  }
+  if (try_tt_cutoff(ctx, depth, ply, alpha, beta, &tt_score, &tt_move))
+    return tt_score;
 
   int static_eval = sf_evaluate_position(ctx);
   bool in_check   = king_in_check(&ctx->bitboard_set, ctx->search_color);
@@ -312,9 +312,8 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   int tt_score = 0;
   Move tt_move = 0;
 
-  if (tt_probe(ctx->hash_key, 0, alpha, beta, &tt_score, &tt_move)) {
-    return score_from_tt(tt_score, ply);
-  }
+  if (try_tt_cutoff(ctx, 0, ply, alpha, beta, &tt_score, &tt_move))
+    return tt_score;
 
   bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
   int max_score = -INF; // we'll track the best score to write to TT
@@ -596,13 +595,12 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
   SF_Context temp_ctx = *ctx;
 
   while (count < max_len) {
-    int tt_score;
-    Move tt_move = 0;
-    
-    tt_probe(temp_ctx.hash_key, 0, -INF, INF, &tt_score, &tt_move);
-
-    if (tt_move == 0)
+    TT_Data tt_data;
+    if (!tt_probe(temp_ctx.hash_key, &tt_data) || tt_data.best_move == MOVE_NONE) {
       break;
+    }
+
+    Move tt_move = tt_data.best_move;
 
     bool valid = false;
     MoveList list = generate_pseudo_legal_moves(&temp_ctx);
@@ -629,6 +627,28 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
 
 
+
+static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, int beta, int *score, Move *best_move) {
+  TT_Data data;
+  if (!tt_probe(ctx->hash_key, &data))
+    return false;
+
+  *best_move = data.best_move;
+  if (data.depth < depth)
+    return false;
+
+  int decoded_score = score_from_tt(data.score, ply);
+  bool cutoff =  data.flag == TT_EXACT                            ||
+                (data.flag == TT_ALPHA && decoded_score <= alpha) ||
+                (data.flag == TT_BETA  && decoded_score >= beta);
+
+  if (!cutoff)
+    return false;
+
+  *score = decoded_score;
+
+  return true;
+}
 
 static inline bool threefold_repetition(const SF_Context *ctx) {
   if (ctx->history_count <= 0 || ctx->pos_history[ctx->history_head] != ctx->hash_key || ctx->in_null_search)

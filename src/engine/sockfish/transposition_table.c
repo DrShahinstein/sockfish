@@ -86,12 +86,12 @@ void tt_record(U64 hash_key, int depth, int score, TT_Flag flag, Move best_move)
   atomic_store_explicit(&entry->signature, hash_key ^ new_payload, memory_order_release);
 }
 
-/* 
- * Queries the record of the current position in the table.
- * If the position has been calculated previously,
- * it assigns that position's score to 'return_score' and returns 'true' to prune the branch.
+/*
+ * Reads a coherent entry for the requested position. Depth, bound, and
+ * mate-distance interpretation belong to the search, where the current ply
+ * and alpha-beta window are known.
  */
-bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, Move *best_move) {
+bool tt_probe(U64 hash_key, TT_Data *data) {
   if (tt_table == NULL || tt_num_entries == 0) return false;
 
   int index = hash_key % tt_num_entries;
@@ -106,29 +106,12 @@ bool tt_probe(U64 hash_key, int depth, int alpha, int beta, int *return_score, M
     return false;
   }
 
-  int score    = tt_unpack_score(payload_after);
-  TT_Flag flag = tt_unpack_flag(payload_after);
-  uint8_t d    = tt_unpack_depth(payload_after);
-  Move m       = tt_unpack_move(payload_after);
+  data->score     = tt_unpack_score(payload_after);
+  data->best_move = tt_unpack_move(payload_after);
+  data->depth     = tt_unpack_depth(payload_after);
+  data->flag      = tt_unpack_flag(payload_after);
 
-  *best_move = m;
-
-  if (d >= depth) {
-    if (flag == TT_EXACT) {
-      *return_score = score;
-      return true;
-    }
-    if (flag == TT_ALPHA && score <= alpha) {
-      *return_score = alpha;
-      return true;
-    }
-    if (flag == TT_BETA && score >= beta) {
-      *return_score = beta;
-      return true;
-    }
-  }
-
-  return false; 
+  return true;
 }
 
 /* Takes sample from the first 1000 elements of TT and returns the fullness rate (as X per thousand) */
