@@ -51,9 +51,19 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   update_castling_rights(ctx, from, moving_piece, history->captured_piece, history->captured_square);
   update_en_passant(ctx, move, moving_piece);
 
-  ctx->hash_key                          ^= zobrist_black_to_move;
-  ctx->search_color                       = !ctx->search_color;
-  ctx->pos_history[ctx->history_count++]  = ctx->hash_key;
+  ctx->hash_key    ^= zobrist_black_to_move;
+  ctx->search_color = !ctx->search_color;
+
+  /* Prevents threefold repetition bugs by only hashing legally capturable en-passant squares. */
+  if ((int)ctx->enpassant_sq != NO_ENPASSANT) {
+    if (has_legal_en_passant_capture(ctx)) {
+      ctx->hash_key ^= zobrist_enpassant[ctx->enpassant_sq % 8];
+    } else {
+      ctx->enpassant_sq = NO_ENPASSANT;
+    }
+  }
+
+  ctx->pos_history[ctx->history_count++] = ctx->hash_key;
 }
 
 void unmake_move(SF_Context *ctx, const MoveHistory *history) {
@@ -109,6 +119,45 @@ bool king_in_check(const BitboardSet *bbset, Turn color) {
   Square king_sq = GET_LSB(bbset->kings[color]);
   Turn opponent  = !color;
   return square_attacked(bbset, king_sq, opponent);
+}
+
+bool has_legal_en_passant_capture(const SF_Context *ctx) {
+  int ep_sq = (int)ctx->enpassant_sq;
+  Turn us   = ctx->search_color;
+
+  if (ep_sq < 0 || ep_sq >= 64)
+    return false;
+
+  int expected_ep_rank = (us == WHITE) ? 5 : 2;
+  if (ep_sq / 8 != expected_ep_rank || GET_BIT(ctx->bitboard_set.occupied, ep_sq))
+    return false;
+
+  int captured_sq      = ep_sq + ((us == WHITE) ? -8 : 8);
+  PieceType our_pawn   = (us == WHITE) ? W_PAWN : B_PAWN;
+  PieceType their_pawn = (us == WHITE) ? B_PAWN : W_PAWN;
+
+  if (get_piece_type(&ctx->bitboard_set, (Square)captured_sq) != their_pawn)
+    return false;
+
+  for (int file_offset = -1; file_offset <= 1; file_offset += 2) {
+    int from = captured_sq + file_offset;
+
+    if (from < 0 || from >= 64 ||
+        abs((from % 8) - (captured_sq % 8)) != 1 ||
+        get_piece_type(&ctx->bitboard_set, (Square)from) != our_pawn) {
+      continue;
+    }
+
+    BitboardSet after = ctx->bitboard_set;
+    remove_piece(&after, (Square)from, our_pawn);
+    remove_piece(&after, (Square)captured_sq, their_pawn);
+    place_piece(&after,  (Square)ep_sq, our_pawn);
+
+    if (!king_in_check(&after, us))
+      return true;
+  }
+
+  return false;
 }
 
 void make_null_move(SF_Context *ctx, MoveHistory *history) {
@@ -298,6 +347,12 @@ static void update_en_passant(SF_Context *ctx, Move move, PieceType moving_piece
   MoveType type = move_type(move);
   Square old_ep = ctx->enpassant_sq;
 
+  if ((int)old_ep != NO_ENPASSANT) {
+    ctx->hash_key ^= zobrist_enpassant[old_ep % 8];
+  }
+
+  ctx->enpassant_sq = NO_ENPASSANT;
+
   if (type == MOVE_NORMAL && (moving_piece == W_PAWN || moving_piece == B_PAWN)) {
     int from_rank = from / 8;
     int to_rank   = to   / 8;
@@ -305,35 +360,8 @@ static void update_en_passant(SF_Context *ctx, Move move, PieceType moving_piece
     bool double_pawn_push = abs(from_rank - to_rank) == 2;
 
     if (double_pawn_push) {
-      Turn us           = ctx->search_color;
-      Turn them         = !us;
-      U64 enemy_pawns   = ctx->bitboard_set.pawns[them];
-      U64 adjacent_mask = 0;
-      int file          = to % 8;
-      
-      if (file > 0) adjacent_mask |= (1ULL << (to - 1));
-      if (file < 7) adjacent_mask |= (1ULL << (to + 1));
-
-      if (enemy_pawns & adjacent_mask) {
-        ctx->enpassant_sq = (from + to) / 2;
-      } else {
-        ctx->enpassant_sq = NO_ENPASSANT;
-      }
-
-    } else {
-      ctx->enpassant_sq = NO_ENPASSANT;
+      ctx->enpassant_sq = (from + to) / 2;
     }
-  } 
-
-  else {
-    ctx->enpassant_sq = NO_ENPASSANT;
-  }
-
-  if ((int) old_ep != NO_ENPASSANT) {
-    ctx->hash_key ^= zobrist_enpassant[old_ep % 8];
-  }
-  if ((int) ctx->enpassant_sq != NO_ENPASSANT) {
-    ctx->hash_key ^= zobrist_enpassant[ctx->enpassant_sq % 8];
   }
 }
 
@@ -403,4 +431,3 @@ static inline PieceType get_promotion_piece(Move move, Turn color) {
   }
   return NO_PIECE; // should not happen
 }
-
