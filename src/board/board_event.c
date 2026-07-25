@@ -154,12 +154,10 @@ static void pawn_promotes(BoardState *board, float mx, float my) {
   }
 
   if (p == -1) {
-    char p_abort = board->turn == WHITE ? 'P':'p';
-
+    board_undo(board);
+    board->redo_count   = 0;
     board->drag.active  = false;
     board->promo.active = false;
-    board->board[board->drag.from_row][board->drag.from_col] = p_abort;
-    board->board[board->promo.row][board->promo.col]         = board->promo.captured;
     return;
   }
 
