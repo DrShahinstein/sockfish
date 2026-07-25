@@ -27,7 +27,6 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   history->prev_game_phase      = ctx->game_phase;
   history->prev_halfmove_clock  = ctx->halfmove_clock;
 
-  ctx->halfmove_clock++;
 
   Square from            = move_from(move);
   Square to              = move_to(move);
@@ -42,9 +41,8 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   }
   history->captured_piece = get_piece_type(&ctx->bitboard_set, history->captured_square);
 
-  if (moving_piece == W_PAWN || moving_piece == B_PAWN || history->captured_piece != NO_PIECE) {
-    ctx->halfmove_clock = 0;
-  }
+  bool irreversible = moving_piece == W_PAWN || moving_piece == B_PAWN || history->captured_piece != NO_PIECE;
+  ctx->halfmove_clock = next_halfmove_clock(ctx->halfmove_clock, irreversible);
 
   update_incremental_eval(ctx, move, moving_piece, history->captured_piece, history->captured_square);
   move_pieces_on_board(ctx, move, moving_piece, history->captured_piece, history->captured_square);

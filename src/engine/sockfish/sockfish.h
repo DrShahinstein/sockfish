@@ -55,6 +55,7 @@ typedef enum {
 
 #define SF_MAX_HIST 1024
 #define SF_MAX_PLY 128
+#define FIFTY_MOVE_RULE_PLY_LIMIT 100
 
 typedef struct SF_Context {
   BitboardSet bitboard_set;
@@ -175,6 +176,17 @@ static inline void request_search_stop(const SF_Context *ctx) {
 
 static inline bool is_depth_limit_exceeded(const SF_Context *ctx, int curr_depth) {
   return ctx->depth_limit > 0 && curr_depth > ctx->depth_limit;
+}
+
+static inline int next_halfmove_clock(int halfmove_clock, bool irreversible) {
+  /* pawn moves irreversibly change the board */
+  if (irreversible)
+    return 0;
+
+  if (halfmove_clock < FIFTY_MOVE_RULE_PLY_LIMIT)
+    return halfmove_clock + 1;
+
+  return FIFTY_MOVE_RULE_PLY_LIMIT;
 }
 
 
