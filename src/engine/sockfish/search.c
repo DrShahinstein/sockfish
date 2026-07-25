@@ -12,7 +12,7 @@
 static inline bool threefold_repetition(const SF_Context *ctx);
 static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, int beta, int *score, Move *best_move);
 static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate);
-static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks);
+static inline bool likely_giving_check(Move move, PieceType attacker, const CheckMasks *masks);
 static inline int piece_value(PieceType p);
 static inline bool has_non_pawn_material(const SF_Context *ctx);
 static inline int get_null_move_reduction(int depth, int static_eval, int beta);
@@ -202,7 +202,7 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
     PieceType attacker = get_piece_type(&ctx->bitboard_set, move_from(move));
     PieceType victim   = get_piece_type(&ctx->bitboard_set, move_to(move));
     bool is_quiet      = (move_type(move) == MOVE_NORMAL) && (victim == NO_PIECE);
-    bool gives_check   = giving_check(move, attacker, &masks);
+    bool gives_check   = likely_giving_check(move, attacker, &masks);
 
     MoveHistory history;
     make_move(ctx, movelist.moves[i], &history);
@@ -454,7 +454,7 @@ int score_move(const SF_Context *ctx, Move move, Move best_so_far, const CheckMa
   PieceType attacker = get_piece_type(bbset, from);
   PieceType victim   = get_piece_type(bbset, to);
 
-  bool check      = giving_check(move, attacker, masks);
+  bool check      = likely_giving_check(move, attacker, masks);
   bool capture    = victim != NO_PIECE;
   bool promote    = type == MOVE_PROMOTION;
   bool castle     = type == MOVE_CASTLING;
@@ -689,7 +689,8 @@ static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate) 
   return true;
 }
 
-static inline bool giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
+/* Fast direct-check detection. Intentionally ignores discovered checks for performance. */
+static inline bool likely_giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
   Square to  = move_to(move);
   U64 to_bit = 1ULL << to;
 
