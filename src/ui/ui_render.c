@@ -97,8 +97,11 @@ void ui_render(SDL_Renderer *r, UI_State *ui, EngineWrapper *engine, BoardState 
     bool out_of_date = engine_hash != board_hash;
     bool thinking    = thr_working || out_of_date;
 
-    if (thinking) draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
-    else {
+    if (thinking) {
+      draw_text(r, ui->fonts.roboto15, "Thinking...", FWHITE, x, y);
+    } else if (best == 0) {
+      draw_text(r, ui->fonts.roboto15, "No legal move.", FWHITE, x, y);
+    } else {
       char from_alg[3]  = {0};
       char to_alg[3]    = {0};
       char promo_alg[3] = {0};
