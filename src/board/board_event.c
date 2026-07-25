@@ -1,5 +1,6 @@
 #include "board.h"
 #include "cursor.h"            /* get_mouse_pos */
+#include "ui.h"                /* ui_set_info */
 #include "sockfish/sockfish.h" /* Move, Turn, CASTLE_WK, CASTLE_WQ, CASTLE_BK, CASTLE_BQ, '= Move Utilities =' ... */
 #include <SDL3/SDL.h>
 
@@ -196,13 +197,17 @@ static void piece_movements(BoardState *board, float mx, float my) {
   bool valid = check_valid(board, move);
 
   if (valid) {
+    if (board->undo_count >= MAX_HISTORY) {
+      board->drag.active = false;
+      ui_set_info("Move history is full; mustn't happen");
+      return;
+    }
+
     board->should_update_valid_moves = true;
 
-    if (board->undo_count < MAX_HISTORY) {
-      board->redo_count = 0;
-      board_save_history(board, fr, fc, tr, tc, board->undo_count);
-      board->undo_count += 1;
-    }
+    board->redo_count = 0;
+    board_save_history(board, fr, fc, tr, tc, board->undo_count);
+    board->undo_count += 1;
 
     if (is_castling_move(board, move)) {
       perform_castling(board, move);
