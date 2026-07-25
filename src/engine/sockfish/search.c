@@ -9,21 +9,20 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-static inline bool threefold_repetition(const SF_Context *ctx);
 static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, int beta, int *score, Move *best_move);
-static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate);
-static inline bool likely_giving_check(Move move, PieceType attacker, const CheckMasks *masks);
-static inline int piece_value(PieceType p);
-static inline bool has_non_pawn_material(const SF_Context *ctx);
-static inline int get_null_move_reduction(int depth, int static_eval, int beta);
-static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
-static inline void save_killer_move(SF_Context *ctx, Move move, int ply);
-static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth);
-static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta);
-
+static bool threefold_repetition(const SF_Context *ctx);
+static bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate);
+static bool likely_giving_check(Move move, PieceType attacker, const CheckMasks *masks);
+static int piece_value(PieceType p);
+static bool has_non_pawn_material(const SF_Context *ctx);
 static bool movelist_has_legal_move(SF_Context *ctx, const MoveList *movelist);
 static bool position_has_legal_move(SF_Context *ctx);
 static bool stand_pat_is_legal(SF_Context *ctx, const MoveList *noisy_moves);
+static int get_null_move_reduction(int depth, int static_eval, int beta);
+static int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check);
+static void save_killer_move(SF_Context *ctx, Move move, int ply);
+static void adjust_hh_entry(SF_Context *ctx, Move move, int delta);
+static void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth);
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
 
 Move sf_search(const SF_Context *ctx) {
@@ -628,6 +627,17 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, int beta, int *score, Move *best_move) {
   TT_Data data;
   if (!tt_probe(sf_tt_hash_key(ctx), &data))
@@ -650,7 +660,7 @@ static bool try_tt_cutoff(const SF_Context *ctx, int depth, int ply, int alpha, 
   return true;
 }
 
-static inline bool threefold_repetition(const SF_Context *ctx) {
+static bool threefold_repetition(const SF_Context *ctx) {
   if (ctx->history_count <= 0 || ctx->pos_history[ctx->history_head] != ctx->hash_key || ctx->in_null_search)
     return false;
 
@@ -673,7 +683,7 @@ static inline bool threefold_repetition(const SF_Context *ctx) {
   return false;
 }
 
-static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate) {
+static bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate) {
   if (ctx->in_null_search ||
       ctx->halfmove_clock < FIFTY_MOVE_RULE_PLY_LIMIT) {
     return false;
@@ -690,7 +700,7 @@ static inline bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate) 
 }
 
 /* Fast direct-check detection. Intentionally ignores discovered checks for performance. */
-static inline bool likely_giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
+static bool likely_giving_check(Move move, PieceType attacker, const CheckMasks *masks) {
   Square to  = move_to(move);
   U64 to_bit = 1ULL << to;
 
@@ -714,7 +724,7 @@ static inline bool likely_giving_check(Move move, PieceType attacker, const Chec
 }
 
 /* Helps score_move() function */
-static inline int piece_value(PieceType p) {
+static int piece_value(PieceType p) {
   switch (p) {
     case W_PAWN:   case B_PAWN:   return 100;
     case W_KNIGHT: case B_KNIGHT: return 320;
@@ -726,7 +736,7 @@ static inline int piece_value(PieceType p) {
   }
 }
 
-static inline bool has_non_pawn_material(const SF_Context *ctx) {
+static bool has_non_pawn_material(const SF_Context *ctx) {
   Turn us = ctx->search_color;
   const BitboardSet *bbs = &ctx->bitboard_set;
   return (bbs->knights[us] | bbs->bishops[us] | bbs->rooks[us] | bbs->queens[us]) != 0;
@@ -757,7 +767,7 @@ static bool stand_pat_is_legal(SF_Context *ctx, const MoveList *noisy_moves) {
   return movelist_has_legal_move(ctx, noisy_moves) || position_has_legal_move(ctx);
 }
 
-static inline int get_null_move_reduction(int depth, int static_eval, int beta) {
+static int get_null_move_reduction(int depth, int static_eval, int beta) {
   int reduction = 2;
 
   /* Search deeper positions more aggressively. */
@@ -778,7 +788,7 @@ static inline int get_null_move_reduction(int depth, int static_eval, int beta) 
  * 4. The move must not give a check
  * 5. We must not currently be in check
  */
-static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check) {
+static int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, bool gives_check, bool in_check) {
   if (depth >= 3 && legal_moves >= 4 && is_quiet && !gives_check && !in_check) {
     int reduction = 1;
     
@@ -793,7 +803,7 @@ static inline int get_lmr_reduction(int depth, int legal_moves, bool is_quiet, b
   return 0; // LMR conditions aren't met so we'll keep going with a full-depth search
 }
 
-static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
+static void save_killer_move(SF_Context *ctx, Move move, int ply) {
   bool new_primary_killer = (ctx->killer_moves[ply][0] != move);
 
   if (new_primary_killer) {
@@ -812,7 +822,7 @@ static inline void save_killer_move(SF_Context *ctx, Move move, int ply) {
  * - HH_LIMIT: The absolute ceiling/floor for a move's score (+/-).
  * - HH_DELTA_MAX: The biggest bonus or penalty allowed in a single step.
  */
-static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta) {
+static void adjust_hh_entry(SF_Context *ctx, Move move, int delta) {
   Turn c      = ctx->search_color;
   Square from = move_from(move);
   Square to   = move_to(move);
@@ -829,7 +839,7 @@ static inline void adjust_hh_entry(SF_Context *ctx, Move move, int delta) {
  * Rewards the winning move based on depth (capped at HH_DELTA_MAX),
  * and penalizes all the quiet moves we tried before it that failed.
  */
-static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth) {
+static void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth) {
   int bonus = clamp_int(depth*depth, 0, HH_DELTA_MAX);
   adjust_hh_entry(ctx, cutoff_move, bonus);
 
@@ -838,6 +848,15 @@ static inline void update_history_heuristic(SF_Context *ctx, Move cutoff_move, c
     adjust_hh_entry(ctx, failed_quiet_moves[i], -malus);
   }
 }
+
+
+
+
+
+
+
+
+
 
 
 
