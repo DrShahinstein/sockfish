@@ -334,9 +334,11 @@ void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t
     if (color == WHITE) {
       // white-kingside
       legal = (
-       castling_rights & CASTLE_WK  &&
-       !(occupied & (1ULL << F1))   &&
-       !(occupied & (1ULL << G1))   &&
+       king_square == E1                    &&
+       GET_BIT(bbset->rooks[WHITE], H1)     &&
+       castling_rights & CASTLE_WK          &&
+       !(occupied & (1ULL << F1))           &&
+       !(occupied & (1ULL << G1))           &&
        !(square_attacked(bbset, E1, BLACK)) &&
        !(square_attacked(bbset, F1, BLACK)) &&
        !(square_attacked(bbset, G1, BLACK))
@@ -345,10 +347,12 @@ void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t
 
       // white-queenside
       legal = (
-       castling_rights & CASTLE_WQ &&
-       !(occupied & (1ULL << B1))  &&
-       !(occupied & (1ULL << C1))  &&
-       !(occupied & (1ULL << D1))  &&
+       king_square == E1                    &&
+       GET_BIT(bbset->rooks[WHITE], A1)     &&
+       castling_rights & CASTLE_WQ          &&
+       !(occupied & (1ULL << B1))           &&
+       !(occupied & (1ULL << C1))           &&
+       !(occupied & (1ULL << D1))           &&
        !(square_attacked(bbset, E1, BLACK)) &&
        !(square_attacked(bbset, D1, BLACK)) &&
        !(square_attacked(bbset, C1, BLACK))
@@ -359,9 +363,11 @@ void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t
     else {
       // black-kingside
       legal = (
-       castling_rights & CASTLE_BK &&
-       !(occupied & (1ULL << F8))  &&
-       !(occupied & (1ULL << G8))  &&
+       king_square == E8                    &&
+       GET_BIT(bbset->rooks[BLACK], H8)     &&
+       castling_rights & CASTLE_BK          &&
+       !(occupied & (1ULL << F8))           &&
+       !(occupied & (1ULL << G8))           &&
        !(square_attacked(bbset, E8, WHITE)) &&
        !(square_attacked(bbset, F8, WHITE)) &&
        !(square_attacked(bbset, G8, WHITE))
@@ -370,10 +376,12 @@ void gen_kings(const BitboardSet *bbset, MoveList *movelist, Turn color, uint8_t
 
       // black-queenside
       legal = (
-       castling_rights & CASTLE_BQ &&
-       !(occupied & (1ULL << B8))  &&
-       !(occupied & (1ULL << C8))  &&
-       !(occupied & (1ULL << D8))  &&
+       king_square == E8                    &&
+       GET_BIT(bbset->rooks[BLACK], A8)     &&
+       castling_rights & CASTLE_BQ          &&
+       !(occupied & (1ULL << B8))           &&
+       !(occupied & (1ULL << C8))           &&
+       !(occupied & (1ULL << D8))           &&
        !(square_attacked(bbset, E8, WHITE)) &&
        !(square_attacked(bbset, D8, WHITE)) &&
        !(square_attacked(bbset, C8, WHITE))

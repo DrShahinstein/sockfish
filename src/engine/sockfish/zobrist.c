@@ -35,6 +35,22 @@ void init_zobrist_keys(void) {
 void sf_init_hash_key(SF_Context *ctx) {
   U64 hash = 0;
 
+  ctx->castling_rights &= CASTLE_ALL;
+
+  if (!GET_BIT(ctx->bitboard_set.kings[WHITE], E1))
+    ctx->castling_rights &= ~(CASTLE_WK | CASTLE_WQ);
+  if (!GET_BIT(ctx->bitboard_set.rooks[WHITE], H1))
+    ctx->castling_rights &= ~CASTLE_WK;
+  if (!GET_BIT(ctx->bitboard_set.rooks[WHITE], A1))
+    ctx->castling_rights &= ~CASTLE_WQ;
+
+  if (!GET_BIT(ctx->bitboard_set.kings[BLACK], E8))
+    ctx->castling_rights &= ~(CASTLE_BK | CASTLE_BQ);
+  if (!GET_BIT(ctx->bitboard_set.rooks[BLACK], H8))
+    ctx->castling_rights &= ~CASTLE_BK;
+  if (!GET_BIT(ctx->bitboard_set.rooks[BLACK], A8))
+    ctx->castling_rights &= ~CASTLE_BQ;
+
   if ((int)ctx->enpassant_sq != NO_ENPASSANT && !has_legal_en_passant_capture(ctx)) {
     ctx->enpassant_sq = NO_ENPASSANT;
   }
