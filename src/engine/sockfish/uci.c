@@ -150,6 +150,7 @@ static void handle_ucinewgame(SF_Context *ctx) {
   ctx->history_count  = 1;
   ctx->pos_history[0] = ctx->hash_key;
   ctx->in_null_search = false;
+  ctx->nmp_min_ply    = 0;
   memset(ctx->killer_moves,      0, sizeof(ctx->killer_moves));
   memset(ctx->history_heuristic, 0, sizeof(ctx->history_heuristic));
 }
@@ -298,6 +299,7 @@ static void uci_parse_fen(const char *fen, SF_Context *ctx) {
   ctx->halfmove_clock  = (count >= 5 && halfmove_clock > 0) ? halfmove_clock : 0;
   ctx->history_count   = 0;
   ctx->in_null_search  = false;
+  ctx->nmp_min_ply     = 0;
 
   sf_init_hash_key(ctx);
   sf_init_evaluation(ctx);
