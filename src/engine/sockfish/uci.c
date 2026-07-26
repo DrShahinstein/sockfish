@@ -204,7 +204,7 @@ static void handle_position(const char *line, SF_Context *ctx) {
 
   while (next_token(&cursor, &token)) {
     Move move = uci_parse_move(&candidate, token);
-    if (move == 0)
+    if (move == MOVE_NONE)
       return;
 
     MoveHistory history;
@@ -260,7 +260,7 @@ static void parse_go(const char *line, SF_Context *ctx) {
 }
 
 static void print_best(Move best) {
-  if (best == 0) {
+  if (best == MOVE_NONE) {
     printf("bestmove 0000\n");
     return;
   }
@@ -284,7 +284,7 @@ static Move uci_parse_move(SF_Context *ctx, UciToken move_token) {
     }
   }
 
-  return 0;
+  return MOVE_NONE;
 }
 
 static bool next_token(const char **cursor, UciToken *token) {
@@ -484,9 +484,9 @@ static bool uci_parse_fen_tokens(const UciToken fields[6], SF_Context *ctx) {
 
   BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8])board_char);
 
-  if (!parse_castling(fields[2], &bbset, &castling)         ||
-      !parse_en_passant(fields[3], turn, &ep_sq)            ||
-      !parse_halfmove_clock(fields[4], &halfmove_clock)      ||
+  if (!parse_castling(fields[2], &bbset, &castling)     ||
+      !parse_en_passant(fields[3], turn, &ep_sq)        ||
+      !parse_halfmove_clock(fields[4], &halfmove_clock) ||
       !valid_fullmove_number(fields[5])) {
     return false;
   }
