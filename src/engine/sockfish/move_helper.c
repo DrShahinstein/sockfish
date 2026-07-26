@@ -42,7 +42,7 @@ void make_move(SF_Context *ctx, Move move, MoveHistory *history) {
   }
   history->captured_piece = get_piece_type(&ctx->bitboard_set, history->captured_square);
 
-  bool irreversible = moving_piece == W_PAWN || moving_piece == B_PAWN || history->captured_piece != NO_PIECE;
+  bool irreversible   = moving_piece == W_PAWN || moving_piece == B_PAWN || history->captured_piece != NO_PIECE;
   ctx->halfmove_clock = next_halfmove_clock(ctx->halfmove_clock, irreversible);
 
   update_incremental_eval(ctx, move, moving_piece, history->captured_piece, history->captured_square);
@@ -122,7 +122,7 @@ void unmake_move(SF_Context *ctx, const MoveHistory *history) {
     }
 
     PieceType rook = (ctx->search_color == WHITE) ? W_ROOK : B_ROOK;
-    remove_piece(&ctx->bitboard_set, rook_to, rook);
+    remove_piece(&ctx->bitboard_set, rook_to,   rook);
     place_piece (&ctx->bitboard_set, rook_from, rook);
   }
 }
@@ -158,16 +158,17 @@ bool has_legal_en_passant_capture(const SF_Context *ctx) {
   for (int file_offset = -1; file_offset <= 1; file_offset += 2) {
     int from = captured_sq + file_offset;
 
-    if (from < 0 || from >= 64 ||
+    /* Verify the square is on the board, strictly on an adjacent file, and contains our pawn */
+    if (from < 0 || from >= 64                   ||
         abs((from % 8) - (captured_sq % 8)) != 1 ||
         get_piece_type(&ctx->bitboard_set, (Square)from) != our_pawn) {
       continue;
     }
 
     BitboardSet after = ctx->bitboard_set;
-    remove_piece(&after, (Square)from, our_pawn);
+    remove_piece(&after, (Square)from,        our_pawn);
     remove_piece(&after, (Square)captured_sq, their_pawn);
-    place_piece(&after,  (Square)ep_sq, our_pawn);
+    place_piece(&after,  (Square)ep_sq,       our_pawn);
 
     if (!king_in_check(&after, us))
       return true;
@@ -211,18 +212,18 @@ void unmake_null_move(SF_Context *ctx, const MoveHistory *history) {
 }
 
 PieceType get_piece_type(const BitboardSet *bbs, Square sq) {
-  if (GET_BIT(bbs->pawns[WHITE], sq))   return W_PAWN;
-  if (GET_BIT(bbs->pawns[BLACK], sq))   return B_PAWN;
+  if (GET_BIT(bbs->pawns[WHITE],   sq)) return W_PAWN;
+  if (GET_BIT(bbs->pawns[BLACK],   sq)) return B_PAWN;
   if (GET_BIT(bbs->knights[WHITE], sq)) return W_KNIGHT;
   if (GET_BIT(bbs->knights[BLACK], sq)) return B_KNIGHT;
   if (GET_BIT(bbs->bishops[WHITE], sq)) return W_BISHOP;
   if (GET_BIT(bbs->bishops[BLACK], sq)) return B_BISHOP;
-  if (GET_BIT(bbs->rooks[WHITE], sq))   return W_ROOK;
-  if (GET_BIT(bbs->rooks[BLACK], sq))   return B_ROOK;
-  if (GET_BIT(bbs->queens[WHITE], sq))  return W_QUEEN;
-  if (GET_BIT(bbs->queens[BLACK], sq))  return B_QUEEN;
-  if (GET_BIT(bbs->kings[WHITE], sq))   return W_KING;
-  if (GET_BIT(bbs->kings[BLACK], sq))   return B_KING;
+  if (GET_BIT(bbs->rooks[WHITE],   sq)) return W_ROOK;
+  if (GET_BIT(bbs->rooks[BLACK],   sq)) return B_ROOK;
+  if (GET_BIT(bbs->queens[WHITE],  sq)) return W_QUEEN;
+  if (GET_BIT(bbs->queens[BLACK],  sq)) return B_QUEEN;
+  if (GET_BIT(bbs->kings[WHITE],   sq)) return W_KING;
+  if (GET_BIT(bbs->kings[BLACK],   sq)) return B_KING;
   return NO_PIECE;
 }
 
