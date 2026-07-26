@@ -10,6 +10,7 @@
 
 static const int ROOT_PLY=0;
 static const int ALLOW_NULL=true;
+static const int DEPTH_0=0;
 static const int HH_LIMIT=8192;
 static const int HH_DELTA_MAX=MAX_DEPTH*MAX_DEPTH;
 
