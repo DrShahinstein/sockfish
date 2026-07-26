@@ -7,15 +7,15 @@
 
 void *helper_search_thread(void *arg) {
   HelperThreadData *data = (HelperThreadData*)arg;
-  SF_Context ctx_        = data->ctx;
+  SF_Context ctx         = data->ctx;
   int thread_id          = data->thread_id;
 
-  ctx_.nodes = 0;
-  ctx_.start_time = get_time_ms();
+  ctx.nodes      = 0;
+  ctx.start_time = get_time_ms();
 
-  int depth_offset = (thread_id + 1) / 2; // Lazy SMP asymmetry
+  int depth_offset = (thread_id+1) / 2; // Lazy SMP asymmetry
 
-  MoveList root_moves = sf_generate_moves(&ctx_);
+  MoveList root_moves = sf_generate_moves(&ctx);
   if (root_moves.count == 0) {
     atomic_store_explicit(&data->nodes, 0, memory_order_relaxed);
     return NULL;
@@ -24,8 +24,8 @@ void *helper_search_thread(void *arg) {
   Move best_move = root_moves.moves[0];
 
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
-    if (is_depth_limit_exceeded(&ctx_, depth)) break;
-    if (check_stop_conditions(&ctx_)) break;
+    if (is_depth_limit_exceeded(&ctx, depth)) break;
+    if (check_stop_conditions(&ctx))          break;
 
     int search_depth = depth + depth_offset;
     if (search_depth > MAX_DEPTH) search_depth = MAX_DEPTH;
@@ -37,24 +37,24 @@ void *helper_search_thread(void *arg) {
 
     MoveList movelist = root_moves;
 
-    CheckMasks masks = generate_check_masks(&ctx_);
+    CheckMasks masks = generate_check_masks(&ctx);
 
     int scores[256];
     for (int i = 0; i < movelist.count; ++i) {
-      scores[i] = score_move(&ctx_, movelist.moves[i], best_so_far, &masks, ROOT_PLY);
+      scores[i] = score_move(&ctx, movelist.moves[i], best_so_far, &masks, ROOT_PLY);
     }
 
     for (int i = 0; i < movelist.count; ++i) {
       bump_highest_scored_move(i, &movelist, scores);
 
       MoveHistory history;
-      make_move(&ctx_, movelist.moves[i], &history);
+      make_move(&ctx, movelist.moves[i], &history);
 
-      int score = -negamax(&ctx_, search_depth-1, ROOT_PLY+1, -beta, -alpha, ALLOW_NULL);
+      int score = -negamax(&ctx, search_depth-1, ROOT_PLY+1, -beta, -alpha, ALLOW_NULL);
 
-      unmake_move(&ctx_, &history);
+      unmake_move(&ctx, &history);
 
-      if (should_stop(&ctx_)) break;
+      if (should_stop(&ctx)) break;
 
       if (score > max_score_so_far) {
         max_score_so_far = score;
@@ -66,15 +66,15 @@ void *helper_search_thread(void *arg) {
       }
     }
 
-    if (should_stop(&ctx_)) break;
+    if (should_stop(&ctx)) break;
 
     int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
-    tt_record(sf_tt_hash_key(&ctx_), search_depth, tt_record_score, TT_EXACT, best_so_far);
+    tt_record(sf_tt_hash_key(&ctx), search_depth, tt_record_score, TT_EXACT, best_so_far);
 
     best_move = best_so_far;
   }
 
-  atomic_store_explicit(&data->nodes, ctx_.nodes, memory_order_relaxed);
+  atomic_store_explicit(&data->nodes, ctx.nodes, memory_order_relaxed);
   
   return NULL;
 }

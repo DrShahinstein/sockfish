@@ -25,29 +25,29 @@ static void adjust_hh_entry(SF_Context *ctx, Move move, int delta);
 static void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Move *failed_quiet_moves, int failed_quiet_count, int depth);
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
 
-Move sf_search(const SF_Context *ctx) {
-  SF_Context ctx_  = *ctx;
-  ctx_.nodes       = 0;
-  ctx_.start_time  = get_time_ms();
-  ctx_.nmp_min_ply = 0;
+Move sf_search(SF_Context *ctx) {
+  ctx->nodes       = 0;
+  ctx->start_time  = get_time_ms();
+  ctx->nmp_min_ply = 0;
 
-  memset(ctx_.killer_moves,      0, sizeof(ctx_.killer_moves));
-  memset(ctx_.history_heuristic, 0, sizeof(ctx_.history_heuristic));
+  memset(ctx->killer_moves,      0, sizeof(ctx->killer_moves));
+  memset(ctx->history_heuristic, 0, sizeof(ctx->history_heuristic));
 
   /* For Safety */
   atomic_bool local_stop = false;
-  if (ctx_.should_stop == NULL)
-    ctx_.should_stop = &local_stop;
+  atomic_bool *previous_stop = ctx->should_stop;
+  if (ctx->should_stop == NULL)
+    ctx->should_stop = &local_stop;
 
-  MoveList root_moves = sf_generate_moves(&ctx_);
+  MoveList root_moves = sf_generate_moves(ctx);
   if (root_moves.count == 0) {
-    ((SF_Context*)ctx)->nodes = 0;
+    ctx->should_stop = previous_stop;
     return MOVE_NONE;
   }
 
   Move best_move = root_moves.moves[0];
 
-  int num_threads = ctx_.threads;
+  int num_threads = ctx->threads;
   if (num_threads < 1) num_threads = 1;
 
   pthread_t *threads            = NULL;
@@ -59,8 +59,8 @@ Move sf_search(const SF_Context *ctx) {
     thread_data = (HelperThreadData*)malloc(helper_count * sizeof(HelperThreadData));
 
     for (int i=0; i < helper_count; ++i) {
-      thread_data[i].ctx             = ctx_;
-      thread_data[i].ctx.should_stop = ctx_.should_stop;
+      thread_data[i].ctx             = *ctx;
+      thread_data[i].ctx.should_stop = ctx->should_stop;
       thread_data[i].thread_id       = i+1; // main-thread's ID=0, helper-threads=>1,2...
       atomic_init(&thread_data[i].nodes, 0);
       pthread_create(&threads[i], NULL, helper_search_thread, &thread_data[i]);
@@ -69,8 +69,8 @@ Move sf_search(const SF_Context *ctx) {
 
   /* Main Thread Search Loop */
   for (int depth=1; depth <= MAX_DEPTH; ++depth) {
-    if (is_depth_limit_exceeded(&ctx_, depth)) break;
-    if (check_stop_conditions(&ctx_))          break;
+    if (is_depth_limit_exceeded(ctx, depth)) break;
+    if (check_stop_conditions(ctx))          break;
     
     int alpha            = -INF;
     int beta             = +INF;
@@ -78,24 +78,24 @@ Move sf_search(const SF_Context *ctx) {
     Move best_so_far     = best_move;
 
     MoveList movelist = root_moves;
-    CheckMasks masks  = generate_check_masks(&ctx_);
+    CheckMasks masks  = generate_check_masks(ctx);
 
     int scores[MOVELIST_CAPACITY]; // scores[i] <===> movelist->moves[i]
     for (int i=0; i < movelist.count; ++i) {
-      scores[i] = score_move(&ctx_, movelist.moves[i], best_so_far, &masks, ROOT_PLY);
+      scores[i] = score_move(ctx, movelist.moves[i], best_so_far, &masks, ROOT_PLY);
     }
 
     for (int i=0; i < movelist.count; ++i) {
       bump_highest_scored_move(i, &movelist, scores);
 
       MoveHistory history;
-      make_move(&ctx_, movelist.moves[i], &history);
+      make_move(ctx, movelist.moves[i], &history);
 
-      int score = -negamax(&ctx_, depth-1, ROOT_PLY+1, -beta, -alpha, ALLOW_NULL);
+      int score = -negamax(ctx, depth-1, ROOT_PLY+1, -beta, -alpha, ALLOW_NULL);
 
-      unmake_move(&ctx_, &history);
+      unmake_move(ctx, &history);
 
-      if (should_stop(&ctx_)) break;
+      if (should_stop(ctx)) break;
 
       if (score > max_score_so_far) {
         max_score_so_far = score;
@@ -107,32 +107,32 @@ Move sf_search(const SF_Context *ctx) {
       }
     }
 
-    if (should_stop(&ctx_)) break;
+    if (should_stop(ctx)) break;
 
     int tt_record_score = score_to_tt(max_score_so_far, ROOT_PLY);
-    tt_record(sf_tt_hash_key(&ctx_), depth, tt_record_score, TT_EXACT, best_so_far);
+    tt_record(sf_tt_hash_key(ctx), depth, tt_record_score, TT_EXACT, best_so_far);
 
     best_move = best_so_far;
 
-    if (ctx_.allow_uci_info) {
-      send_uci_info(&ctx_, thread_data, max_score_so_far, helper_count, depth);
+    if (ctx->allow_uci_info) {
+      send_uci_info(ctx, thread_data, max_score_so_far, helper_count, depth);
     }
   }
 
   /* Shutdown Helper Threads */
   if (helper_count > 0) {
-    request_search_stop(&ctx_);
+    request_search_stop(ctx);
 
     for (int i = 0; i < helper_count; ++i) {
       pthread_join(threads[i], NULL);
-      ctx_.nodes += atomic_load_explicit(&thread_data[i].nodes, memory_order_relaxed);
+      ctx->nodes += atomic_load_explicit(&thread_data[i].nodes, memory_order_relaxed);
     }
 
     free(threads);
     free(thread_data);
   }
 
-  ((SF_Context*)ctx)->nodes = ctx_.nodes;
+  ctx->should_stop = previous_stop;
 
   return best_move;
 }
