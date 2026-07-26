@@ -158,7 +158,7 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
 
   int original_alpha = alpha;
   int tt_score = 0;
-  Move tt_move = 0;
+  Move tt_move = MOVE_NONE;
 
   if (try_tt_cutoff(ctx, depth, ply, alpha, beta, &tt_score, &tt_move))
     return tt_score;
@@ -179,8 +179,8 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   }
 
   MoveList movelist = generate_pseudo_legal_moves(ctx);
-  Move best_so_far  = tt_move; // the best result we obtained in previous nodes
-  Move best_move    = 0;       // the best result from this node (will be recorded to TT and potentially become next "best_so_far" if strong enough)
+  Move best_so_far  = tt_move;   // the best result we obtained in previous nodes
+  Move best_move    = MOVE_NONE; // the best result from this node (will be recorded to TT and potentially become next "best_so_far" if strong enough)
   int legal_moves   = 0;
   int max_score     = -INF;
 
@@ -309,7 +309,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 
   int original_alpha = alpha;
   int tt_score = 0;
-  Move tt_move = 0;
+  Move tt_move = MOVE_NONE;
 
   if (try_tt_cutoff(ctx, DEPTH_0, ply, alpha, beta, &tt_score, &tt_move))
     return tt_score;
@@ -338,7 +338,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   }
 
   Move best_so_far = tt_move;
-  Move best_move   = 0;
+  Move best_move   = MOVE_NONE;
   int legal_moves  = 0;
 
   CheckMasks masks = generate_check_masks(ctx);
@@ -410,7 +410,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 bool null_move_search(SF_Context *ctx, int depth, int ply, int beta, int static_eval) {
   int reduction = get_null_move_reduction(depth, static_eval, beta);
   
-  MoveHistory null_history;
+  NullMoveHistory null_history;
   make_null_move(ctx, &null_history);
 
   /* A null move only needs a zero-window search to prove a beta cutoff. */
