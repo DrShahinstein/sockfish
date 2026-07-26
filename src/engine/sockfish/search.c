@@ -26,7 +26,7 @@ static void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Mo
 static void send_uci_info(const SF_Context *ctx, const HelperThreadData *thread_data, int max_score_so_far, int helper_count, int depth);
 
 Move sf_search(const SF_Context *ctx) {
-  SF_Context ctx_ = *ctx;
+  SF_Context ctx_  = *ctx;
   ctx_.nodes       = 0;
   ctx_.start_time  = get_time_ms();
   ctx_.nmp_min_ply = 0;
@@ -58,10 +58,10 @@ Move sf_search(const SF_Context *ctx) {
     threads     = (pthread_t*)malloc(helper_count * sizeof(pthread_t));
     thread_data = (HelperThreadData*)malloc(helper_count * sizeof(HelperThreadData));
 
-    for (int i = 0; i < helper_count; ++i) {
-      thread_data[i].ctx = ctx_;
+    for (int i=0; i < helper_count; ++i) {
+      thread_data[i].ctx             = ctx_;
       thread_data[i].ctx.should_stop = ctx_.should_stop;
-      thread_data[i].thread_id = i + 1; // main-thread's ID=0, helper-threads=>1,2...
+      thread_data[i].thread_id       = i+1; // main-thread's ID=0, helper-threads=>1,2...
       atomic_init(&thread_data[i].nodes, 0);
       pthread_create(&threads[i], NULL, helper_search_thread, &thread_data[i]);
     }
@@ -311,7 +311,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   int tt_score = 0;
   Move tt_move = 0;
 
-  if (try_tt_cutoff(ctx, 0, ply, alpha, beta, &tt_score, &tt_move))
+  if (try_tt_cutoff(ctx, DEPTH_0, ply, alpha, beta, &tt_score, &tt_move))
     return tt_score;
 
   bool in_check = king_in_check(&ctx->bitboard_set, ctx->search_color);
@@ -329,7 +329,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
       if (!stand_pat_is_legal(ctx, &movelist))
         return 0;
 
-      tt_record(sf_tt_hash_key(ctx), 0, stand_pat, TT_BETA, 0);
+      tt_record(sf_tt_hash_key(ctx), DEPTH_0, stand_pat, TT_BETA, MOVE_NONE);
       return beta;
     }
 
@@ -374,7 +374,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
 
     if (score >= beta) {
       int tt_record_score = score_to_tt(score, ply);
-      tt_record(sf_tt_hash_key(ctx), 0, tt_record_score, TT_BETA, best_move);
+      tt_record(sf_tt_hash_key(ctx), DEPTH_0, tt_record_score, TT_BETA, best_move);
       return beta;
     }
 
@@ -402,7 +402,7 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
   }
 
   int tt_record_score = score_to_tt(max_score, ply);
-  tt_record(sf_tt_hash_key(ctx), 0, tt_record_score, flag, best_move);
+  tt_record(sf_tt_hash_key(ctx), DEPTH_0, tt_record_score, flag, best_move);
 
   return alpha;
 }
@@ -433,10 +433,10 @@ bool null_move_search(SF_Context *ctx, int depth, int ply, int beta, int static_
   int verification_depth   = depth - reduction;
   int previous_nmp_min_ply = ctx->nmp_min_ply;
   int verification_span    = clamp_int((3 * verification_depth) / 4, 1, verification_depth);
-  ctx->nmp_min_ply = ply + verification_span;
 
+  ctx->nmp_min_ply       = ply + verification_span;
   int verification_score = negamax(ctx, verification_depth, ply, beta-1, beta, false);
-  ctx->nmp_min_ply = previous_nmp_min_ply;
+  ctx->nmp_min_ply       = previous_nmp_min_ply;
 
   return !should_stop(ctx) && verification_score >= beta;
 }
@@ -603,7 +603,7 @@ int extract_pv(const SF_Context *ctx, Move *pv_line, int max_len) {
 
     bool valid = false;
     MoveList list = generate_pseudo_legal_moves(&temp_ctx);
-    for (int i = 0; i < list.count; ++i) {
+    for (int i=0; i < list.count; ++i) {
       if (list.moves[i] == tt_move) {
         valid = true;
         break;
@@ -684,8 +684,7 @@ static bool threefold_repetition(const SF_Context *ctx) {
 }
 
 static bool fifty_move_draw(SF_Context *ctx, int ply, int *draw_or_mate) {
-  if (ctx->in_null_search ||
-      ctx->halfmove_clock < FIFTY_MOVE_RULE_PLY_LIMIT) {
+  if (ctx->in_null_search || ctx->halfmove_clock < FIFTY_MOVE_RULE_PLY_LIMIT) {
     return false;
   }
 
@@ -777,7 +776,7 @@ static int get_null_move_reduction(int depth, int static_eval, int beta) {
   int eval_margin = static_eval - beta;
   reduction += clamp_int(eval_margin / 200, 0, 2);
 
-  return clamp_int(reduction, 2, depth - 1);
+  return clamp_int(reduction, 2, depth-1);
 }
 
 /*
@@ -844,7 +843,7 @@ static void update_history_heuristic(SF_Context *ctx, Move cutoff_move, const Mo
   adjust_hh_entry(ctx, cutoff_move, bonus);
 
   int malus = bonus / 2;
-  for (int i = 0; i < failed_quiet_count; ++i) {
+  for (int i=0; i < failed_quiet_count; ++i) {
     adjust_hh_entry(ctx, failed_quiet_moves[i], -malus);
   }
 }
