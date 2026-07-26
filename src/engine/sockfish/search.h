@@ -21,7 +21,7 @@ typedef struct {
   U64 rook;
 } CheckMasks;
 
-Move sf_search(const SF_Context *ctx);
+Move sf_search(SF_Context *ctx);
 int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow_null);
 int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta);
 bool null_move_search(SF_Context *ctx, int depth, int ply, int beta, int static_eval);
