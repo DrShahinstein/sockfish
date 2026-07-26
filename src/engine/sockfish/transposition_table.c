@@ -76,7 +76,7 @@ void tt_record(U64 hash_key, int depth, int score, TT_Flag flag, Move best_move)
 
   if (!same_position && occupied && depth < current_depth) return;
 
-  if (best_move == 0 && same_position) {
+  if (best_move == MOVE_NONE && same_position) {
     best_move = tt_unpack_move(current_payload);
   }
 
