@@ -29,6 +29,15 @@ typedef struct {
   Turn turn;
 } BoardMoveHistory;
 
+typedef enum {
+  GAME_ONGOING,
+  GAME_CHECKMATE,
+  GAME_STALEMATE,
+  DRAW_INSUFFICIENT_MATERIAL,
+  DRAW_FIFTY_MOVE,
+  DRAW_THREEFOLD_REPETITION,
+} GameResult;
+
 /* Internal Type For 'BoardState' */
 typedef struct {
   bool active;
@@ -92,6 +101,7 @@ typedef struct BoardState {
   uint8_t castling;
   int ep_row, ep_col;
   int halfmove_clock;
+  GameResult game_result;
   bool flipped;
   MoveList valid_moves; bool should_update_valid_moves;
   SelectedPiece selected_piece;
