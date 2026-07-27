@@ -493,8 +493,7 @@ static bool threefold_repetition(const BoardState *board) {
 }
 
 static void board_update_game_result(BoardState *board) {
-  GameResult previous_result = board->game_result;
-  board->game_result         = GAME_ONGOING;
+  board->game_result = GAME_ONGOING;
 
   board->should_update_valid_moves = true;
   board_update_valid_moves(board);
