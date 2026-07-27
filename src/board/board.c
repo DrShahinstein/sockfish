@@ -1,5 +1,6 @@
 #include "board.h"
 #include "sockfish/sockfish.h"
+#include "sockfish/evaluation.h"          /* is_insufficient_material() */
 #include "sockfish/move_helper.h"         /* king_in_check() */
 #include "sockfish/transposition_table.h" /* tt_clear() */
 #include "engine.h"                       /* make_bitboards_from_charboard() */
@@ -9,6 +10,9 @@
 
 static uint8_t parse_castling(const char *str);
 static bool validate_castling(const char *str);
+static bool threefold_repetition(const BoardState *board);
+static void board_update_game_result(BoardState *board);
+static void end_game(BoardState *board, GameResult result, const char *message);
 static void adjust_promoting_pawn(BoardState *tmp_b, char promote, Turn T, int tr, int tc);
 static void adjust_castling_rook(BoardState *tmp_b, int king_to_col, int row);
 static void adjust_castling_flags(uint8_t *c, char moved, int fr, int fc, char captured, int tr, int tc);
@@ -25,6 +29,7 @@ void board_init(BoardState *board) {
   board->ep_row                      = NO_ENPASSANT;
   board->ep_col                      = NO_ENPASSANT;
   board->halfmove_clock              = 0;
+  board->game_result                 = GAME_ONGOING;
   board->flipped                     = false;
   board->drag.active                 = false;
   board->drag.to_row                 = -1;
@@ -71,6 +76,8 @@ void board_update_position_hash(BoardState *board) {
   if (board->undo_count >= 0 && board->undo_count <= MAX_HISTORY) {
     board->hash_history[board->undo_count] = board->position_hash;
   }
+
+  board_update_game_result(board);
 }
 
 void board_update_valid_moves(BoardState *b) {
@@ -469,8 +476,67 @@ int get_halfmove_clock(const BoardState *board) {
   return board->halfmove_clock;
 }
 
+static bool threefold_repetition(const BoardState *board) {
+  int reversible_plies = board->halfmove_clock;
+  if (reversible_plies > board->undo_count)
+    reversible_plies = board->undo_count;
 
+  int repetitions = 0;
+  for (int distance=0; distance <= reversible_plies; distance+=2) {
+    int history_index = board->undo_count - distance;
 
+    if (board->hash_history[history_index] == board->position_hash && ++repetitions >= 3)
+      return true;
+  }
+
+  return false;
+}
+
+static void board_update_game_result(BoardState *board) {
+  GameResult previous_result = board->game_result;
+  board->game_result         = GAME_ONGOING;
+
+  board->should_update_valid_moves = true;
+  board_update_valid_moves(board);
+
+  BitboardSet bbset = make_bitboards_from_charboard((const char (*)[8])board->board);
+
+  if (board->valid_moves.count == 0) {
+    if (king_in_check(&bbset, board->turn)) {
+      const char *winner = board->turn == WHITE ? "Black" : "White";
+      board->game_result           = GAME_CHECKMATE;
+      board->selected_piece.active = false;
+      board->drag.active           = false;
+      ui_set_info("%s checkmates", winner);
+    }
+    else {
+      end_game(board, GAME_STALEMATE, "Drawn by stalemate");
+    }
+    return;
+  }
+
+  if (threefold_repetition(board)) {
+    end_game(board, DRAW_THREEFOLD_REPETITION, "Drawn by threefold repetition");
+    return;
+  }
+
+  if (is_insufficient_material(&bbset)) {
+    end_game(board, DRAW_INSUFFICIENT_MATERIAL, "Drawn by insufficient material");
+    return;
+  }
+
+  if (board->halfmove_clock >= FIFTY_MOVE_RULE_PLY_LIMIT) {
+    end_game(board, DRAW_FIFTY_MOVE, "Drawn by fifty-move rule");
+    return;
+  }
+}
+
+static void end_game(BoardState *board, GameResult result, const char *message) {
+  board->game_result           = result;
+  board->selected_piece.active = false;
+  board->drag.active           = false;
+  ui_set_info("%s", message);
+}
 
 static uint8_t parse_castling(const char *str) {
   uint8_t rights = 0;
