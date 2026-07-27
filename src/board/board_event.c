@@ -8,7 +8,7 @@
 static inline bool is_mouse_in_board(float mx, float my);
 static bool check_valid(BoardState *b, Move move);
 
-/* Procedural Functions */
+/* Extracted Functions for Readability */
 static void pawn_promotes(BoardState *board, float mx, float my);
 static void piece_movements(BoardState *board, float mx, float my);
 
@@ -21,6 +21,11 @@ void board_handle_event(SDL_Event *e, BoardState *board) {
     board->selected_piece.active = false;
 
     if (e->button.button == SDL_BUTTON_LEFT) {
+      if (board->game_result != GAME_ONGOING) {
+        board->drag.active = false;
+        return;
+      }
+
       get_mouse_pos(&mx, &my);
 
       if (!is_mouse_in_board(mx, my)) {
