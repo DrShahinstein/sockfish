@@ -7,10 +7,10 @@ U64 passed_pawn_masks[2][64];
 
 
 /* Extracted Functions: Called once and used for clarity */
-static inline void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black);
-static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
-static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
-static inline void rooks(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
+static void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black);
+static void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
+static void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
+static void rooks(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black);
 
 
 void sf_init_eval_masks(void) {
@@ -174,14 +174,36 @@ void evaluate_pawns(const BitboardSet *bbs, Turn color, int *mg_bonus, int *eg_b
 }
 
 
-/* --- Procedural Functions --- */
+bool is_insufficient_material(const BitboardSet *bbs) {
+  U64 pawns  = bbs->pawns[WHITE]  | bbs->pawns[BLACK];
+  U64 rooks  = bbs->rooks[WHITE]  | bbs->rooks[BLACK];
+  U64 queens = bbs->queens[WHITE] | bbs->queens[BLACK];
 
-static inline void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black) {
+  if (pawns || rooks || queens)
+    return false;
+
+  U64 knights     = bbs->knights[WHITE] | bbs->knights[BLACK];
+  U64 bishops     = bbs->bishops[WHITE] | bbs->bishops[BLACK];
+  int minor_count = COUNT_BITS(knights  | bishops);
+
+  if (minor_count <= 1)
+    return true;
+
+  if (knights)
+    return false;
+
+  return (bishops & DARK_SQUARES) == 0 || (bishops & LIGHT_SQUARES) == 0;
+}
+
+
+/* ------ Extracted Functions ------ */
+
+static void king_safety(const SF_Context *ctx, int *mg_white, int *mg_black) {
   *mg_white -= evaluate_king_safety(&ctx->bitboard_set, WHITE);
   *mg_black -= evaluate_king_safety(&ctx->bitboard_set, BLACK);
 }
 
-static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
+static void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
   int w_mg_pawns = 0, w_eg_pawns = 0;
   int b_mg_pawns = 0, b_eg_pawns = 0;
   
@@ -192,7 +214,7 @@ static inline void pawn_structure(const SF_Context *ctx, int *mg_white, int *mg_
   *mg_black += b_mg_pawns; *eg_black += b_eg_pawns;
 }
 
-static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
+static void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
   const BitboardSet *bbs = &ctx->bitboard_set;
 
   if (COUNT_BITS(bbs->bishops[WHITE]) >= 2) {
@@ -206,7 +228,7 @@ static inline void bishop_pair(const SF_Context *ctx, int *mg_white, int *mg_bla
   }
 }
 
-static inline void rooks(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
+static void rooks(const SF_Context *ctx, int *mg_white, int *mg_black, int *eg_white, int *eg_black) {
   const BitboardSet *bbs = &ctx->bitboard_set;
 
   for (int color = WHITE; color <= BLACK; ++color) {
