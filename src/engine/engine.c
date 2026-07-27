@@ -44,6 +44,17 @@ void engine_req_search(EngineWrapper *engine, const BoardState *board) {
 
   SDL_LockMutex(engine->mtx);
 
+  if (board->game_result != GAME_ONGOING) {
+    if (engine->thr_working)
+      engine->abort_search = true;
+
+    engine->last_pos_hash = board->position_hash;
+    engine->ctx.best      = MOVE_NONE;
+
+    SDL_UnlockMutex(engine->mtx);
+    return;
+  }
+
   U64 hash_now    = board->position_hash;
   U64 hash_before = engine->last_pos_hash;
   bool same       = hash_now == hash_before;
