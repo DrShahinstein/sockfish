@@ -149,6 +149,9 @@ int negamax(SF_Context *ctx, int depth, int ply, int alpha, int beta, bool allow
   if (threefold_repetition(ctx))
     return 0;
 
+  if (is_insufficient_material(&ctx->bitboard_set))
+    return 0;
+
   int draw_or_mate;
   if (fifty_move_draw(ctx, ply, &draw_or_mate))
     return draw_or_mate;
@@ -301,6 +304,9 @@ int quiescence_search(SF_Context *ctx, int ply, int alpha, int beta) {
     return sf_evaluate_position(ctx); // avoid potential stack overflow (shouldn't happen)
 
   if (threefold_repetition(ctx))
+    return 0;
+
+  if (is_insufficient_material(&ctx->bitboard_set))
     return 0;
 
   int draw_or_mate;
