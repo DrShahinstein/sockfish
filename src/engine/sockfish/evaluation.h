@@ -40,6 +40,9 @@ static const U64 FILE_MASKS[8] = {
   0x8080808080808080ULL  // H-File
 };
 
+static const U64 DARK_SQUARES  = 0xAA55AA55AA55AA55ULL;
+static const U64 LIGHT_SQUARES = 0x55AA55AA55AA55AAULL;
+
 static const int MG_MATERIAL[6] = {82, 337, 365, 477, 1025, 0};
 static const int EG_MATERIAL[6] = {94, 281, 297, 512,  936, 0};
 
@@ -62,6 +65,7 @@ void sf_init_evaluation(SF_Context *ctx);
 int sf_evaluate_position(const SF_Context *ctx);
 int evaluate_king_safety(const BitboardSet *bbs, Turn color);
 void evaluate_pawns(const BitboardSet *bbs, Turn color, int *mg_bonus, int *eg_bonus);
+bool is_insufficient_material(const BitboardSet *bbs);
 
 
 /* 
