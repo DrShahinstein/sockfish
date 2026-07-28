@@ -375,6 +375,8 @@ void board_undo(BoardState *board) {
   if (board->undo_count <= 0)
     return;
 
+  bool cancelling_promotion = board->promo.active;
+
   board->redo_count += 1;
 
   BoardMoveHistory *h                            = &board->history[--board->undo_count];
@@ -386,6 +388,11 @@ void board_undo(BoardState *board) {
   board->board[h->from_row][h->from_col]         = h->moving_piece;
   board->board[h->captured_row][h->captured_col] = h->captured_piece;
   board->selected_piece.active                   = false;
+  board->drag.active                             = false;
+  board->promo.active                            = false;
+
+  if (cancelling_promotion)
+    board->redo_count = 0;
 
   char moving_piece = h->moving_piece;
 
@@ -429,6 +436,8 @@ void board_redo(BoardState *board) {
   board->board[h->to_row][h->to_col]     = (h->promoted_piece) ? h->promoted_piece : moving_piece;;
   board->turn                            = (h->turn == WHITE) ? BLACK : WHITE;
   board->selected_piece.active           = false;
+  board->drag.active                     = false;
+  board->promo.active                    = false;
 
   bool irreversible = moving_piece == 'P' || moving_piece == 'p' || h->captured_piece != 0;
   board->halfmove_clock = next_halfmove_clock(h->halfmove_clock, irreversible);
