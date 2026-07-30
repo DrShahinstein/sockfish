@@ -39,6 +39,19 @@ python3 bench/search_bench.py \
   --repeat 3 | tee /tmp/sockfish-bench.txt
 ```
 
+## Complex positions
+
+`complex-positions.fen` contains all 24 positions from the Bratko-Kopec Test.
+Run that suite with:
+
+```bash
+python3 bench/search_bench.py             \
+  ...                                     \
+  --positions bench/complex-positions.fen \
+  ...                                     \
+  ...                                     \
+```
+
 ## Reading the result
 
 - `nodes` compares search-tree size at the same depth. Fewer nodes can indicate
