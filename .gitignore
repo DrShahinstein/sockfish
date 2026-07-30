@@ -2,3 +2,4 @@ build
 tags
 .cache
 sockfish.ini
+__pycache__
