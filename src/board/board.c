@@ -1,6 +1,7 @@
 #include "board.h"
 #include "sockfish/sockfish.h"
 #include "sockfish/evaluation.h"          /* is_insufficient_material() */
+#include "sockfish/fen.h"
 #include "sockfish/move_helper.h"         /* king_in_check() */
 #include "sockfish/transposition_table.h" /* tt_clear() */
 #include "engine.h"                       /* make_bitboards_from_charboard() */
@@ -8,8 +9,6 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
-static uint8_t parse_castling(const char *str);
-static bool validate_castling(const char *str);
 static bool threefold_repetition(const BoardState *board);
 static void board_update_game_result(BoardState *board);
 static void end_game(BoardState *board, GameResult result, const char *message);
@@ -119,86 +118,42 @@ void board_update_king_in_check(BoardState *b) {
 }
 
 void load_fen(const char *fen, BoardState *board) {
-  SDL_memset(board->board,   0, sizeof(board->board));
-  SDL_memset(board->history, 0, sizeof(board->history));
-  board->turn           = WHITE;
-  board->castling       = 0;
-  board->ep_row         = NO_ENPASSANT;
-  board->ep_col         = NO_ENPASSANT;
-  board->halfmove_clock = 0;
-  board->promo.active   = false;
-  board->undo_count     = 0;
-  board->redo_count     = 0;
-  board->king.in_check  = false;
-  board->king.color     = 0;
-  board->king.row       = -1;
-  board->king.col       = -1;
-
-  char placement[256], active[2], castling[16], ep[3], halfmove[16], fullmove[16];
-  int count = SDL_sscanf(fen, "%255s %1s %15s %2s %15s %15s",
-    placement, active, castling, ep, halfmove, fullmove);
-
-  if (count < 2) {
-    load_fen(START_FEN, board);
+  SF_Fen parsed;
+  if (!sf_parse_fen(fen, &parsed)) {
     ui_set_info("Can't load invalid FEN.");
     return;
   }
 
-  if (count >= 4 && SDL_strcmp(ep, "-") != 0) {
-    board->ep_col = ep[0] - 'a';
-    board->ep_row = 7 - (ep[1]-'1');  // convert rank to row (0-7)
+  SDL_memset(board->board,           0,        sizeof(board->board));
+  SDL_memset(board->history,         0,        sizeof(board->history));
+  SDL_memset(board->hash_history,    0,        sizeof(board->hash_history));
+  SDL_memcpy(board->board,       parsed.board, sizeof(board->board));
+  board->turn                  = parsed.turn;
+  board->castling              = parsed.castling_rights;
+  board->halfmove_clock        = parsed.halfmove_clock;
+  board->game_result           = GAME_ONGOING;
+  board->promo.active          = false;
+  board->undo_count            = 0;
+  board->redo_count            = 0;
+  board->selected_piece.active = false;
+  board->drag.active           = false;
+  board->king.in_check         = false;
+  board->king.color            = 0;
+  board->king.row              = -1;
+  board->king.col              = -1;
+
+  if ((int)parsed.enpassant_sq != NO_ENPASSANT) {
+    board->ep_row = square_to_row(parsed.enpassant_sq);
+    board->ep_col = square_to_col(parsed.enpassant_sq);
   } else {
     board->ep_row = NO_ENPASSANT;
     board->ep_col = NO_ENPASSANT;
   }
 
-  if (count >= 5) {
-    char *end = NULL;
-    long long parsed_halfmove = SDL_strtoll(halfmove, &end, 10);
-    if (end != halfmove && *end == '\0' && parsed_halfmove >= 0) {
-      board->halfmove_clock = parsed_halfmove > FIFTY_MOVE_RULE_PLY_LIMIT ? FIFTY_MOVE_RULE_PLY_LIMIT : (int)parsed_halfmove;
-    }
-  }
-
-  if (active[0] == 'w' || active[0] == 'W')
-    board->turn = WHITE;
-  else if (active[0] == 'b' || active[0] == 'B')
-    board->turn = BLACK;
-
-  if (count >= 3) {
-    board->castling = validate_castling(castling) ? parse_castling(castling) : CASTLE_NONE;
-  } else {
-    board->castling = CASTLE_NONE;
-  }
-
-  int row = 0, col = 0;
-  for (const char *p = placement; *p && row < 8; ++p) {
-    if (SDL_isdigit((unsigned char)*p)) {
-      col += *p - '0';
-    } else if (*p == '/') {
-      row++;
-      col = 0;
-    } else {
-      if (col < 8) board->board[row][col++] = *p;
-    }
-  }
-
-  if (board->board[7][4] != 'K')
-    board->castling &= ~(CASTLE_WK | CASTLE_WQ);
-  if (board->board[7][7] != 'R')
-    board->castling &= ~CASTLE_WK;
-  if (board->board[7][0] != 'R')
-    board->castling &= ~CASTLE_WQ;
-  if (board->board[0][4] != 'k')
-    board->castling &= ~(CASTLE_BK | CASTLE_BQ);
-  if (board->board[0][7] != 'r')
-    board->castling &= ~CASTLE_BK;
-  if (board->board[0][0] != 'r')
-    board->castling &= ~CASTLE_BQ;
-
+  clear_annotations(&board->annotations);
   board->should_update_valid_moves = true;
-
   board_update_position_hash(board);
+  board_update_king_in_check(board);
 }
 
 void load_pgn(const char *pgn, BoardState *board) {
@@ -544,40 +499,6 @@ static void end_game(BoardState *board, GameResult result, const char *message) 
   board->selected_piece.active = false;
   board->drag.active           = false;
   ui_set_info("%s", message);
-}
-
-static uint8_t parse_castling(const char *str) {
-  uint8_t rights = 0;
-  if (SDL_strcmp(str, "-") == 0) return rights;
-
-  for (; *str; str++) {
-    switch (*str) {
-      case 'K': rights |= CASTLE_WK; break;
-      case 'Q': rights |= CASTLE_WQ; break;
-      case 'k': rights |= CASTLE_BK; break;
-      case 'q': rights |= CASTLE_BQ; break;
-    }
-  }
-
-  return rights;
-}
-
-static bool validate_castling(const char *str) {
-  if (SDL_strcmp(str, "-") == 0) return true;
-
-  for (; *str; str++) {
-    switch (*str) {
-      case 'K':
-      case 'Q':
-      case 'k':
-      case 'q':
-      continue;
-
-      default: return false;
-    }
-  }
-
-  return true;
 }
 
 static void adjust_castling_flags(uint8_t *c, char moved, int fr, int fc, char captured, int tr, int tc) {
