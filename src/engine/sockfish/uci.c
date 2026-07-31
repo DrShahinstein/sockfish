@@ -52,9 +52,7 @@ static AsyncSearch async_search = {
 };
 
 static inline void init_uci_config(SF_Config *cfg) {
-  /* Default values for options */
-  cfg->tt_size_mb = 16;
-  cfg->threads    = 1;
+  config_init_default(cfg);
 }
 
 static void apply_default_options(SF_Context *ctx, SF_Config *uci_cfg) {
@@ -122,8 +120,8 @@ void uci_loop(void) {
 static void handle_uci(const SF_Config *cfg) {
   printf("id name Sockfish\n");
   printf("id author DrShahinstein\n");
-  printf("option name Hash type spin default %d min 1 max 1024\n",   cfg->tt_size_mb);
-  printf("option name Threads type spin default %d min 1 max 128\n", cfg->threads);
+  printf("option name Hash type spin default %d min %d max %d\n", cfg->tt_size_mb, SF_TT_SIZE_MB_MIN, SF_TT_SIZE_MB_MAX);
+  printf("option name Threads type spin default %d min %d max %d\n", cfg->threads, SF_THREADS_MIN, SF_THREADS_MAX);
   printf("uciok\n");
 }
 
@@ -138,8 +136,8 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
   val_ptr  += 6;
 
   if (strncmp(name_ptr, "Hash", 4) == 0) {
-    int new_hash = atoi(val_ptr);
-    if (new_hash > 0 && new_hash != cfg->tt_size_mb) {
+    int new_hash;
+    if (parse_bounded_int(val_ptr, SF_TT_SIZE_MB_MIN, SF_TT_SIZE_MB_MAX, &new_hash) && new_hash != cfg->tt_size_mb) {
       async_search_shutdown();
       cfg->tt_size_mb = new_hash;
       tt_free();
@@ -147,8 +145,8 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
     }
   }
   else if (strncmp(name_ptr, "Threads", 7) == 0) {
-    int new_threads = atoi(val_ptr);
-    if (new_threads > 0)
+    int new_threads;
+    if (parse_bounded_int(val_ptr, SF_THREADS_MIN, SF_THREADS_MAX, &new_threads))
       cfg->threads = new_threads;
   }
 }
@@ -156,11 +154,11 @@ static void handle_setoption(const char *line, SF_Config *cfg) {
 static void handle_ucinewgame(SF_Context *ctx) {
   async_search_shutdown();
   tt_clear();
-  ctx->history_count  = 1;
-  ctx->history_head   = 0;
+  ctx->history_count                  = 1;
+  ctx->history_head                   = 0;
   ctx->pos_history[ctx->history_head] = ctx->hash_key;
-  ctx->in_null_search = false;
-  ctx->nmp_min_ply    = 0;
+  ctx->in_null_search                 = false;
+  ctx->nmp_min_ply                    = 0;
   memset(ctx->killer_moves,      0, sizeof(ctx->killer_moves));
   memset(ctx->history_heuristic, 0, sizeof(ctx->history_heuristic));
 }
@@ -392,7 +390,14 @@ static void async_search_start(const SF_Context *base_ctx, int threads) {
   atomic_store_explicit(&async_search.stop_flag, false, memory_order_relaxed);
   atomic_store(&async_search.running, true);
 
-  pthread_create(&async_search.thread, NULL, async_search_thread_main, NULL);
+  int result = pthread_create(&async_search.thread, NULL, async_search_thread_main, NULL);
+  if (result != 0) {
+    atomic_store(&async_search.running, false);
+    async_search.thread_valid = false;
+    print_best(MOVE_NONE);
+    return;
+  }
+
   async_search.thread_valid = true;
 }
 
