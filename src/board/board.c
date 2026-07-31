@@ -9,6 +9,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
+#define MAX_PGN_MOVE_LENGTH 16
+
 static bool threefold_repetition(const BoardState *board);
 static void board_update_game_result(BoardState *board);
 static void end_game(BoardState *board, GameResult result, const char *message);
@@ -188,7 +190,7 @@ void load_pgn(const char *pgn, BoardState *board) {
   SF_Context ctx    = create_sf_ctx(&bbset, WHITE, CASTLE_ALL, NO_ENPASSANT);
 
   while (*ptr != '\0') {
-    while (*ptr == ' ' || *ptr == '\n' || *ptr == '\r') ptr++;
+    while (*ptr == ' ' || *ptr == '\t' || *ptr == '\n' || *ptr == '\r') ptr++;
 
     if (*ptr == '\0')
       break;
@@ -224,14 +226,19 @@ void load_pgn(const char *pgn, BoardState *board) {
       }
     }
 
-    char pgn_move[8] = {0}; // e4 c5 Nf3 Nc6
-    int move_index   =  0;
+    const char *move_start = ptr;
+    while (*ptr != ' ' && *ptr != '\t' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r')
+      ptr++;
 
-    while (*ptr != ' ' && *ptr != '\0' && *ptr != '\n' && *ptr != '\r' && move_index < 8) {
-      pgn_move[move_index++] = *ptr++;
+    size_t move_length = (size_t)(ptr - move_start);
+    if (move_length >= MAX_PGN_MOVE_LENGTH) {
+      ui_set_info("PGN move token is too long.");
+      return;
     }
 
-    pgn_move[move_index] = '\0';
+    char pgn_move[MAX_PGN_MOVE_LENGTH];
+    SDL_memcpy(pgn_move, move_start, move_length);
+    pgn_move[move_length] = '\0';
 
     if (pgn_move[0] != '\0') {
       if (tmp_b.redo_count >= MAX_HISTORY)
@@ -276,6 +283,10 @@ void load_pgn(const char *pgn, BoardState *board) {
       tmp_b.turn          = ctx.search_color;
       tmp_b.board[tr][tc] = moved_piece;
       tmp_b.board[fr][fc] = 0;
+
+      bool en_passant = saved->captured_piece != 0 && saved->captured_row != tr;
+      if (en_passant)
+        tmp_b.board[saved->captured_row][saved->captured_col] = 0;
 
       if (promote != -1)
         adjust_promoting_pawn(&tmp_b, promote, t, tr, tc);
