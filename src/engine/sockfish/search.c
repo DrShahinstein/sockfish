@@ -5,6 +5,7 @@
 #include "movegen.h"
 #include "transposition_table.h"
 #include "thread.h"
+#include "config.h"
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -48,22 +49,35 @@ Move sf_search(SF_Context *ctx) {
   Move best_move = root_moves.moves[0];
 
   int num_threads = ctx->threads;
-  if (num_threads < 1) num_threads = 1;
+  if (num_threads < SF_THREADS_MIN) num_threads = SF_THREADS_MIN;
+  if (num_threads > SF_THREADS_MAX) num_threads = SF_THREADS_MAX;
 
   pthread_t *threads            = NULL;
   HelperThreadData *thread_data = NULL;
-  int helper_count              = num_threads - 1;
+  int helper_count              = 0;
+  int helper_capacity           = num_threads - 1;
 
-  if (helper_count > 0) {
-    threads     = (pthread_t*)malloc(helper_count * sizeof(pthread_t));
-    thread_data = (HelperThreadData*)malloc(helper_count * sizeof(HelperThreadData));
+  if (helper_capacity > 0) {
+    threads     = (pthread_t*)malloc((size_t)helper_capacity * sizeof(pthread_t));
+    thread_data = (HelperThreadData*)malloc((size_t)helper_capacity * sizeof(HelperThreadData));
 
-    for (int i=0; i < helper_count; ++i) {
-      thread_data[i].ctx             = *ctx;
-      thread_data[i].ctx.should_stop = ctx->should_stop;
-      thread_data[i].thread_id       = i+1; // main-thread's ID=0, helper-threads=>1,2...
-      atomic_init(&thread_data[i].nodes, 0);
-      pthread_create(&threads[i], NULL, helper_search_thread, &thread_data[i]);
+    if (threads != NULL && thread_data != NULL) {
+      for (int i=0; i < helper_capacity; ++i) {
+        thread_data[i].ctx             = *ctx;
+        thread_data[i].ctx.should_stop = ctx->should_stop;
+        thread_data[i].thread_id       = i+1; // main-thread's ID=0, helper-threads=>1,2...
+        atomic_init(&thread_data[i].nodes, 0);
+
+        if (pthread_create(&threads[i], NULL, helper_search_thread, &thread_data[i]) != 0)
+          break;
+
+        helper_count++;
+      }
+    } else {
+      free(threads);
+      free(thread_data);
+      threads     = NULL;
+      thread_data = NULL;
     }
   }
 
@@ -128,9 +142,10 @@ Move sf_search(SF_Context *ctx) {
       ctx->nodes += atomic_load_explicit(&thread_data[i].nodes, memory_order_relaxed);
     }
 
-    free(threads);
-    free(thread_data);
   }
+
+  free(threads);
+  free(thread_data);
 
   ctx->should_stop = previous_stop;
 
