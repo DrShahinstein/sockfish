@@ -3,3 +3,4 @@ tags
 .cache
 sockfish.ini
 __pycache__
+.clangd
